@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import SearchBar from "./SearchBar";
+import { useEffect, useRef, useState } from "react";
+import SearchBar, { SearchIcon } from "./SearchBar";
 import HeaderMoreButton from "./HeaderMoreButton";
 
 // 상단 좌측정렬 제목(+선택적 검색바). position: fixed로 화면 상단에 고정되어
@@ -7,12 +7,20 @@ import HeaderMoreButton from "./HeaderMoreButton";
 // 아무리 스크롤해도 둘 다 함께 그 자리에 그대로 있고 절대 움직이거나 사라지지
 // 않는다. 스크롤 진행도만 --hdr(0~1) CSS 변수로 흘려보내 뒤에 깔리는 유리
 // 레이어의 블러 불투명도를 순수 CSS가 조절한다(제목·검색바 자체는 변하지 않음).
+//
+// 홈·파일 탭에서 스크롤하는 동안에는(멈출 때까지) 검색바가 삼점 버튼과 같은
+// 45px 원으로 축소되어 그 왼쪽에 붙는다. 스크롤이 멈추면(약 180ms 동안 스크롤
+// 이벤트가 없으면) 다시 정상 크기로 돌아온다. 축소된 아이콘을 누르면 즉시
+// 정상 크기로 확장되어 바로 쓸 수 있다.
 export default function PageHeader({ title, showSearch, resetKey }) {
   const ref = useRef(null);
+  const [collapsed, setCollapsed] = useState(false);
 
   // 헤더가 fixed라 문서 흐름을 벗어나므로, 실제 렌더링된 높이(제목+검색바 포함)를
   // 재서 --header-h로 넘겨준다. .page의 padding-top이 이 값을 써서 본문이
-  // 헤더 바로 밑에서 시작한다.
+  // 헤더 바로 밑에서 시작한다. (스크롤 중 축소는 opacity/transform만 쓰므로
+  // 이 높이에는 영향을 주지 않는다 — 축소 애니메이션이 문서 스크롤 위치 자체를
+  // 흔들지 않게 하기 위함.)
   useEffect(() => {
     const el = ref.current;
     const update = () => document.documentElement.style.setProperty("--header-h", `${el.getBoundingClientRect().height}px`);
@@ -22,9 +30,15 @@ export default function PageHeader({ title, showSearch, resetKey }) {
     return () => ro.disconnect();
   }, [showSearch]);
 
+  // 검색 없는 탭으로 가거나 다른 검색 탭으로 이동하면 축소 상태를 초기화한다.
+  useEffect(() => {
+    setCollapsed(false);
+  }, [resetKey, showSearch]);
+
   useEffect(() => {
     const el = ref.current;
     let raf = 0;
+    let collapseTimer = 0;
     const update = () => {
       raf = 0;
       const p = Math.min(1, Math.max(0, window.scrollY / 56));
@@ -32,25 +46,49 @@ export default function PageHeader({ title, showSearch, resetKey }) {
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update);
+      if (showSearch) {
+        setCollapsed(true);
+        clearTimeout(collapseTimer);
+        collapseTimer = setTimeout(() => setCollapsed(false), 180);
+      }
     };
     update();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(raf);
+      clearTimeout(collapseTimer);
     };
-  }, []);
+  }, [showSearch]);
 
   return (
     <header className="page-header" ref={ref}>
-      {/* 제목과 삼점 버튼을 한 행에 놓고 수직 중앙 정렬한다 */}
+      {/* 제목과 액션(축소 검색 아이콘 + 삼점 버튼)을 한 행에 놓고 수직 중앙 정렬한다 */}
       <div className="page-header-row">
         <h1 className="page-title">{title}</h1>
-        {/* key={resetKey}: 탭이 바뀌면 새로 마운트되어 열려 있던 상태가 닫힌 채로 초기화된다 */}
-        {showSearch && <HeaderMoreButton key={resetKey} />}
+        {showSearch && (
+          <div className="page-header-actions">
+            <button
+              className={`header-collapsed-search${collapsed ? " visible" : ""}`}
+              type="button"
+              aria-label="검색"
+              aria-hidden={!collapsed}
+              tabIndex={collapsed ? 0 : -1}
+              onClick={() => setCollapsed(false)}
+            >
+              <SearchIcon size={20} />
+            </button>
+            {/* key={resetKey}: 탭이 바뀌면 새로 마운트되어 열려 있던 상태가 닫힌 채로 초기화된다 */}
+            <HeaderMoreButton key={resetKey} />
+          </div>
+        )}
       </div>
-      {/* key={resetKey}: 탭이 바뀌면 새로 마운트되어 입력값이 초기화된다 */}
-      {showSearch && <SearchBar key={resetKey} />}
+      {showSearch && (
+        <div className={`search-bar-wrap${collapsed ? " hidden" : ""}`}>
+          {/* key={resetKey}: 탭이 바뀌면 새로 마운트되어 입력값이 초기화된다 */}
+          <SearchBar key={resetKey} hidden={collapsed} />
+        </div>
+      )}
     </header>
   );
 }
