@@ -73,21 +73,28 @@ button {
   touch-action: manipulation;
 }
 
-/* ── 페이지 ── */
+/* ── 페이지 ──
+   상단 제목 높이만큼 padding-top을 줘서 본문이 고정 헤더 밑에서 시작하게 한다.
+   --header-h는 PageHeader가 실측해서 넣고, 값이 아직 없을 때의 폴백은 노치 없는
+   기기 기준 헤더 높이(14px 여백 + 34px 제목 한 줄 + 20px 여백)다. */
 .page {
   max-width: 720px;
   margin: 0 auto;
-  padding: 0 20px calc(env(safe-area-inset-bottom, 0px) + var(--tabbar-h) + 44px);
+  padding: var(--header-h, 73px) 20px calc(env(safe-area-inset-bottom, 0px) + var(--tabbar-h) + 44px);
 }
 
-/* ── 상단 제목: sticky로 그 자리에 그대로 고정되고, 스크롤해도 크기·위치·투명도가
-   전혀 변하지 않는다. 뒤에 깔리는 유리 레이어(::before)만 스크롤 진행도(--hdr, 0~1)에
+/* ── 상단 제목: 스크롤 범위 자체에 포함되지 않도록 position: fixed로 화면 상단에
+   고정한다(sticky가 아니다 — 문서를 아무리 스크롤해도 이 박스는 절대 움직이거나
+   사라지지 않는다). 뒤에 깔리는 유리 레이어(::before)만 스크롤 진행도(--hdr, 0~1)에
    따라 블러가 옅게 나타나며, 배경색 없이 최대 불투명도 60%까지만 올라간다. */
 .page-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 20;
-  margin: 0 -20px;
+  max-width: 720px;
+  margin: 0 auto;
   padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px 20px;
 }
 .page-header::before {
