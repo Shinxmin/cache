@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import TabBar, { TABS } from "./components/TabBar";
 import PageHeader from "./components/PageHeader";
+import SearchBar from "./components/SearchBar";
+
+// 검색바는 홈·파일 탭에서만 뜬다(설정에는 없음).
+const SEARCH_TABS = new Set(["home", "files"]);
 
 const THEME_COLORS = { dark: "#1B1B1B", light: "#F5F5F7" };
 
@@ -28,6 +32,8 @@ export default function App() {
     <>
       <main className="page">
         <PageHeader title={title} />
+        {/* key={tab}: 탭을 바꾸면 이 컴포넌트가 통째로 새로 마운트되어 입력값이 초기화된다 */}
+        {SEARCH_TABS.has(tab) && <SearchBar key={tab} />}
       </main>
       <TabBar
         active={tab}
