@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <!-- theme-color는 라이트/다크 전환 시 App에서 동적으로 갱신한다. -->
+    <meta name="theme-color" content="#1B1B1B" />
+    <meta name="color-scheme" content="dark light" />
+    <!-- iOS 홈 화면(PWA)에서 상단 상태바를 투명하게 처리해 아래 배경색(#1B1B1B)이 그대로 비치도록 한다. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="cache" />
+    <meta name="application-name" content="cache" />
+    <meta name="description" content="cache — 미니멀 웹 클라우드 스토리지" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>cache</title>
+    <script>
+      // 첫 페인트 전에 테마를 결정해 라이트/다크 깜빡임을 막는다. (App의 useTheme와 동일한 규칙)
+      (function () {
+        try {
+          var saved = localStorage.getItem("cache.theme");
+          var mode = saved === "light" || saved === "dark" ? saved : "system";
+          var dark = mode === "dark" || (mode === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", dark ? "#1B1B1B" : "#F5F5F7");
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
