@@ -1,16 +1,6 @@
 import { useEffect, useRef } from "react";
 import SearchBar from "./SearchBar";
-
-// 하단바 아이콘과 같은 방식(단일 currentColor 채우기)의 가로 삼점(···) 아이콘.
-function MoreIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
-      <circle cx="5.5" cy="12" r="2.2" />
-      <circle cx="12" cy="12" r="2.2" />
-      <circle cx="18.5" cy="12" r="2.2" />
-    </svg>
-  );
-}
+import HeaderMoreButton from "./HeaderMoreButton";
 
 // 상단 좌측정렬 제목(+선택적 검색바). position: fixed로 화면 상단에 고정되어
 // 스크롤 범위 자체에 포함되지 않는다 — 제목과 검색바를 한 박스로 묶어서, 문서를
@@ -56,11 +46,8 @@ export default function PageHeader({ title, showSearch, resetKey }) {
       {/* 제목과 삼점 버튼을 한 행에 놓고 수직 중앙 정렬한다 */}
       <div className="page-header-row">
         <h1 className="page-title">{title}</h1>
-        {showSearch && (
-          <button className="header-more-btn" type="button" aria-label="더 보기">
-            <MoreIcon />
-          </button>
-        )}
+        {/* key={resetKey}: 탭이 바뀌면 새로 마운트되어 열려 있던 상태가 닫힌 채로 초기화된다 */}
+        {showSearch && <HeaderMoreButton key={resetKey} />}
       </div>
       {/* key={resetKey}: 탭이 바뀌면 새로 마운트되어 입력값이 초기화된다 */}
       {showSearch && <SearchBar key={resetKey} />}
