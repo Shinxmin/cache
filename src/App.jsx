@@ -33,7 +33,7 @@ export default function App() {
         active={tab}
         onChange={(id) => {
           setTab(id);
-          document.getElementById("root").scrollTo({ top: 0 });
+          window.scrollTo({ top: 0 });
         }}
       />
     </>

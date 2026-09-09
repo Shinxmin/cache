@@ -33,42 +33,33 @@
   --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
 }
 
-/* ── 기본: 배경색이 화면 전체(아이폰 상태바·바운스 영역 포함)를 감싼다 ── */
+/* ── 기본: 배경색이 화면 전체(사파리 자체 툴바 뒤·홈 인디케이터 영역 포함)를 감싼다 ──
+   WebKit은 툴바 뒤로 드러나는 영역과 오버스크롤 영역을 <html>의 background로 채우므로
+   html에도 반드시 칠해야 한다(body/#root만으로는 그 영역이 흰 배경으로 남는다).
+   문서는 평소처럼 자연스럽게 스크롤하며(고정 레이아웃 트릭 없음), body/#root의
+   min-height를 동적 뷰포트 높이(dvh, 사파리 툴바 상태에 따라 즉시 재계산)로 잡아
+   내용이 짧아도 항상 현재 화면 전체를 덮게 한다. */
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
-html,
+html {
+  background: var(--bg);
+}
 body {
   margin: 0;
-  padding: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: none;
 }
-/* 문서 자체는 스크롤하지 않고 #root 안에서만 스크롤한다. 사파리의 주소창 접힘/바운스와
-   홈 화면 PWA(standalone) 사이에서 뷰포트 높이와 하단바 위치가 똑같이 유지된다. */
-html,
-body {
-  height: 100%;
-  overflow: hidden;
-}
-/* #root는 뷰포트의 가장 큰 높이(사파리 툴바가 접힌 상태, 100lvh)로 고정해 툴바 뒤·홈 인디케이터
-   영역까지 배경이 끊기지 않게 한다. 배경은 html(캔버스)·body·#root 세 겹에 모두 칠한다. */
 #root {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  height: 100lvh;
-  min-height: -webkit-fill-available;
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg);
 }
 button {
@@ -86,7 +77,6 @@ button {
   max-width: 720px;
   margin: 0 auto;
   padding: 0 20px calc(env(safe-area-inset-bottom, 0px) + var(--tabbar-h) + 44px);
-  min-height: 100%;
 }
 
 /* ── 상단 제목: sticky로 따라오며, 배경색 없이 --hdr(0~1)에 따라 투명도·블러만 조절 ── */
