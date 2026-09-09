@@ -11,7 +11,8 @@ export const TABS = [
 const ICONS = {
   home: (
     <svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" aria-hidden="true">
-      <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+      {/* stroke를 round join/cap으로 겹쳐 지붕·벽 모서리를 아주 살짝만 둥글게 만든다 */}
+      <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   ),
   files: (
