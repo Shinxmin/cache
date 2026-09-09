@@ -98,8 +98,7 @@ button {
   padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px 20px;
   display: flex;
   flex-direction: column;
-  /* 제목과 검색바 사이 여백 — 기존 22px 대비 25% 줄인 값 */
-  gap: 16.5px;
+  gap: 10px;
 }
 .page-header::before {
   content: "";
@@ -123,17 +122,15 @@ button {
 
 /* ── 검색바: 홈·파일 탭에서만, 제목과 한 fixed 박스 안에 있어 스크롤해도 함께
    고정된다(PageHeader.jsx). 하단바(.tabbar)와 같은 리퀴드글라스 표면(같은 블러·
-   하이라이트·그림자)이고, 가로 길이도 --tabbar-w(TabBar.jsx가 실측해 공유)로
-   하단바와 항상 똑같이 맞춘다. ── */
+   하이라이트·그림자)이다. 가로 길이는 하단바 폭에 맞추지 않고 이전 버전대로
+   .page-header 콘텐츠 너비(화면 좌우 20px 여백 기준)에 꽉 차게 되돌렸다
+   (flex-column인 .page-header의 기본 stretch로 자동으로 채워진다). ── */
 .search-bar {
   position: relative;
   isolation: isolate;
   display: flex;
   align-items: center;
   gap: 10px;
-  width: var(--tabbar-w, min(300px, 100%));
-  max-width: 100%;
-  margin: 0 auto;
   height: 44px;
   padding: 0 16px;
   border-radius: 999px;
