@@ -5,6 +5,9 @@
   --spring: cubic-bezier(0.32, 0.72, 0, 1);
   --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --tabbar-h: 60px;
+  /* index.html의 스크립트가 window.innerHeight로 즉시 덮어쓴다. 스크립트가 못 도는
+     극히 드문 경우를 위한 폴백만 100dvh로 둔다. */
+  --vh: 100dvh;
 }
 
 :root[data-theme="dark"] {
@@ -37,8 +40,8 @@
    WebKit은 툴바 뒤로 드러나는 영역과 오버스크롤 영역을 <html>의 background로 채우므로
    html에도 반드시 칠해야 한다(body/#root만으로는 그 영역이 흰 배경으로 남는다).
    문서는 평소처럼 자연스럽게 스크롤하며(고정 레이아웃 트릭 없음), body/#root의
-   min-height를 동적 뷰포트 높이(dvh, 사파리 툴바 상태에 따라 즉시 재계산)로 잡아
-   내용이 짧아도 항상 현재 화면 전체를 덮게 한다. */
+   min-height는 실제 window.innerHeight 기준인 --vh(index.html 스크립트)를 써서
+   내용이 짧을 때 스크롤할 게 없는데도 몇 px 스크롤되는 문제를 없앤다. */
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
@@ -48,8 +51,7 @@ html {
 }
 body {
   margin: 0;
-  min-height: 100vh;
-  min-height: 100dvh;
+  min-height: var(--vh);
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
@@ -58,8 +60,7 @@ body {
   overscroll-behavior-y: none;
 }
 #root {
-  min-height: 100vh;
-  min-height: 100dvh;
+  min-height: var(--vh);
   background: var(--bg);
 }
 button {
@@ -79,14 +80,24 @@ button {
   padding: 0 20px calc(env(safe-area-inset-bottom, 0px) + var(--tabbar-h) + 44px);
 }
 
-/* ── 상단 제목: sticky로 따라오며, 배경색 없이 --hdr(0~1)에 따라 투명도·블러만 조절 ── */
+/* ── 상단 제목: sticky로 그 자리에 그대로 고정되고, 스크롤해도 크기·위치·투명도가
+   전혀 변하지 않는다. 뒤에 깔리는 유리 레이어(::before)만 스크롤 진행도(--hdr, 0~1)에
+   따라 블러가 옅게 나타나며, 배경색 없이 최대 불투명도 60%까지만 올라간다. */
 .page-header {
   position: sticky;
   top: 0;
   z-index: 20;
   margin: 0 -20px;
   padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px 20px;
-  background: rgba(var(--bg-rgb), calc(var(--hdr, 0) * 0.62));
+}
+.page-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  opacity: calc(var(--hdr, 0) * 0.6);
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 10px), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 10px), transparent);
 }
@@ -97,10 +108,6 @@ button {
   font-weight: 700;
   letter-spacing: -0.02em;
   text-align: left;
-  transform-origin: left center;
-  transform: scale(calc(1 - var(--hdr, 0) * 0.32));
-  opacity: calc(1 - var(--hdr, 0) * 0.15);
-  will-change: transform, opacity;
 }
 
 /* ── 하단 내비게이션 (리퀴드글라스) ── */
@@ -114,10 +121,11 @@ button {
   z-index: 50;
   pointer-events: none;
 }
-/* 홈 화면 PWA(standalone)에서는 브라우저 툴바가 없으므로 하단바를 더 아래로 내린다. */
+/* 홈 화면 PWA(standalone)에서는 브라우저 툴바가 없으므로 하단바를 더 아래로 내리되,
+   홈 인디케이터와는 자연스러운 간격을 둔다. */
 @media (display-mode: standalone) {
   .tabbar-wrap {
-    bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 16px));
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
   }
 }
 .tabbar {

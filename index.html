@@ -24,6 +24,20 @@
         document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
         document.querySelector('meta[name="theme-color"]').setAttribute("content", dark ? "#1B1B1B" : "#F5F5F7");
       })();
+      // iOS 사파리·PWA는 로드 직후 실제 화면 높이가 한 박자 늦게 확정될 때가 있어, 그 사이
+      // 100dvh만 믿으면 스크롤할 내용이 없는데도 몇 px가 스크롤되는 문제가 생긴다.
+      // window.innerHeight를 직접 읽어 --vh로 저장해 두고, 툴바 표시 상태가 바뀔 때마다
+      // (resize/visualViewport resize 등) 다시 계산한다. CSS는 100dvh 대신 이 값을 쓴다.
+      (function () {
+        var setVh = function () {
+          document.documentElement.style.setProperty("--vh", window.innerHeight + "px");
+        };
+        setVh();
+        window.addEventListener("resize", setVh);
+        window.addEventListener("orientationchange", setVh);
+        window.addEventListener("pageshow", setVh);
+        if (window.visualViewport) window.visualViewport.addEventListener("resize", setVh);
+      })();
     </script>
   </head>
   <body>

@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 
-// 상단 좌측정렬 제목. sticky로 스크롤을 따라오며, 배경색 없이 스크롤 진행도(0~1)에 따라
-// 배경 투명도와 블러만 조절한다.
+// 상단 좌측정렬 제목. sticky로 그 자리에 고정되며 스크롤해도 제목 자체는 전혀 변하지
+// 않는다. 스크롤 진행도만 --hdr(0~1) CSS 변수로 흘려보내고, 뒤에 깔리는 유리 레이어의
+// 블러 불투명도는 순수 CSS(styles.css의 .page-header::before)가 처리한다.
 export default function PageHeader({ title }) {
   const ref = useRef(null);
 
@@ -12,9 +13,6 @@ export default function PageHeader({ title }) {
       raf = 0;
       const p = Math.min(1, Math.max(0, window.scrollY / 56));
       el.style.setProperty("--hdr", p.toFixed(3));
-      const filter = `blur(${(p * 22).toFixed(1)}px) saturate(160%)`;
-      el.style.webkitBackdropFilter = filter;
-      el.style.backdropFilter = filter;
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update);
