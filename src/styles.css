@@ -98,7 +98,14 @@ button {
   padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  /* 제목-검색바 여백: 10px 대비 15% 증가 */
+  gap: 11.5px;
+}
+.page-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 .page-header::before {
   content: "";
@@ -120,6 +127,42 @@ button {
   text-align: left;
 }
 
+/* ── 원형 리퀴드글라스 "더 보기" 버튼: 홈·파일 탭에서만, 제목과 같은 행에서
+   수직 중앙 정렬. 눌렀을 때 살짝 줄어드는 애니메이션은 하단바 탭(.tab:active)과
+   완전히 같은 값(transform, easing, 지속시간)을 쓴다 — 검색바도 동일하게 맞춤. ── */
+.header-more-btn {
+  position: relative;
+  isolation: isolate;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  color: var(--text-2);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  backdrop-filter: blur(28px) saturate(200%);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
+  transition: transform 0.35s var(--spring);
+}
+.header-more-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 45%);
+  pointer-events: none;
+}
+.header-more-btn svg {
+  position: relative;
+  z-index: 1;
+}
+.header-more-btn:active {
+  transform: scale(0.94);
+}
+
 /* ── 검색바: 홈·파일 탭에서만, 제목과 한 fixed 박스 안에 있어 스크롤해도 함께
    고정된다(PageHeader.jsx). 하단바(.tabbar)와 같은 리퀴드글라스 표면(같은 블러·
    하이라이트·그림자)이다. 가로 길이는 하단바 폭에 맞추지 않고 이전 버전대로
@@ -139,6 +182,11 @@ button {
   backdrop-filter: blur(28px) saturate(200%);
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
   color: var(--text-2);
+  /* 하단바 탭(.tab:active)과 동일한 눌림 애니메이션 */
+  transition: transform 0.35s var(--spring);
+}
+.search-bar:active {
+  transform: scale(0.94);
 }
 .search-bar::before {
   /* 하단바와 같은, 유리 윗면에 비치는 얇은 하이라이트 */
@@ -177,7 +225,8 @@ button {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+  /* 하단 여백: 14px 대비 15% 증가 */
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 16.1px);
   display: flex;
   justify-content: center;
   z-index: 50;
@@ -187,7 +236,8 @@ button {
    홈 인디케이터와는 자연스러운 간격을 둔다. */
 @media (display-mode: standalone) {
   .tabbar-wrap {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+    /* 하단 여백: 4px 대비 15% 증가 */
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 4.6px);
   }
 }
 .tabbar {
