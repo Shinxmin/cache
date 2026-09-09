@@ -160,15 +160,27 @@ button {
 .tab {
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
   height: 48px;
   min-width: 92px;
   padding: 0 24px;
   border-radius: 999px;
-  font-size: 14px;
-  font-weight: 600;
   color: var(--text-2);
-  letter-spacing: -0.01em;
   transition: color 0.35s var(--ease), transform 0.35s var(--spring);
+}
+.tab-icon {
+  display: flex;
+  line-height: 0;
+}
+.tab-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
 }
 .tab.active {
   color: var(--text);
