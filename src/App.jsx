@@ -1,121 +1,41 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { supabase } from "./supabaseClient";
-import { AppContext } from "./AppContext";
-import { ToastProvider, useToast } from "./components/Toast";
+import { useEffect, useState } from "react";
 import TabBar, { TABS } from "./components/TabBar";
-import AuthPage from "./pages/AuthPage";
-import HomePage from "./pages/HomePage";
-import FilesPage from "./pages/FilesPage";
-import SettingsPage from "./pages/SettingsPage";
-import { useTheme } from "./lib/theme";
-import { uploadFiles } from "./lib/items";
-import { formatBytes } from "./lib/format";
+import PageHeader from "./components/PageHeader";
 
-const TAB_KEY = "cache.tab";
+const THEME_COLORS = { dark: "#1B1B1B", light: "#F5F5F7" };
 
-export default function App() {
-  const theme = useTheme();
-  const [session, setSession] = useState(undefined); // undefined = 확인 중
-
+// 시스템 다크/라이트 설정을 따라 html[data-theme]와 theme-color를 맞춘다.
+function useSystemTheme() {
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s ?? null));
-    return () => sub.subscription.unsubscribe();
+    const mq = matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => {
+      const theme = mq.matches ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", theme);
+      document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLORS[theme]);
+    };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
   }, []);
-
-  if (session === undefined) {
-    return (
-      <div className="loading">
-        <div className="spinner" />
-      </div>
-    );
-  }
-
-  return <ToastProvider>{session ? <Shell user={session.user} theme={theme} /> : <AuthPage />}</ToastProvider>;
 }
 
-function Shell({ user, theme }) {
-  const toast = useToast();
-  const [tab, setTab] = useState(() => {
-    const saved = sessionStorage.getItem(TAB_KEY);
-    return TABS.some((t) => t.id === saved) ? saved : "home";
-  });
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [upload, setUpload] = useState(null);
-  const abortRef = useRef(null);
-
-  const goTab = useCallback((id) => {
-    setTab(id);
-    try {
-      sessionStorage.setItem(TAB_KEY, id);
-    } catch (_e) {
-      /* ignore */
-    }
-    window.scrollTo({ top: 0 });
-  }, []);
-
-  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
-
-  const startUpload = useCallback(
-    async (files, parentId) => {
-      if (upload?.active) {
-        toast("이미 업로드가 진행 중입니다", { error: true });
-        return;
-      }
-      const controller = new AbortController();
-      abortRef.current = controller;
-      setUpload({ active: true, loaded: 0, total: 0, done: 0, count: files.length });
-      try {
-        const { uploaded, failed } = await uploadFiles(files, parentId, {
-          signal: controller.signal,
-          onProgress: (p) => setUpload({ active: true, ...p }),
-        });
-        if (failed.length && !controller.signal.aborted) {
-          toast(`${failed.length}개 업로드 실패: ${failed[0].error?.message ?? ""}`, { error: true, duration: 4000 });
-        } else if (uploaded.length) {
-          toast(`${uploaded.length}개 파일 업로드 완료`);
-        }
-      } catch (e) {
-        toast(e.message, { error: true });
-      } finally {
-        setUpload(null);
-        abortRef.current = null;
-        refresh();
-      }
-    },
-    [upload, toast, refresh]
-  );
-
-  const ctx = useMemo(() => ({ user, refreshKey, refresh, startUpload, upload, goTab }), [user, refreshKey, refresh, startUpload, upload, goTab]);
+export default function App() {
+  useSystemTheme();
+  const [tab, setTab] = useState(TABS[0].id);
+  const title = TABS.find((t) => t.id === tab).label;
 
   return (
-    <AppContext.Provider value={ctx}>
-      {tab === "home" && <HomePage key="home" />}
-      {tab === "files" && <FilesPage key="files" />}
-      {tab === "settings" && <SettingsPage key="settings" theme={theme} />}
-
-      {upload && (
-        <div className="upload-panel glass" role="status">
-          <div className="upload-head">
-            <b>
-              업로드 중 {upload.done}/{upload.count}
-            </b>
-            <span>
-              {upload.total ? `${Math.round((upload.loaded / upload.total) * 100)}%` : "0%"} · {formatBytes(upload.loaded)}
-            </span>
-          </div>
-          <div className="bar">
-            <i style={{ width: `${upload.total ? (upload.loaded / upload.total) * 100 : 0}%` }} />
-          </div>
-          <div style={{ textAlign: "right", marginTop: 8 }}>
-            <button className="btn btn-text btn-sm" onClick={() => abortRef.current?.abort()}>
-              취소
-            </button>
-          </div>
-        </div>
-      )}
-
-      <TabBar active={tab} onChange={goTab} />
-    </AppContext.Provider>
+    <>
+      <main className="page tab-panel" key={tab}>
+        <PageHeader title={title} />
+      </main>
+      <TabBar
+        active={tab}
+        onChange={(id) => {
+          setTab(id);
+          window.scrollTo({ top: 0 });
+        }}
+      />
+    </>
   );
 }
