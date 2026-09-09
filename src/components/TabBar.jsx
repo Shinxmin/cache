@@ -46,8 +46,15 @@ export default function TabBar({ active, onChange }) {
 
   useLayoutEffect(measure, [active]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    const ro = new ResizeObserver(measure);
+    // 실제 렌더링된 하단바 폭을 --tabbar-w로 공유한다. 검색바가 이 값을 그대로
+    // 가져다 써서 하단바와 항상 같은 가로 길이를 유지한다(styles.css 참고).
+    const publishWidth = () => document.documentElement.style.setProperty("--tabbar-w", `${barRef.current.getBoundingClientRect().width}px`);
+    const ro = new ResizeObserver(() => {
+      measure();
+      publishWidth();
+    });
     ro.observe(barRef.current);
+    publishWidth();
     return () => ro.disconnect();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
