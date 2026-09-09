@@ -4,7 +4,7 @@
     "Noto Sans KR", system-ui, sans-serif;
   --spring: cubic-bezier(0.32, 0.72, 0, 1);
   --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
-  --tabbar-h: 66px;
+  --tabbar-h: 60px;
 }
 
 :root[data-theme="dark"] {
@@ -144,9 +144,9 @@ button {
 .tab {
   position: relative;
   z-index: 1;
-  height: 54px;
-  min-width: 108px;
-  padding: 0 28px;
+  height: 48px;
+  min-width: 92px;
+  padding: 0 24px;
   border-radius: 999px;
   font-size: 16px;
   font-weight: 600;
