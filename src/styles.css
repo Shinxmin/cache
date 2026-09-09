@@ -117,6 +117,41 @@ button {
   text-align: left;
 }
 
+/* ── 검색바: 홈·파일 탭에서만, 제목 바로 밑에 위치. 헤더는 fixed라 스크롤 범위
+   밖에 있으므로, 검색바는 본문(.page)의 맨 앞에 있는 일반 콘텐츠라 함께 스크롤된다. ── */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 16px;
+  margin: 2px 0 18px;
+  border-radius: 999px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
+  color: var(--text-2);
+}
+.search-bar-icon {
+  display: flex;
+  flex: none;
+  line-height: 0;
+}
+.search-bar-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--text);
+}
+.search-bar-input::placeholder {
+  color: var(--text-2);
+}
+
 /* ── 하단 내비게이션 (리퀴드글라스) ── */
 .tabbar-wrap {
   position: fixed;
