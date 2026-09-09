@@ -26,14 +26,14 @@ export default function App() {
 
   return (
     <>
-      <main className="page tab-panel" key={tab}>
+      <main className="page">
         <PageHeader title={title} />
       </main>
       <TabBar
         active={tab}
         onChange={(id) => {
           setTab(id);
-          window.scrollTo({ top: 0 });
+          document.getElementById("root").scrollTo({ top: 0 });
         }}
       />
     </>

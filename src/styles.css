@@ -4,7 +4,7 @@
     "Noto Sans KR", system-ui, sans-serif;
   --spring: cubic-bezier(0.32, 0.72, 0, 1);
   --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
-  --tabbar-h: 56px;
+  --tabbar-h: 66px;
 }
 
 :root[data-theme="dark"] {
@@ -48,12 +48,23 @@ body {
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
 }
-html {
-  min-height: 100dvh;
-}
+/* 문서 자체는 스크롤하지 않고 #root 안에서만 스크롤한다. 사파리의 주소창 접힘/바운스와
+   홈 화면 PWA(standalone) 사이에서 뷰포트 높이와 하단바 위치가 똑같이 유지된다. */
+html,
 body {
-  min-height: 100dvh;
-  overscroll-behavior-y: none;
+  height: 100%;
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+}
+#root {
+  position: fixed;
+  inset: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  background: var(--bg);
 }
 button {
   font: inherit;
@@ -70,16 +81,7 @@ button {
   max-width: 720px;
   margin: 0 auto;
   padding: 0 20px calc(env(safe-area-inset-bottom, 0px) + var(--tabbar-h) + 44px);
-  min-height: 100dvh;
-}
-.tab-panel {
-  animation: panelIn 0.4s var(--spring);
-}
-@keyframes panelIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
+  min-height: 100%;
 }
 
 /* ── 상단 제목: sticky로 따라오며, 배경색 없이 --hdr(0~1)에 따라 투명도·블러만 조절 ── */
@@ -121,9 +123,10 @@ button {
   pointer-events: auto;
   position: relative;
   display: flex;
-  padding: 5px;
+  padding: 6px;
   border-radius: 999px;
   background: var(--glass);
+  transform: translateZ(0);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
   backdrop-filter: blur(28px) saturate(200%);
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
@@ -141,10 +144,11 @@ button {
 .tab {
   position: relative;
   z-index: 1;
-  height: 46px;
-  padding: 0 24px;
+  height: 54px;
+  min-width: 108px;
+  padding: 0 28px;
   border-radius: 999px;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-2);
   letter-spacing: -0.01em;
@@ -158,29 +162,14 @@ button {
 }
 .tab-indicator {
   position: absolute;
-  top: 5px;
-  bottom: 5px;
+  top: 6px;
+  bottom: 6px;
   left: 0;
   border-radius: 999px;
   background: var(--glass-strong);
   box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border), 0 4px 14px rgba(0, 0, 0, 0.18);
-  transition: transform 0.55s var(--spring), width 0.55s var(--spring);
-  will-change: transform, width;
-}
-.tab-indicator.moving {
-  /* 이동 중엔 유리 방울처럼 살짝 늘어난다 */
-  animation: liquid 0.55s var(--spring);
-}
-@keyframes liquid {
-  0% {
-    transform: var(--from) scale(1);
-  }
-  40% {
-    transform: var(--from) scaleX(1.12) scaleY(0.9);
-  }
-  100% {
-    transform: var(--to) scale(1);
-  }
+  transition: transform 0.5s var(--spring), width 0.5s var(--spring);
+  will-change: transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
