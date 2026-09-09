@@ -117,7 +117,7 @@ button {
 /* 홈 화면 PWA(standalone)에서는 브라우저 툴바가 없으므로 하단바를 더 아래로 내린다. */
 @media (display-mode: standalone) {
   .tabbar-wrap {
-    bottom: max(6px, calc(env(safe-area-inset-bottom, 0px) - 20px));
+    bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 16px));
   }
 }
 .tabbar {
