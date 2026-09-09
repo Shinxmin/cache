@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 function DotsIcon() {
   return (
@@ -26,8 +26,8 @@ function FolderIcon() {
   );
 }
 
-// 홈·파일 탭 제목 우측의 원형 "더 보기" 버튼. 평소엔 삼점(···)만 있는 원(지름 45px)이고,
-// 누르면 오른쪽 끝은 그대로 둔 채 왼쪽으로 자라나(160px) 업로드·새 폴더 두 액션이
+// 홈·파일 탭 제목 우측의 원형 "더 보기" 버튼. 평소엔 삼점(···)만 있는 원(지름 50px)이고,
+// 누르면 오른쪽 끝은 그대로 둔 채 왼쪽으로 자라나(150px) 업로드·새 폴더 두 액션이
 // 나타난다. 다시 삼점(맨 오른쪽 항목)을 누르면 닫힌다.
 //
 // 애니메이션은 순수 CSS다 — 바깥 박스(overflow:hidden)의 width만 트랜지션하고,
@@ -38,11 +38,35 @@ function FolderIcon() {
 // 스크롤로는 닫히지 않는다(별도 처리 없음 = 기본 동작). 다른 탭으로 이동하면
 // 부모(PageHeader)가 key={resetKey}로 이 컴포넌트를 통째로 새로 마운트시켜
 // 자동으로 닫힌 상태가 된다. 업로드/새 폴더를 누르면 그 자리에서 닫는다.
-export default function HeaderMoreButton({ onUpload, onNewFolder }) {
+//
+// onOpen: 열릴 때(스크롤 중 검색바가 왼쪽에 축소돼 있으면 확장하면서 겹칠 수
+// 있으므로) 호출해 부모가 검색바를 먼저 정상 크기로 되돌리게 한다.
+export default function HeaderMoreButton({ onUpload, onNewFolder, onOpen }) {
   const [open, setOpen] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const toggle = () => {
+    setOpen((v) => {
+      const next = !v;
+      if (next) onOpen?.();
+      return next;
+    });
+  };
 
   return (
     <div className={`header-more${open ? " open" : ""}`}>
+      {/* 업로드 클릭 시 아이폰에서는 사진/파일 선택 팝업을, PC에서는 OS 파일 선택
+          대화상자를 그대로 띄우는 네이티브 파일 입력(화면에는 보이지 않음). */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        style={{ display: "none" }}
+        onChange={(e) => {
+          onUpload?.(e.target.files);
+          e.target.value = "";
+        }}
+      />
       <div className="header-more-inner">
         <button
           className="header-more-item"
@@ -51,7 +75,7 @@ export default function HeaderMoreButton({ onUpload, onNewFolder }) {
           aria-hidden={!open}
           onClick={() => {
             setOpen(false);
-            onUpload?.();
+            fileInputRef.current?.click();
           }}
         >
           <span className="header-more-icon">
@@ -79,7 +103,7 @@ export default function HeaderMoreButton({ onUpload, onNewFolder }) {
           type="button"
           aria-label={open ? "닫기" : "더 보기"}
           aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
+          onClick={toggle}
         >
           <span className="header-more-icon">
             <DotsIcon />
