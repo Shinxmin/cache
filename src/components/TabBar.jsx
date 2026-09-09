@@ -10,9 +10,12 @@ export const TABS = [
 // var(--text-2)/var(--text))을 그대로 물려받아 테마와 활성 상태에 자동으로 맞는다.
 const ICONS = {
   home: (
+    // 다른 아이콘과 동일하게 단일 fill 패스 하나로만 그린다(별도 stroke 겹침 없음).
+    // 모서리는 stroke 트릭 대신 패스 자체에 둥근 꼭짓점을 넣어(각 꼭짓점을 2차
+    // 베지어로 라운딩) 만들었기 때문에, 반투명 색(비선택 상태)에서도 겹친 획이
+    // 만드는 이중 톤(윤곽선처럼 보이는 테두리)이 생기지 않는다.
     <svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor" aria-hidden="true">
-      {/* stroke를 round join/cap으로 겹쳐 지붕·벽 모서리를 아주 살짝만 둥글게 만든다 */}
-      <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round" />
+      <path d="M13.3 4.3 Q12 3 10.7 4.3 L5.3 9.7 Q4 11 4 12.8 L4 19.2 Q4 21 5.8 21 L18.2 21 Q20 21 20 19.2 L20 12.8 Q20 11 18.7 9.7 Z" />
     </svg>
   ),
   files: (
