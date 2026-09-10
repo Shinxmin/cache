@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 
 function DotsIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
       <circle cx="5.5" cy="12" r="2.2" />
       <circle cx="12" cy="12" r="2.2" />
       <circle cx="18.5" cy="12" r="2.2" />
@@ -12,7 +12,7 @@ function DotsIcon() {
 
 function DocIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true">
       <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z" />
     </svg>
   );
@@ -20,7 +20,7 @@ function DocIcon() {
 
 function FolderIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true">
       <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
     </svg>
   );
