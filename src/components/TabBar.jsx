@@ -36,6 +36,26 @@ export default function TabBar({ active, onChange }) {
   const barRef = useRef(null);
   const tabRefs = useRef({});
   const [rect, setRect] = useState(null);
+  const pointerStart = useRef(null);
+
+  // 스크롤(특히 관성 스크롤)을 멈추게 하는 첫 탭은 iOS 사파리가 click을 생성하지
+  // 않고 스크롤만 멈춘다 — 검색바가 축소돼 있는 스크롤 중에 하단바를 눌러도
+  // 반응이 없던 버그가 이 때문이었다. click 대신 pointerup으로 처리하되, 단순히
+  // "같은 요소에서 눌렀다 뗐다"만 보면 마우스/트랙패드로 다른 곳을 누른 채
+  // 이 탭 위로 드래그해 놓았을 때도 오작동한다(터치와 달리 마우스 포인터는
+  // 암시적 캡처가 없어 실제로 이렇게 오탐지되는 것을 확인함). 그래서 누른
+  // 지점과 뗀 지점 사이 이동 거리가 작을 때만(진짜 탭일 때만) 반응한다.
+  const TAP_SLOP = 10;
+  const handlePointerDown = (e) => {
+    pointerStart.current = { x: e.clientX, y: e.clientY };
+  };
+  const handlePointerUp = (e, id) => {
+    const start = pointerStart.current;
+    pointerStart.current = null;
+    if (!start) return;
+    const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+    if (moved < TAP_SLOP) onChange(id);
+  };
 
   const measure = () => {
     const el = tabRefs.current[active];
@@ -63,6 +83,8 @@ export default function TabBar({ active, onChange }) {
             aria-selected={active === t.id}
             className={`tab${active === t.id ? " active" : ""}`}
             onClick={() => onChange(t.id)}
+            onPointerDown={handlePointerDown}
+            onPointerUp={(e) => handlePointerUp(e, t.id)}
           >
             <span className="tab-icon">{ICONS[t.id]}</span>
             <span className="tab-label">{t.label}</span>
