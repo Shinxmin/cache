@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import SearchBar, { SearchIcon } from "./SearchBar";
 import HeaderMoreButton from "./HeaderMoreButton";
+import StudioToolkitBar from "./StudioToolkitBar";
 
 // 상단 좌측정렬 제목(+선택적 검색바). position: fixed로 화면 상단에 고정되어
 // 스크롤 범위 자체에 포함되지 않는다 — 제목과 검색바를 한 박스로 묶어서, 문서를
@@ -13,7 +14,7 @@ import HeaderMoreButton from "./HeaderMoreButton";
 // 이벤트가 없으면) 다시 정상 크기로 돌아온다. 축소된 아이콘을 누르면, 또는
 // 축소된 채로 삼점 버튼을 눌러 열면(왼쪽으로 확장되며 겹칠 수 있으므로) 즉시
 // 검색바가 정상 크기로 돌아와 충돌을 피한다.
-export default function PageHeader({ title, showSearch, resetKey }) {
+export default function PageHeader({ title, showSearch, resetKey, toolkitActive, onCloseToolkit }) {
   const ref = useRef(null);
   const [collapsed, setCollapsed] = useState(false);
   const collapseTimerRef = useRef(0);
@@ -98,6 +99,10 @@ export default function PageHeader({ title, showSearch, resetKey }) {
           <SearchBar key={resetKey} hidden={collapsed} />
         </div>
       )}
+      {/* 평소엔 마운트되지 않는다(비활성화). 파일을 꾹 누르면 활성화되거나
+          (연결 예정), 지금은 설정 탭 체크박스로 켜고 끌 수 있다. 헤더 자체의
+          ResizeObserver가 이 바의 유무에 따라 --header-h를 자동으로 다시 잰다. */}
+      {showSearch && toolkitActive && <StudioToolkitBar onClose={onCloseToolkit} />}
     </header>
   );
 }
