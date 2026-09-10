@@ -21,6 +21,7 @@
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-highlight: rgba(255, 255, 255, 0.16);
   --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  --danger: #ff8a80;
 }
 
 :root[data-theme="light"] {
@@ -34,6 +35,7 @@
   --glass-border: rgba(0, 0, 0, 0.06);
   --glass-highlight: rgba(255, 255, 255, 0.95);
   --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  --danger: #d9433a;
 }
 
 /* ── 기본: 배경색이 화면 전체(사파리 자체 툴바 뒤·홈 인디케이터 영역 포함)를 감싼다 ──
@@ -406,6 +408,87 @@ button {
   box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border), 0 4px 14px rgba(0, 0, 0, 0.18);
   transition: transform 0.5s var(--spring), width 0.5s var(--spring);
   will-change: transform;
+}
+
+/* ── 로그인/회원가입 화면: 비로그인 상태에서 앱 전체를 대신해 뜬다. 입력창은
+   검색바(.search-bar)와 같은 리퀴드글라스 알약 재질을 그대로 쓴다. ── */
+.auth-page {
+  min-height: var(--vh);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.auth-card {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.auth-title {
+  margin: 0 0 10px;
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+.auth-input {
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  backdrop-filter: blur(28px) saturate(200%);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
+  outline: none;
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--text);
+  transition: transform 0.35s var(--spring);
+}
+.auth-input:active {
+  transform: scale(0.98);
+}
+.auth-input::placeholder {
+  color: var(--text-2);
+}
+/* 로그인 실패 안내: 비밀번호 입력창과 로그인 버튼 사이에 항상 자리를 잡고 있다가
+   실패 시에만 텍스트가 나타난다 — 자리를 미리 확보해 두어 나타날 때 레이아웃이
+   덜컹거리지 않는다. */
+.auth-error {
+  min-height: 16px;
+  margin-top: -6px;
+  font-size: 13px;
+  line-height: 1.3;
+  text-align: center;
+  color: var(--danger);
+}
+.auth-submit {
+  height: 48px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border), 0 4px 14px rgba(0, 0, 0, 0.18);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  transition: transform 0.35s var(--spring), opacity 0.3s var(--ease);
+}
+.auth-submit:active {
+  transform: scale(0.97);
+}
+.auth-submit:disabled {
+  opacity: 0.6;
+}
+.auth-toggle {
+  margin: 2px auto 0;
+  font-size: 13px;
+  color: var(--text-2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

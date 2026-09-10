@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import TabBar, { TABS } from "./components/TabBar";
 import PageHeader from "./components/PageHeader";
+import AuthPage from "./pages/AuthPage";
+
+const AUTH_STORAGE_KEY = "cache_auth_user";
 
 // 검색바는 홈·파일 탭에서만 뜬다(설정에는 없음). 제목과 한 fixed 박스로 묶여
 // PageHeader 안에서 렌더링된다(PageHeader.jsx 참고).
@@ -25,8 +28,30 @@ function useSystemTheme() {
 
 export default function App() {
   useSystemTheme();
+  const [user, setUser] = useState(() => {
+    try {
+      return localStorage.getItem(AUTH_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  });
   const [tab, setTab] = useState(TABS[0].id);
   const title = TABS.find((t) => t.id === tab).label;
+
+  if (!user) {
+    return (
+      <AuthPage
+        onLogin={(username) => {
+          try {
+            localStorage.setItem(AUTH_STORAGE_KEY, username);
+          } catch {
+            /* 저장 실패해도(사파리 프라이빗 모드 등) 이번 세션 로그인은 유지 */
+          }
+          setUser(username);
+        }}
+      />
+    );
+  }
 
   return (
     <>
