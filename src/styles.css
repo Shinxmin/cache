@@ -209,11 +209,16 @@ button {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  /* 왼쪽 두 항목(업로드·새 폴더)을 살짝 오른쪽으로 밀어 정렬한다. 오른쪽은
+     patting 없이 그대로 둬서 삼점 항목의 위치(오른쪽 끝)는 바뀌지 않는다.
+     item 폭을 8px만큼씩 줄인 총량과 정확히 맞춰서(48.5*2+45=142=150-8) 열린
+     상태에서도 잘리는 부분 없이 꽉 채운다. */
+  padding-left: 8px;
 }
 .header-more-item {
   position: relative;
   flex: none;
-  width: 52.5px;
+  width: 48.5px;
   height: 100%;
   display: flex;
   flex-direction: column;
