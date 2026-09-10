@@ -85,7 +85,7 @@ export default function PageHeader({ title, showSearch, resetKey }) {
               tabIndex={collapsed ? 0 : -1}
               onClick={expandSearch}
             >
-              <SearchIcon size={20} />
+              <SearchIcon size={18} />
             </button>
             {/* key={resetKey}: 탭이 바뀌면 새로 마운트되어 열려 있던 상태가 닫힌 채로 초기화된다 */}
             <HeaderMoreButton key={resetKey} onOpen={expandSearch} />
