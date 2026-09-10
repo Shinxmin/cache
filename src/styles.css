@@ -410,6 +410,100 @@ button {
   will-change: transform;
 }
 
+/* ── 체크박스: 네이티브 input은 투명 처리해 접근성/토글 동작만 맡기고, 시각
+   표현은 형제 요소(.checkbox-box)가 담당한다. 체크 시 text/bg 색을 서로
+   뒤바꿔 채워서 라이트·다크 어느 테마에서도 또렷하게 보인다. ── */
+.checkbox {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+.checkbox input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.checkbox-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass);
+  box-shadow: inset 0 0 0 1.5px var(--glass-border);
+  color: transparent;
+  transition: background 0.2s var(--ease), box-shadow 0.2s var(--ease), color 0.2s var(--ease), transform 0.35s var(--spring);
+}
+.checkbox input:checked + .checkbox-box {
+  background: var(--text);
+  box-shadow: none;
+  color: var(--bg);
+}
+.checkbox input:active + .checkbox-box {
+  transform: scale(0.88);
+}
+
+/* ── 스튜디오 툴킷: 홈·파일 탭에서 검색바 밑에, 제목·검색바와 같은 fixed 헤더
+   안에 고정되는 선택 도구줄. 좌우 여백 없이(헤더의 20px 좌우 패딩을 음수
+   마진으로 상쇄) 위아래 가로선 하나씩으로만 구분된다. 평소엔 마운트되지
+   않고(비활성화), 파일을 꾹 누르거나 설정의 체크박스로 켤 때만 나타난다. ── */
+.studio-toolkit {
+  margin: 0 -20px;
+  padding: 0 20px;
+  height: 44px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+}
+.studio-toolkit-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.studio-toolkit-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.studio-toolkit-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  color: var(--text-2);
+}
+.studio-toolkit-icon-btn {
+  display: flex;
+  transition: transform 0.35s var(--spring);
+}
+.studio-toolkit-icon-btn:active {
+  transform: scale(0.88);
+}
+
+/* ── 설정 탭 리스트: 지금은 스튜디오 툴킷 on/off 한 줄뿐이다. ── */
+.settings-list {
+  display: flex;
+  flex-direction: column;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 50px;
+  border-bottom: 1px solid var(--glass-border);
+  cursor: pointer;
+}
+.settings-row-label {
+  font-size: 15px;
+  color: var(--text);
+}
+
 /* ── 로그인/회원가입 화면: 비로그인 상태에서 앱 전체를 대신해 뜬다. 입력창은
    검색바(.search-bar)와 같은 리퀴드글라스 알약 재질을 그대로 쓴다. ── */
 .auth-page {

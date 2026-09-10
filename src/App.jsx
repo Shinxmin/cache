@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import TabBar, { TABS } from "./components/TabBar";
 import PageHeader from "./components/PageHeader";
 import AuthPage from "./pages/AuthPage";
+import SettingsPage from "./pages/SettingsPage";
 
 const AUTH_STORAGE_KEY = "cache_auth_user";
 
@@ -36,6 +37,7 @@ export default function App() {
     }
   });
   const [tab, setTab] = useState(TABS[0].id);
+  const [toolkitActive, setToolkitActive] = useState(false);
   const title = TABS.find((t) => t.id === tab).label;
 
   if (!user) {
@@ -56,7 +58,14 @@ export default function App() {
   return (
     <>
       <main className="page">
-        <PageHeader title={title} showSearch={SEARCH_TABS.has(tab)} resetKey={tab} />
+        <PageHeader
+          title={title}
+          showSearch={SEARCH_TABS.has(tab)}
+          resetKey={tab}
+          toolkitActive={toolkitActive}
+          onCloseToolkit={() => setToolkitActive(false)}
+        />
+        {tab === "settings" && <SettingsPage toolkitActive={toolkitActive} onToggleToolkit={setToolkitActive} />}
       </main>
       <TabBar
         active={tab}
