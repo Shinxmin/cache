@@ -22,6 +22,18 @@ export default function FileViewer({ session, items, initialIndex, onClose }) {
 
   const item = items[index];
 
+  // 뷰어는 화면 전체를 검정으로 덮는데, 상단 상태바(브라우저 주소창·PWA
+  // 상태바 색)는 별개로 meta theme-color를 따르므로 열려 있는 동안만
+  // 검정으로 바꿔 두고, 닫히면 useSystemTheme이 정해 둔 원래 값으로 되돌린다.
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const prev = meta?.getAttribute("content");
+    meta?.setAttribute("content", "#000000");
+    return () => {
+      if (prev != null) meta?.setAttribute("content", prev);
+    };
+  }, []);
+
   useEffect(() => {
     if (!item) return;
     let cancelled = false;
