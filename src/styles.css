@@ -604,6 +604,9 @@ button {
   width: 100%;
   display: flex;
   flex-direction: column;
+  /* 브라우저 기본 스타일시트가 <button>의 정렬을 stretch가 아닌 값으로 잡는
+     경우가 있어 명시해 둔다(안 그러면 타일이 내용 크기로 쪼그라든다). */
+  align-items: stretch;
   gap: 7px;
   text-align: left;
   transition: transform 0.35s var(--spring);
@@ -620,6 +623,12 @@ button {
   position: relative;
   isolation: isolate;
   overflow: hidden;
+  /* 너비를 부모(.drive-tile-btn)에서 확정해 둔다. 이게 없으면 타일 크기가
+     내용물에 따라 정해지는데, <button>을 flex 컨테이너로 쓸 때 기본 정렬이
+     stretch가 아닌 브라우저(PC 크로미움 일부 버전)에서는 폴더 타일이 아이콘
+     크기(44px)만큼 쪼그라들어 버린다. 썸네일이 있는 이미지·영상 타일은 원본이
+     커서 멀쩡해 보이니 폴더만 유독 작아 보이는 증상으로 나타났다. */
+  width: 100%;
   aspect-ratio: 1;
   display: flex;
   align-items: center;
@@ -638,7 +647,10 @@ button {
    않는다. 42%로는 여전히 작아 보인다는 피드백이 있어 58%로 더 키웠다. */
 .drive-tile > svg {
   width: 70%;
-  height: 70%;
+  /* 높이는 부모 높이를 참조하지 않고 자기 정사각 비율로 잡는다 — 부모 높이는
+     aspect-ratio로 너비에서 나오므로, %로 되물으면 순환 참조가 된다. */
+  height: auto;
+  aspect-ratio: 1;
 }
 /* 폴더 아이콘은 24x24 안에서 가로로 넓고 낮은 모양(16 높이)이라, 세로로
    길쭉한 파일 아이콘(20 높이)과 같은 박스 크기로 두면 실제 그려지는 높이가
@@ -646,7 +658,6 @@ button {
    쪽만 더 키운다(70% Γ— 20/16 = 87.5%). */
 .drive-tile > svg.drive-tile-icon-folder {
   width: 87.5%;
-  height: 87.5%;
 }
 .drive-tile--thumb img {
   width: 100%;
