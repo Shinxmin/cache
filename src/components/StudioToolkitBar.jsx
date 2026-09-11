@@ -95,6 +95,7 @@ export default function StudioToolkitBar({
           type="button"
           aria-label="파일·폴더 용량 정보"
           aria-pressed={infoVisible}
+          disabled={!hasSelection}
           onClick={onToggleInfo}
         >
           <InfoIcon />
