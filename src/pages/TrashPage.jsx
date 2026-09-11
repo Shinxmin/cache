@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { deleteFilesPermanently, listTrash, restoreFiles } from "../lib/drive";
-import { BackIcon, FileIcon, FolderIcon, RestoreIcon, TrashIcon } from "../components/icons";
+import { BackIcon, FileIcon, FolderIcon } from "../components/icons";
+import TrashRowMenu from "../components/TrashRowMenu";
 
 // 설정 → 휴지통에서 열리는 화면. 앱의 다른 화면과 같은 제목 레이아웃·리스트
-// 스타일을 그대로 쓴다. 항목마다 복원/영구 삭제 버튼이 있다.
+// 스타일을 그대로 쓴다. 항목마다 삼점바(TrashRowMenu, 홈·파일 탭 헤더의
+// 삼점바와 같은 모양·애니메이션)가 있고, 열면 삭제·복원 아이콘이 나온다.
+// 복원도 영구 삭제도 확인 없이 누르는 즉시 실행된다.
 export default function TrashPage({ session, onBack }) {
   const [items, setItems] = useState([]);
   const [state, setState] = useState("loading"); // loading | ready | error
@@ -36,7 +39,6 @@ export default function TrashPage({ session, onBack }) {
   };
 
   const removeForever = async (item) => {
-    if (!window.confirm(`"${item.name}"을(를) 영구적으로 삭제할까요?\n되돌릴 수 없습니다.`)) return;
     try {
       await deleteFilesPermanently(session.token, [item.id]);
       setRefreshKey((k) => k + 1);
@@ -66,17 +68,7 @@ export default function TrashPage({ session, onBack }) {
                 <span className="drive-row-icon">{item.is_folder ? <FolderIcon size={20} /> : <FileIcon size={20} />}</span>
                 <span className="drive-row-name">{item.name}</span>
                 <span className="trash-row-actions">
-                  <button className="studio-toolkit-icon-btn" type="button" aria-label="복원" onClick={() => restore(item)}>
-                    <RestoreIcon size={18} />
-                  </button>
-                  <button
-                    className="studio-toolkit-icon-btn"
-                    type="button"
-                    aria-label="영구 삭제"
-                    onClick={() => removeForever(item)}
-                  >
-                    <TrashIcon size={18} />
-                  </button>
+                  <TrashRowMenu onDelete={() => removeForever(item)} onRestore={() => restore(item)} />
                 </span>
               </li>
             ))}
