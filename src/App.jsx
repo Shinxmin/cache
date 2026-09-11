@@ -5,8 +5,10 @@ import AuthPage from "./pages/AuthPage";
 import SettingsPage from "./pages/SettingsPage";
 import FilesPage from "./pages/FilesPage";
 import TransfersPage from "./pages/TransfersPage";
+import FileViewer from "./pages/FileViewer";
 import { clearSession, loadSession, saveSession, verifySession } from "./lib/session";
 import { createFolder, downloadFile, uploadFile } from "./lib/drive";
+import { isImage, isVideo } from "./lib/thumbnail";
 
 // 검색바는 홈·파일 탭에서만 뜬다(설정에는 없음). 제목과 한 fixed 박스로 묶여
 // PageHeader 안에서 렌더링된다(PageHeader.jsx 참고).
@@ -49,6 +51,12 @@ export default function App() {
   // 전송(업로드/다운로드) 상태. 진행 중인 것이 있을 때만 헤더에 버튼이 뜬다.
   const [transfers, setTransfers] = useState([]);
   const [showTransfers, setShowTransfers] = useState(false);
+  // 헤더 버튼 테두리에 도는 원형 게이지용 전체 진행도(0~1). 여러 파일을 한 번에
+  // 올릴 때는 "지금 파일까지의 진행률"이 아니라 배치 전체 기준으로 계산한다.
+  const [transferRing, setTransferRing] = useState(0);
+
+  // 이미지·영상은 누르면 다운로드하지 않고 이 화면에서 바로 크게 보여준다.
+  const [viewerItem, setViewerItem] = useState(null);
 
   useEffect(() => {
     const stored = loadSession();
@@ -89,13 +97,25 @@ export default function App() {
     }
   };
 
-  // 확장자 제한 없이 고른 파일을 순서대로 R2에 올린다.
+  // 확장자 제한 없이 고른 파일을 순서대로 R2에 올린다. 헤더의 원형 게이지는
+  // 지금 올리는 파일 하나가 아니라 이번에 고른 파일 전체 기준 진행도를 보여준다.
   const handleUpload = async (fileList) => {
     const files = Array.from(fileList ?? []);
     const target = parentId;
-    for (const file of files) {
+    setTransferRing(0);
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       const ok = await track(file.name, "up", (onProgress) =>
-        uploadFile({ token: session.token, userId: session.userId, file, parentId: target, onProgress })
+        uploadFile({
+          token: session.token,
+          userId: session.userId,
+          file,
+          parentId: target,
+          onProgress: (p) => {
+            onProgress(p);
+            setTransferRing((i + p) / files.length);
+          },
+        })
       );
       if (ok) setRefreshKey((k) => k + 1);
     }
@@ -112,8 +132,25 @@ export default function App() {
     }
   };
 
-  const handleOpenFile = (item) =>
-    track(item.name, "down", (onProgress) => downloadFile({ token: session.token, item, onProgress }));
+  // 이미지·영상은 누르기만 해서 다운로드되면 안 되므로 뷰어를 띄운다.
+  // 그 외 파일만 눌렀을 때 바로 내려받는다.
+  const handleOpenFile = (item) => {
+    if (isImage(item.mime) || isVideo(item.mime)) {
+      setViewerItem(item);
+      return;
+    }
+    setTransferRing(0);
+    return track(item.name, "down", (onProgress) =>
+      downloadFile({
+        token: session.token,
+        item,
+        onProgress: (p) => {
+          onProgress(p);
+          setTransferRing(p);
+        },
+      })
+    );
+  };
 
   if (checkingSession) return null;
 
@@ -131,59 +168,65 @@ export default function App() {
     );
   }
 
-  if (showTransfers) {
-    return <TransfersPage transfers={transfers} onBack={() => setShowTransfers(false)} />;
-  }
-
   const isFiles = tab === "files";
   const title = isFiles && folderPath.length ? folderPath[folderPath.length - 1].name : TABS.find((t) => t.id === tab).label;
 
   return (
     <>
-      <main className="page">
-        <PageHeader
-          title={title}
-          showSearch={SEARCH_TABS.has(tab)}
-          resetKey={tab}
-          toolkitActive={toolkitActive}
-          onCloseToolkit={() => setToolkitActive(false)}
-          searchAlwaysOn={searchAlwaysOn}
-          viewMode={viewMode}
-          onToggleView={() => setViewMode((v) => (v === "gallery" ? "list" : "gallery"))}
-          onUpload={handleUpload}
-          onNewFolder={handleNewFolder}
-          canGoBack={isFiles && folderPath.length > 0}
-          onBack={() => setFolderPath((p) => p.slice(0, -1))}
-          transferActive={Boolean(activeTransfer)}
-          transferDirection={activeTransfer?.direction}
-          onOpenTransfers={() => setShowTransfers(true)}
-        />
-        {isFiles && (
-          <FilesPage
-            session={session}
-            viewMode={viewMode}
-            parentId={parentId}
-            onOpenFolder={(item) => setFolderPath((p) => [...p, { id: item.id, name: item.name }])}
-            onOpenFile={handleOpenFile}
-            refreshKey={refreshKey}
+      {showTransfers ? (
+        <TransfersPage transfers={transfers} onBack={() => setShowTransfers(false)} />
+      ) : (
+        <>
+          <main className="page">
+            <PageHeader
+              title={title}
+              showSearch={SEARCH_TABS.has(tab)}
+              resetKey={tab}
+              toolkitActive={toolkitActive}
+              onCloseToolkit={() => setToolkitActive(false)}
+              searchAlwaysOn={searchAlwaysOn}
+              viewMode={viewMode}
+              onToggleView={() => setViewMode((v) => (v === "gallery" ? "list" : "gallery"))}
+              onUpload={handleUpload}
+              onNewFolder={handleNewFolder}
+              canGoBack={isFiles && folderPath.length > 0}
+              onBack={() => setFolderPath((p) => p.slice(0, -1))}
+              transferActive={Boolean(activeTransfer)}
+              transferDirection={activeTransfer?.direction}
+              transferProgress={transferRing}
+              onOpenTransfers={() => setShowTransfers(true)}
+            />
+            {isFiles && (
+              <FilesPage
+                session={session}
+                viewMode={viewMode}
+                parentId={parentId}
+                onOpenFolder={(item) => setFolderPath((p) => [...p, { id: item.id, name: item.name }])}
+                onOpenFile={handleOpenFile}
+                refreshKey={refreshKey}
+              />
+            )}
+            {tab === "settings" && (
+              <SettingsPage
+                toolkitActive={toolkitActive}
+                onToggleToolkit={setToolkitActive}
+                searchAlwaysOn={searchAlwaysOn}
+                onToggleSearchAlwaysOn={setSearchAlwaysOn}
+              />
+            )}
+          </main>
+          <TabBar
+            active={tab}
+            onChange={(id) => {
+              setTab(id);
+              window.scrollTo({ top: 0 });
+            }}
           />
-        )}
-        {tab === "settings" && (
-          <SettingsPage
-            toolkitActive={toolkitActive}
-            onToggleToolkit={setToolkitActive}
-            searchAlwaysOn={searchAlwaysOn}
-            onToggleSearchAlwaysOn={setSearchAlwaysOn}
-          />
-        )}
-      </main>
-      <TabBar
-        active={tab}
-        onChange={(id) => {
-          setTab(id);
-          window.scrollTo({ top: 0 });
-        }}
-      />
+        </>
+      )}
+      {viewerItem && (
+        <FileViewer session={session} item={viewerItem} onClose={() => setViewerItem(null)} />
+      )}
     </>
   );
 }

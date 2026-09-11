@@ -38,6 +38,13 @@ export async function thumbnailUrls(token, keys) {
   return urls ?? {};
 }
 
+// 뷰어에서 이미지·영상을 그 자리에서 보여줄 때 쓴다(download 플래그를 안 붙여서
+// 브라우저가 강제로 저장하지 않고 <img>/<video>로 바로 그릴 수 있다).
+export async function fileUrl(token, key) {
+  const { url } = await presign(token, { action: "get", key });
+  return url;
+}
+
 // fetch는 업로드 진행률을 알려주지 않으므로 전송에는 XHR을 쓴다.
 function xhrPut(url, blob, contentType, onProgress) {
   return new Promise((resolve, reject) => {
