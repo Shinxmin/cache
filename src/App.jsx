@@ -128,7 +128,10 @@ export default function App() {
   // 다르게 선택된 파일이 있는지만 본다 — "항상 활성화" 설정이 켜져 있어도
   // 아무것도 선택되지 않은 상태라면 탭은 그냥 평소처럼 열기/보기로 동작해야
   // 하기 때문이다(꾹 눌러야 첫 항목이 선택되고, 그때부터 탭이 선택 토글로 바뀐다).
-  const toolkitVisible = toolkitAlwaysOn || selectedIds.size > 0;
+  // 정보(용량 표시) 아이콘도 켜져 있는 동안은 바를 계속 띄워 둔다 — 안 그러면
+  // 선택을 풀자마자 바가 사라져서, 정보 표시를 다시 끄려면 매번 뭔가를 다시
+  // 선택해야 하는 불편이 생긴다.
+  const toolkitVisible = toolkitAlwaysOn || selectedIds.size > 0 || infoVisible;
   const allSelected = visibleItems.length > 0 && visibleItems.every((it) => selectedIds.has(it.id));
 
   const toggleSelect = (item) => {
