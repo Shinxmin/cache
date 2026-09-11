@@ -12,7 +12,7 @@ function GalleryTile({ item, thumb, selected, onTap, onLongPress }) {
       {thumb ? (
         // 썸네일이 있는 이미지·영상: 타일을 꽉 채우고 제목은 좌하단에 겹친다.
         <span className="drive-tile drive-tile--thumb">
-          <img src={thumb} alt="" loading="lazy" />
+          <img src={thumb} alt="" loading="lazy" draggable={false} />
           <span className="drive-tile-overlay-name">{item.name}</span>
           {selected && (
             <span className="drive-select-badge">
