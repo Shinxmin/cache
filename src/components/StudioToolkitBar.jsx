@@ -13,26 +13,13 @@ function EyeIcon() {
   );
 }
 
-// 60%만 채워진 원형 게이지: 나머지 40%는 점선으로 그려 "비어 있음"을
-// 강조한다(차후 용량 압축 기능용 아이콘).
+// 위아래 화살표가 가운데로 모여 "압축"을 나타낸다(차후 용량 압축 기능용
+// 아이콘). 이전의 원형 게이지는 칠해진 호와 빈 부분의 점선이 서로 겹쳐
+// 지저분해 보이는 문제가 있어 아예 다른 디자인으로 바꿨다.
 function CapacityIcon() {
-  const r = 9;
-  const c = 2 * Math.PI * r;
-  const filled = c * 0.6;
   return (
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-      <circle cx="12" cy="12" r={r} fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="3" strokeDasharray="1.8 2.6" />
-      <circle
-        cx="12"
-        cy="12"
-        r={r}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeDasharray={`${filled} ${c}`}
-        strokeLinecap="round"
-        transform="rotate(-90 12 12)"
-      />
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+      <path d="M11 3H13V8H16L12 13L8 8H11Z M11 21H13V16H16L12 11L8 16H11Z" />
     </svg>
   );
 }
@@ -65,6 +52,7 @@ export default function StudioToolkitBar({
   onBlurSelected,
   infoVisible,
   onToggleInfo,
+  onEditSelected,
   style,
 }) {
   return (
@@ -127,7 +115,13 @@ export default function StudioToolkitBar({
         <button className="studio-toolkit-icon-btn" type="button" aria-label="용량 압축">
           <CapacityIcon />
         </button>
-        <button className="studio-toolkit-icon-btn" type="button" aria-label="편집">
+        <button
+          className="studio-toolkit-icon-btn"
+          type="button"
+          aria-label="이름 바꾸기"
+          disabled={!hasSelection}
+          onClick={onEditSelected}
+        >
           <PencilIcon />
         </button>
       </div>
