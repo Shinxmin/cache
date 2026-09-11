@@ -546,6 +546,26 @@ button {
 .header-transfer svg {
   flex: none;
 }
+/* 버튼 테두리를 따라 도는 전체 진행도 게이지. 12시 방향에서 시작해 시계
+   방향으로 채워지도록 -90도 돌려 둔다. */
+.header-transfer-ring {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+.header-transfer-ring circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5px;
+}
+.header-transfer-ring-track {
+  stroke-opacity: 0.28;
+}
+.header-transfer-ring-fill {
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.15s linear;
+}
 
 /* 폴더 안으로 들어갔을 때 제목 왼쪽에 붙는 뒤로 가기. */
 .header-back {
@@ -672,6 +692,55 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ── 파일 뷰어: 이미지·영상을 누르면 다운로드 대신 뜨는 전체화면 오버레이. ── */
+.viewer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.92);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+.viewer-close {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 14px);
+  right: 20px;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  transition: transform 0.35s var(--spring);
+}
+.viewer-close:active {
+  transform: scale(0.88);
+}
+.viewer-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.viewer-media {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+}
+.viewer-note {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* ── 전송 현황 화면 ───────────────────────────────────────────────────── */

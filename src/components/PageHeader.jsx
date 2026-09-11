@@ -4,6 +4,11 @@ import HeaderMoreButton from "./HeaderMoreButton";
 import StudioToolkitBar from "./StudioToolkitBar";
 import { BackIcon, DownloadIcon, UploadIcon } from "./icons";
 
+// 전송 버튼(45px 원) 테두리에 그리는 진행도 게이지. 버튼 지름보다 살짝 안쪽에
+// 그려서 원형 버튼 테두리를 따라 도는 것처럼 보이게 한다.
+const TRANSFER_RING_R = 20;
+const TRANSFER_RING_C = 2 * Math.PI * TRANSFER_RING_R;
+
 // 상단 좌측정렬 제목(+선택적 검색바). position: fixed로 화면 상단에 고정되어
 // 스크롤 범위 자체에 포함되지 않는다 — 제목과 검색바를 한 박스로 묶어서, 문서를
 // 아무리 스크롤해도 둘 다 함께 그 자리에 그대로 있고 절대 움직이거나 사라지지
@@ -34,6 +39,7 @@ export default function PageHeader({
   onBack,
   transferActive,
   transferDirection,
+  transferProgress,
   onOpenTransfers,
 }) {
   const ref = useRef(null);
@@ -150,7 +156,9 @@ export default function PageHeader({
               <SearchIcon size={18} />
             </button>
             {/* 전송 중에만 나타나는 버튼. 축소 검색 아이콘과 같은 45px 원·같은
-                타이밍으로 열리고, 검색바와 삼점바 사이에 자리한다. */}
+                타이밍으로 열리고, 검색바와 삼점바 사이에 자리한다. 테두리를 따라
+                도는 원형 게이지는 지금 전송 중인 파일 하나가 아니라 전체 진행도를
+                보여준다(여러 파일을 한 번에 올릴 때는 배치 전체 기준). */}
             <button
               className={`header-transfer${transferActive ? " visible" : ""}`}
               type="button"
@@ -159,6 +167,19 @@ export default function PageHeader({
               tabIndex={transferActive ? 0 : -1}
               onClick={onOpenTransfers}
             >
+              {transferActive && (
+                <svg className="header-transfer-ring" viewBox="0 0 45 45" width="45" height="45" aria-hidden="true">
+                  <circle className="header-transfer-ring-track" cx="22.5" cy="22.5" r={TRANSFER_RING_R} />
+                  <circle
+                    className="header-transfer-ring-fill"
+                    cx="22.5"
+                    cy="22.5"
+                    r={TRANSFER_RING_R}
+                    strokeDasharray={TRANSFER_RING_C}
+                    strokeDashoffset={TRANSFER_RING_C * (1 - Math.min(1, Math.max(0, transferProgress ?? 0)))}
+                  />
+                </svg>
+              )}
               {transferDirection === "down" ? <DownloadIcon /> : <UploadIcon />}
             </button>
             {/* key={resetKey}: 탭이 바뀌면 새로 마운트되어 열려 있던 상태가 닫힌 채로 초기화된다 */}
