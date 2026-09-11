@@ -643,7 +643,7 @@ button {
 /* 스튜디오 툴킷의 눈 아이콘으로 켠 썸네일 블러. 실제로 파일을 열면(뷰어) 원본
    그대로 보이고, 갤러리 미리보기에만 적용된다. */
 .drive-thumb-blurred {
-  filter: blur(18px);
+  filter: blur(15px);
   transform: scale(1.15);
 }
 /* 썸네일 위 제목은 사진이 밝든 어둡든 읽히도록 아래쪽 그라데이션 위에 올린다. */
@@ -781,9 +781,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.92);
-  -webkit-backdrop-filter: blur(24px);
-  backdrop-filter: blur(24px);
+  background: #000;
 }
 .viewer-close {
   position: absolute;
@@ -810,6 +808,9 @@ button {
   align-items: center;
   justify-content: center;
   padding: 20px;
+  /* 브라우저가 세로 스와이프로 오인해 스크롤/당겨서 새로고침 제스처를
+     가로채지 않도록, 터치 동작을 전부 이 컴포넌트가 직접 처리한다. */
+  touch-action: none;
 }
 .viewer-media {
   max-width: 100%;
