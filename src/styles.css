@@ -640,6 +640,12 @@ button {
   -webkit-user-drag: none;
   pointer-events: none;
 }
+/* 스튜디오 툴킷의 눈 아이콘으로 켠 썸네일 블러. 실제로 파일을 열면(뷰어) 원본
+   그대로 보이고, 갤러리 미리보기에만 적용된다. */
+.drive-thumb-blurred {
+  filter: blur(18px);
+  transform: scale(1.15);
+}
 /* 썸네일 위 제목은 사진이 밝든 어둡든 읽히도록 아래쪽 그라데이션 위에 올린다. */
 .drive-tile-overlay-name {
   position: absolute;
@@ -735,7 +741,6 @@ button {
 }
 .drive-row.selected {
   transform: scale(0.98);
-  background: var(--glass);
 }
 .drive-row-check {
   flex: none;

@@ -32,6 +32,12 @@ export async function createFolder(token, name, parentId = null) {
   return rpcResult(await supabase.rpc("create_folder", { p_token: token, p_name: name, p_parent_id: parentId }));
 }
 
+// 갤러리 썸네일 블러 처리(스튜디오 툴킷의 눈 아이콘). 서버에 저장돼 있어
+// 새로고침해도 유지된다.
+export async function setBlur(token, ids, blurred) {
+  return rpcResult(await supabase.rpc("set_blur", { p_token: token, p_ids: ids, p_blurred: blurred }));
+}
+
 // ── 휴지통 ─────────────────────────────────────────────────────────────
 export async function listTrash(token) {
   return rpcResult(await supabase.rpc("list_trash", { p_token: token }));

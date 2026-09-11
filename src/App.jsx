@@ -8,7 +8,7 @@ import TransfersPage from "./pages/TransfersPage";
 import TrashPage from "./pages/TrashPage";
 import FileViewer from "./pages/FileViewer";
 import { clearSession, loadSession, saveSession, verifySession } from "./lib/session";
-import { createFolder, downloadFile, downloadFolderAsZip, trashFiles, uploadFile } from "./lib/drive";
+import { createFolder, downloadFile, downloadFolderAsZip, setBlur, trashFiles, uploadFile } from "./lib/drive";
 import { isImage, isVideo } from "./lib/thumbnail";
 
 // 검색바는 홈·파일 탭에서만 뜬다(설정에는 없음). 제목과 한 fixed 박스로 묶여
@@ -65,7 +65,13 @@ export default function App() {
   const [transferRing, setTransferRing] = useState(0);
 
   // 이미지·영상은 누르면 다운로드하지 않고 이 화면에서 바로 크게 보여준다.
-  const [viewerItem, setViewerItem] = useState(null);
+  // 뷰어 안에서 스와이프로 이전/다음으로 넘기려면 지금 폴더의 미디어 목록과
+  // 그 안에서 몇 번째를 열었는지가 필요하다.
+  const [viewerIndex, setViewerIndex] = useState(null);
+  const mediaItems = useMemo(
+    () => visibleItems.filter((it) => isImage(it.mime) || isVideo(it.mime)),
+    [visibleItems]
+  );
 
   useEffect(() => {
     const stored = loadSession();
@@ -171,7 +177,8 @@ export default function App() {
   // 그 외 파일만 눌렀을 때 바로 내려받는다.
   const handleOpenFile = (item) => {
     if (isImage(item.mime) || isVideo(item.mime)) {
-      setViewerItem(item);
+      const idx = mediaItems.findIndex((it) => it.id === item.id);
+      setViewerIndex(idx >= 0 ? idx : 0);
       return;
     }
     setTransferRing(0);
@@ -217,6 +224,21 @@ export default function App() {
           })
         );
       }
+    }
+  };
+
+  // 선택된 항목 중 이미지·영상만 대상으로 썸네일 블러를 토글한다. 전체가 이미
+  // 블러 상태면 풀고, 아니면(하나도 안 되어 있거나 일부만 되어 있으면) 전부 건다
+  // — 전체 선택 체크박스와 같은 "일부면 켜는 쪽으로" 방식이다.
+  const handleBlurSelected = async () => {
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && (isImage(it.mime) || isVideo(it.mime)));
+    if (!targets.length) return;
+    const nextBlurred = !targets.every((it) => it.blurred);
+    try {
+      await setBlur(session.token, targets.map((it) => it.id), nextBlurred);
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("블러 처리하지 못했습니다");
     }
   };
 
@@ -267,8 +289,6 @@ export default function App() {
               showSearch={SEARCH_TABS.has(tab)}
               resetKey={tab}
               toolkitActive={toolkitVisible}
-              onCloseToolkit={() => setSelectedIds(new Set())}
-              closeDisabled={toolkitAlwaysOn}
               searchAlwaysOn={searchAlwaysOn}
               viewMode={viewMode}
               onToggleView={() => setViewMode((v) => (v === "gallery" ? "list" : "gallery"))}
@@ -286,6 +306,7 @@ export default function App() {
               hasSelection={selectedIds.size > 0}
               onDownloadSelected={handleDownloadSelected}
               onTrashSelected={handleTrashSelected}
+              onBlurSelected={handleBlurSelected}
             />
             {isFiles && (
               <FilesPage
@@ -321,8 +342,13 @@ export default function App() {
           />
         </>
       )}
-      {viewerItem && (
-        <FileViewer session={session} item={viewerItem} onClose={() => setViewerItem(null)} />
+      {viewerIndex !== null && (
+        <FileViewer
+          session={session}
+          items={mediaItems}
+          initialIndex={viewerIndex}
+          onClose={() => setViewerIndex(null)}
+        />
       )}
     </>
   );

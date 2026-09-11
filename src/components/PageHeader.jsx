@@ -29,8 +29,6 @@ export default function PageHeader({
   showSearch,
   resetKey,
   toolkitActive,
-  onCloseToolkit,
-  closeDisabled,
   searchAlwaysOn,
   viewMode,
   onToggleView,
@@ -48,6 +46,7 @@ export default function PageHeader({
   hasSelection,
   onDownloadSelected,
   onTrashSelected,
+  onBlurSelected,
 }) {
   const ref = useRef(null);
   const [collapsed, setCollapsed] = useState(!searchAlwaysOn);
@@ -205,12 +204,10 @@ export default function PageHeader({
       {/* 평소엔 마운트되지 않는다(비활성화). 설정의 "스튜디오 툴킷 항상 활성화"가
           켜져 있거나, 파일을 꾹 눌러 선택이 하나라도 있으면 뜬다. 헤더 자체의
           ResizeObserver가 이 바의 유무에 따라 --header-h를 자동으로 다시 잰다.
-          "항상 활성화" 설정이 띄운 것이면 x로 끌 수 없다(closeDisabled) — 그
-          설정을 꺼야 사라진다. 선택 때문에 떠 있는 것이면 x가 선택을 지운다. */}
+          닫기 버튼은 없다 — 선택을 모두 풀거나(선택 때문에 떠 있었다면) 설정을
+          끄면(항상 활성화 때문에 떠 있었다면) 사라진다. */}
       {showSearch && toolkitActive && (
         <StudioToolkitBar
-          onClose={onCloseToolkit}
-          closeDisabled={closeDisabled}
           viewMode={viewMode}
           onToggleView={onToggleView}
           allSelected={allSelected}
@@ -218,6 +215,7 @@ export default function PageHeader({
           hasSelection={hasSelection}
           onDownloadSelected={onDownloadSelected}
           onTrashSelected={onTrashSelected}
+          onBlurSelected={onBlurSelected}
           style={{ transform: collapsed ? `translateY(-${toolkitLift}px)` : "none" }}
         />
       )}
