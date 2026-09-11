@@ -510,10 +510,9 @@ button {
 .studio-toolkit-icon-btn:active {
   transform: scale(0.88);
 }
-.studio-toolkit-icon-btn:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
+/* 선택된 항목이 없어 휴지통·다운로드·블러가 disabled여도 흐릿하게 만들지
+   않는다 — 항상 같은 모습으로 보이게 하고, 눌러도 그냥 아무 일이 없는
+   쪽을 택했다(각 핸들러가 이미 빈 선택이면 조용히 아무 것도 안 한다). */
 .studio-toolkit-icon-btn.active {
   color: var(--text);
 }
