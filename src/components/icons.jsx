@@ -66,6 +66,15 @@ export function CloseIcon({ size = 18 }) {
   );
 }
 
+// 정보 — 동그라미 안에 "i". 스튜디오 툴킷에서 파일·폴더 용량 표시를 토글한다.
+export function InfoIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2zm0-8h-2V7h2z" />
+    </svg>
+  );
+}
+
 export function TrashIcon({ size = 18 }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">

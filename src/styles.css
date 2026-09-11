@@ -514,6 +514,9 @@ button {
   opacity: 0.35;
   cursor: default;
 }
+.studio-toolkit-icon-btn.active {
+  color: var(--text);
+}
 
 /* ── 전송 중에만 나타나는 헤더 버튼: 축소 검색 아이콘과 완전히 같은 재질·크기·
    타이밍이고, 검색바와 삼점바 사이에 자리한다. ── */
@@ -646,17 +649,31 @@ button {
   filter: blur(15px);
   transform: scale(1.15);
 }
-/* 썸네일 위 제목은 사진이 밝든 어둡든 읽히도록 아래쪽 그라데이션 위에 올린다. */
+/* 썸네일 위 제목은 사진이 밝든 어둡든 읽히도록 아래쪽 그라데이션 위에 올린다.
+   정보 아이콘이 켜져 있으면 그 밑에 작은 글씨로 용량이 한 줄 더 붙는다. */
 .drive-tile-overlay-name {
   position: absolute;
   left: 8px;
   right: 8px;
   bottom: 6px;
   z-index: 1;
-  font-size: 11px;
-  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   color: #fff;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+.drive-tile-overlay-title {
+  font-size: 11px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.drive-tile-overlay-size {
+  font-size: 9px;
+  font-weight: 500;
+  opacity: 0.8;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -669,10 +686,26 @@ button {
   background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.55));
   pointer-events: none;
 }
+/* 제목(+정보 아이콘이 켜져 있을 때 그 밑 용량 한 줄)을 담는 좁은 세로 묶음.
+   .drive-tile-btn 자체의 7px 간격은 아이콘↔이 묶음 사이에만 적용된다. */
+.drive-tile-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
 .drive-tile-name {
   font-size: 12px;
   line-height: 1.3;
   color: var(--text);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 정보 아이콘이 켜져 있을 때 제목 밑에 붙는 용량. */
+.drive-tile-size {
+  font-size: 10px;
+  color: var(--text-2);
   text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -704,10 +737,26 @@ button {
   display: flex;
   color: var(--text-2);
 }
+.drive-row-text {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
 .drive-row-name {
   min-width: 0;
   font-size: 15px;
   color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 정보 아이콘이 켜져 있을 때 제목 밑에 붙는 용량. */
+.drive-row-size {
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-2);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
