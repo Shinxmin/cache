@@ -38,7 +38,8 @@ export default function PageHeader({
   onNewFolder,
   canGoBack,
   onBack,
-  transferActive,
+  transferVisible,
+  transferInProgress,
   transferDirection,
   transferProgress,
   onOpenTransfers,
@@ -161,19 +162,21 @@ export default function PageHeader({
             >
               <SearchIcon size={18} />
             </button>
-            {/* 전송 중에만 나타나는 버튼. 축소 검색 아이콘과 같은 45px 원·같은
-                타이밍으로 열리고, 검색바와 삼점바 사이에 자리한다. 테두리를 따라
-                도는 원형 게이지는 지금 전송 중인 파일 하나가 아니라 전체 진행도를
-                보여준다(여러 파일을 한 번에 올릴 때는 배치 전체 기준). */}
+            {/* 이번 세션에 업로드나 다운로드를 한 번이라도 했으면 계속 떠 있는
+                버튼이다(사이트를 새로고침/종료하기 전까지 영구 표시). 축소 검색
+                아이콘과 같은 45px 원·같은 타이밍으로 열리고, 검색바와 삼점바
+                사이에 자리한다. 테두리를 따라 도는 원형 게이지는 실제로 전송 중일
+                때만 나타나고(transferInProgress), 여러 파일을 한 번에 올릴 때는
+                지금 파일 하나가 아니라 배치 전체 기준 진행도를 보여준다. */}
             <button
-              className={`header-transfer${transferActive ? " visible" : ""}`}
+              className={`header-transfer${transferVisible ? " visible" : ""}`}
               type="button"
               aria-label="전송 현황"
-              aria-hidden={!transferActive}
-              tabIndex={transferActive ? 0 : -1}
+              aria-hidden={!transferVisible}
+              tabIndex={transferVisible ? 0 : -1}
               onClick={onOpenTransfers}
             >
-              {transferActive && (
+              {transferInProgress && (
                 <svg className="header-transfer-ring" viewBox="0 0 45 45" width="45" height="45" aria-hidden="true">
                   <circle className="header-transfer-ring-track" cx="22.5" cy="22.5" r={TRANSFER_RING_R} />
                   <circle
