@@ -34,7 +34,7 @@ export default function AuthPage({ onLogin }) {
           );
           return;
         }
-        onLogin(data.username);
+        onLogin({ username: data.username, token: data.token });
       } else {
         const { data, error: rpcError } = await supabase.rpc("verify_login", {
           p_username: username,
@@ -44,7 +44,7 @@ export default function AuthPage({ onLogin }) {
           setError("아이디 또는 비밀번호가 일치하지 않습니다");
           return;
         }
-        onLogin(data.username);
+        onLogin({ username: data.username, token: data.token });
       }
     } finally {
       setBusy(false);
