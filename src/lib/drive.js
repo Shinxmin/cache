@@ -1,5 +1,6 @@
+import { zipSync } from "fflate";
 import { supabase } from "../supabaseClient";
-import { makeThumbnail } from "./thumbnail";
+import { isImage, isVideo, makeThumbnail } from "./thumbnail";
 
 // R2 웹드라이브 API. 파일 본체는 R2에, 폴더 구조와 메타데이터는 Supabase에 둔다.
 // 브라우저는 R2 자격증명을 알지 못하고, r2-presign 엣지 함수가 세션 토큰을 확인한
@@ -143,7 +144,40 @@ export async function uploadFile({ token, userId, file, parentId = null, onProgr
   );
 }
 
-// 진행률을 보여주기 위해 blob으로 받은 뒤 저장을 띄운다.
+// 일반적인 "브라우저 다운로드" 방식(a[download] 클릭) — Downloads 폴더나
+// 파일 앱으로 저장된다. 공유 시트를 쓸 수 없거나 사용자가 공유 자체에
+// 실패했을 때(취소는 제외) 대체 경로로도 쓰인다.
+function triggerBrowserDownload(blob, filename) {
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+}
+
+// 이미지·영상은 OS 공유 시트를 통해 "사진에 저장"으로 바로 보낼 수 있다 —
+// 브라우저 샌드박스상 갤러리에 조용히 쓰는 API는 없고, 이게 웹에서 가장
+// 가까운 방법이다. 사용자가 시트에서 취소를 누르면(AbortError) 그건 그
+// 자체로 의사표현이므로 일반 다운로드로 대체하지 않는다 — 정말 공유가
+// 지원되지 않거나 실패했을 때만 대체한다.
+async function shareMediaFile(blob, filename, mime) {
+  if (!navigator.canShare || !navigator.share) return false;
+  try {
+    const file = new File([blob], filename, { type: mime || blob.type });
+    if (!navigator.canShare({ files: [file] })) return false;
+    await navigator.share({ files: [file] });
+    return true;
+  } catch (err) {
+    return err?.name === "AbortError";
+  }
+}
+
+// 진행률을 보여주기 위해 blob으로 받은 뒤 저장을 띄운다. 이미지·영상은 먼저
+// 공유 시트(사진에 저장)를 시도하고, 그 외 파일이거나 공유를 못 쓰면 일반
+// 브라우저 다운로드로 저장한다.
 export async function downloadFile({ token, item, onProgress }) {
   const { url } = await presign(token, {
     action: "get",
@@ -153,12 +187,45 @@ export async function downloadFile({ token, item, onProgress }) {
   });
   const blob = await xhrGetBlob(url, onProgress);
 
-  const objectUrl = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = objectUrl;
-  a.download = item.name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+  if (isImage(item.mime) || isVideo(item.mime)) {
+    const handled = await shareMediaFile(blob, item.name, item.mime);
+    if (handled) return;
+  }
+
+  triggerBrowserDownload(blob, item.name);
+}
+
+// 폴더 하나를 재귀적으로 순회해 그 안의 실제 파일들을(하위 폴더 포함) 상대
+// 경로와 함께 모은다. 빈 폴더는 zip 안에서 그냥 생략된다.
+async function collectFolderFiles(token, folderId, prefix = "") {
+  const entries = await listFiles(token, folderId);
+  const files = [];
+  for (const entry of entries) {
+    const path = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.is_folder) {
+      files.push(...(await collectFolderFiles(token, entry.id, path)));
+    } else if (entry.r2_key) {
+      files.push({ ...entry, zipPath: path });
+    }
+  }
+  return files;
+}
+
+// 폴더를 통째로 내려받을 때: 안의 파일들을 전부 받아 브라우저에서 zip으로
+// 묶은 뒤 "<폴더 이름>.zip"으로 저장한다. onProgress는 파일 하나하나가
+// 아니라 폴더 전체(파일 개수) 기준 진행도다.
+export async function downloadFolderAsZip({ token, folder, onProgress }) {
+  const files = await collectFolderFiles(token, folder.id);
+  if (!files.length) throw new Error("폴더가 비어 있습니다");
+
+  const zipInput = {};
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const { url } = await presign(token, { action: "get", key: file.r2_key });
+    const blob = await xhrGetBlob(url, (p) => onProgress?.((i + p) / files.length));
+    zipInput[file.zipPath] = new Uint8Array(await blob.arrayBuffer());
+  }
+
+  const zipped = zipSync(zipInput, { level: 6 });
+  triggerBrowserDownload(new Blob([zipped], { type: "application/zip" }), `${folder.name}.zip`);
 }

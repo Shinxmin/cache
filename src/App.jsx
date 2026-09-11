@@ -8,7 +8,7 @@ import TransfersPage from "./pages/TransfersPage";
 import TrashPage from "./pages/TrashPage";
 import FileViewer from "./pages/FileViewer";
 import { clearSession, loadSession, saveSession, verifySession } from "./lib/session";
-import { createFolder, downloadFile, trashFiles, uploadFile } from "./lib/drive";
+import { createFolder, downloadFile, downloadFolderAsZip, trashFiles, uploadFile } from "./lib/drive";
 import { isImage, isVideo } from "./lib/thumbnail";
 
 // 검색바는 홈·파일 탭에서만 뜬다(설정에는 없음). 제목과 한 fixed 박스로 묶여
@@ -187,21 +187,36 @@ export default function App() {
     );
   };
 
-  // 선택된 항목(폴더 제외) 전체를 순서대로 내려받는다.
+  // 선택된 항목을 순서대로 내려받는다. 폴더는 그 안의 파일들을(하위 폴더까지)
+  // 모아 "폴더 이름.zip"으로 묶어 저장하고, 일반 파일은 그대로 내려받는다.
   const handleDownloadSelected = async () => {
-    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && !it.is_folder);
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
     for (const item of targets) {
       setTransferRing(0);
-      await track(item.name, "down", (onProgress) =>
-        downloadFile({
-          token: session.token,
-          item,
-          onProgress: (p) => {
-            onProgress(p);
-            setTransferRing(p);
-          },
-        })
-      );
+      const onProgress = (p) => setTransferRing(p);
+      if (item.is_folder) {
+        await track(`${item.name}.zip`, "down", (progress) =>
+          downloadFolderAsZip({
+            token: session.token,
+            folder: item,
+            onProgress: (p) => {
+              progress(p);
+              onProgress(p);
+            },
+          })
+        );
+      } else {
+        await track(item.name, "down", (progress) =>
+          downloadFile({
+            token: session.token,
+            item,
+            onProgress: (p) => {
+              progress(p);
+              onProgress(p);
+            },
+          })
+        );
+      }
     }
   };
 
