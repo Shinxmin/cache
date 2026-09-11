@@ -70,7 +70,7 @@ function CloseIcon() {
 //
 // 지금은 이 바 자체의 UI만 구현한 상태다 — 실제로 파일을 꾹 눌러 활성화하는
 // 연결은 파일 목록이 생기면 추가된다(현재는 설정 탭의 체크박스로만 켜고 끌 수 있음).
-export default function StudioToolkitBar({ onClose, style }) {
+export default function StudioToolkitBar({ onClose, closeDisabled, style }) {
   const [selectAll, setSelectAll] = useState(false);
 
   return (
@@ -97,7 +97,13 @@ export default function StudioToolkitBar({ onClose, style }) {
         <button className="studio-toolkit-icon-btn" type="button" aria-label="편집">
           <PencilIcon />
         </button>
-        <button className="studio-toolkit-icon-btn" type="button" aria-label="닫기" onClick={onClose}>
+        <button
+          className="studio-toolkit-icon-btn"
+          type="button"
+          aria-label="닫기"
+          disabled={closeDisabled}
+          onClick={onClose}
+        >
           <CloseIcon />
         </button>
       </div>
