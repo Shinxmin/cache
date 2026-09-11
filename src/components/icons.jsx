@@ -65,3 +65,47 @@ export function CloseIcon({ size = 18 }) {
     </svg>
   );
 }
+
+export function TrashIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M7 21c-1.1 0-2-.9-2-2V7H4V5h5V4h6v1h5v2h-1v12c0 1.1-.9 2-2 2H7zM9 9v10h2V9H9zm4 0v10h2V9h-2z" />
+    </svg>
+  );
+}
+
+// "복원" — 시계 반대방향 화살표가 있는 되돌리기 아이콘.
+export function RestoreIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 2.05 4.95l-1.42 1.42A9 9 0 1 0 13 3zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8z" />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M8.8 3.6 17.2 12l-8.4 8.4-2.1-2.1L13 12 6.7 5.7z" />
+    </svg>
+  );
+}
+
+// 선택된 항목 배지에 쓰는 체크마크. 체크박스(Checkbox.jsx)와 같은 획 스타일이다.
+export function CheckIcon({ size = 13 }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 12.5 9.5 18 20 6" />
+    </svg>
+  );
+}

@@ -1,7 +1,14 @@
 import CheckboxVisual from "../components/Checkbox";
+import { ChevronRightIcon } from "../components/icons";
 
 // 설정 탭 본문.
-export default function SettingsPage({ toolkitActive, onToggleToolkit, searchAlwaysOn, onToggleSearchAlwaysOn }) {
+export default function SettingsPage({
+  toolkitActive,
+  onToggleToolkit,
+  searchAlwaysOn,
+  onToggleSearchAlwaysOn,
+  onOpenTrash,
+}) {
   return (
     <div className="settings-list">
       <label className="settings-row">
@@ -22,6 +29,10 @@ export default function SettingsPage({ toolkitActive, onToggleToolkit, searchAlw
           <CheckboxVisual />
         </span>
       </label>
+      <button className="settings-row settings-row--link" type="button" onClick={onOpenTrash}>
+        <span className="settings-row-label">휴지통</span>
+        <ChevronRightIcon size={18} />
+      </button>
     </div>
   );
 }

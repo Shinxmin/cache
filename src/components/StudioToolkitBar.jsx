@@ -1,6 +1,5 @@
-import { useState } from "react";
 import CheckboxVisual from "./Checkbox";
-import { DownloadIcon, GalleryIcon, ListIcon } from "./icons";
+import { DownloadIcon, GalleryIcon, ListIcon, TrashIcon } from "./icons";
 
 function EyeIcon() {
   return (
@@ -58,26 +57,51 @@ function CloseIcon() {
 // 안에 있어 스크롤해도 함께 고정된다(PageHeader.jsx가 마운트를 조건부로 제어,
 // 검색바가 축소될 때는 style로 넘어온 transform으로 그 자리까지 끌어올려진다).
 // 좌우 여백 없이 위아래 가로선으로만 구분된 한 줄이며,
-// 왼쪽엔 전체 선택 체크박스+라벨+다운로드 아이콘(차후 파일 다운로드용),
+// 왼쪽엔 전체 선택 체크박스+라벨+휴지통·다운로드 아이콘(선택된 항목 대상),
 // 오른쪽엔 보기 전환(갤러리↔리스트)·눈(차후 썸네일 블러용)·용량 게이지(차후 용량
-// 압축용)·편집·닫기 아이콘이 있다. 이 중 실제로 동작하는 것은 보기 전환뿐이고
-// 나머지는 자리만 잡아둔 상태다.
+// 압축용)·편집·닫기 아이콘이 있다.
 //
-// 파일을 꾹 눌러 활성화하는 연결은 아직 없다(설정의 "스튜디오 툴킷 항상 활성화"로만 켠다).
-export default function StudioToolkitBar({ onClose, closeDisabled, viewMode, onToggleView, style }) {
-  const [selectAll, setSelectAll] = useState(false);
-
+// 설정의 "스튜디오 툴킷 항상 활성화"가 켜져 있거나(closeDisabled=true, x로 못 끔),
+// 파일을 꾹 눌러 선택이 하나라도 있으면(closeDisabled=false, x를 누르면 선택이
+// 풀리며 닫힌다) 뜬다.
+export default function StudioToolkitBar({
+  onClose,
+  closeDisabled,
+  viewMode,
+  onToggleView,
+  allSelected,
+  onToggleSelectAll,
+  hasSelection,
+  onDownloadSelected,
+  onTrashSelected,
+  style,
+}) {
   return (
     <div className="studio-toolkit" style={style}>
       <div className="studio-toolkit-left">
         <label className="studio-toolkit-select">
           <span className="checkbox">
-            <input type="checkbox" checked={selectAll} onChange={(e) => setSelectAll(e.target.checked)} />
+            <input type="checkbox" checked={allSelected} onChange={(e) => onToggleSelectAll(e.target.checked)} />
             <CheckboxVisual />
           </span>
           <span className="studio-toolkit-label">전체 선택</span>
         </label>
-        <button className="studio-toolkit-icon-btn" type="button" aria-label="다운로드">
+        <button
+          className="studio-toolkit-icon-btn"
+          type="button"
+          aria-label="휴지통으로 삭제"
+          disabled={!hasSelection}
+          onClick={onTrashSelected}
+        >
+          <TrashIcon />
+        </button>
+        <button
+          className="studio-toolkit-icon-btn"
+          type="button"
+          aria-label="다운로드"
+          disabled={!hasSelection}
+          onClick={onDownloadSelected}
+        >
           <DownloadIcon />
         </button>
       </div>

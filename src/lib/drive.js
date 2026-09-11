@@ -31,6 +31,31 @@ export async function createFolder(token, name, parentId = null) {
   return rpcResult(await supabase.rpc("create_folder", { p_token: token, p_name: name, p_parent_id: parentId }));
 }
 
+// ── 휴지통 ─────────────────────────────────────────────────────────────
+export async function listTrash(token) {
+  return rpcResult(await supabase.rpc("list_trash", { p_token: token }));
+}
+
+export async function trashFiles(token, ids) {
+  return rpcResult(await supabase.rpc("trash_files", { p_token: token, p_ids: ids }));
+}
+
+export async function restoreFiles(token, ids) {
+  return rpcResult(await supabase.rpc("restore_files", { p_token: token, p_ids: ids }));
+}
+
+// DB 행을 지운 뒤 돌려주는 R2 키 목록을 실제로 R2에서 지우는 것까지 한 번에 한다.
+export async function deleteFilesPermanently(token, ids) {
+  const result = rpcResult(await supabase.rpc("delete_files_permanently", { p_token: token, p_ids: ids }));
+  const keys = result?.keys ?? [];
+  if (keys.length) {
+    // R2 정리는 최선을 다하는 것으로 충분하다 — DB 행은 이미 지워졌으니
+    // 여기서 실패해도 사용자에게 다시 시도할 방법이 없다(고아 객체만 남는다).
+    await presign(token, { action: "delete-batch", keys }).catch(() => {});
+  }
+  return result;
+}
+
 // 갤러리 썸네일처럼 여러 개가 한꺼번에 필요할 때. 파일마다 요청하지 않도록 묶어서 받는다.
 export async function thumbnailUrls(token, keys) {
   if (!keys.length) return {};
