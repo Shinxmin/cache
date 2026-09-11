@@ -11,12 +11,11 @@ function DotsIcon() {
   );
 }
 
-// 휴지통 각 행의 원형 "더 보기" 버튼. 홈·파일 탭 헤더의 삼점바(HeaderMoreButton)와
-// 완전히 같은 모양·애니메이션(평소엔 삼점만 있는 원, 누르면 오른쪽 끝은 그대로 둔
-// 채 왼쪽으로 자라나 항목이 드러남)이고, 내용만 업로드·새 폴더 대신 왼쪽부터
-// 삭제·복원 아이콘으로 바꿨다. 두 액션 모두 확인 없이 즉시 실행되고, 실행 후
-// 그 자리에서 닫는다(어차피 행 자체가 목록에서 사라진다).
-export default function TrashRowMenu({ onDelete, onRestore }) {
+// 휴지통 화면 제목 우측의 삼점바. 홈·파일 탭 헤더의 더 보기 버튼(HeaderMoreButton)과
+// 같은 자리·모양·애니메이션이고, 내용만 업로드·새 폴더 대신 전체 삭제·전체 복원으로
+// 바꿨다(왼쪽부터 삭제, 복원). 휴지통에 있는 모든 항목이 대상이며, 확인 없이
+// 누르는 즉시 실행된다. 개별 항목의 삭제·복원은 각 행 오른쪽의 아이콘이 맡는다.
+export default function TrashMoreButton({ onDeleteAll, onRestoreAll, disabled }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -27,10 +26,10 @@ export default function TrashRowMenu({ onDelete, onRestore }) {
           type="button"
           tabIndex={open ? 0 : -1}
           aria-hidden={!open}
-          aria-label="영구 삭제"
+          aria-label="전체 삭제"
           onClick={() => {
             setOpen(false);
-            onDelete();
+            onDeleteAll();
           }}
         >
           <span className="header-more-icon">
@@ -42,10 +41,10 @@ export default function TrashRowMenu({ onDelete, onRestore }) {
           type="button"
           tabIndex={open ? 0 : -1}
           aria-hidden={!open}
-          aria-label="복원"
+          aria-label="전체 복원"
           onClick={() => {
             setOpen(false);
-            onRestore();
+            onRestoreAll();
           }}
         >
           <span className="header-more-icon">
@@ -57,6 +56,7 @@ export default function TrashRowMenu({ onDelete, onRestore }) {
           type="button"
           aria-label={open ? "닫기" : "더 보기"}
           aria-expanded={open}
+          disabled={disabled}
           onClick={() => setOpen((v) => !v)}
         >
           <span className="header-more-icon">
