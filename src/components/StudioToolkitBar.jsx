@@ -13,13 +13,38 @@ function EyeIcon() {
   );
 }
 
-// 위아래 화살표가 가운데로 모여 "압축"을 나타낸다(차후 용량 압축 기능용
-// 아이콘). 이전의 원형 게이지는 칠해진 호와 빈 부분의 점선이 서로 겹쳐
-// 지저분해 보이는 문제가 있어 아예 다른 디자인으로 바꿨다.
+// 6:4로 나뉜 원형 그래프(차후 용량 압축 기능용 아이콘). 두 구간 모두 실선이고
+// 끝을 각지게(strokeLinecap 기본값) 처리해 정확히 맞물려 이어지므로, 이전
+// 디자인처럼 칠해진 호와 점선이 서로 겹쳐 지저분해 보이는 문제가 없다.
 function CapacityIcon() {
+  const r = 9;
+  const c = 2 * Math.PI * r;
+  const filled = c * 0.6;
+  const empty = c * 0.4;
   return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
-      <path d="M11 3H13V8H16L12 13L8 8H11Z M11 21H13V16H16L12 11L8 16H11Z" />
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <circle
+        cx="12"
+        cy="12"
+        r={r}
+        fill="none"
+        stroke="currentColor"
+        strokeOpacity="0.35"
+        strokeWidth="3"
+        strokeDasharray={`${empty} ${c}`}
+        strokeDashoffset={-filled}
+        transform="rotate(-90 12 12)"
+      />
+      <circle
+        cx="12"
+        cy="12"
+        r={r}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeDasharray={`${filled} ${c}`}
+        transform="rotate(-90 12 12)"
+      />
     </svg>
   );
 }
