@@ -97,7 +97,11 @@ export default function App() {
     setSelectedIds(new Set());
   }, [parentId]);
 
-  // 스튜디오 툴킷은 설정이 항상 켜 두었거나, 선택된 파일이 하나라도 있으면 뜬다.
+  // 스튜디오 툴킷 "바"는 설정이 항상 켜 두었거나, 선택된 파일이 하나라도 있으면
+  // 뜬다. 하지만 탭했을 때 선택을 토글할지(FilesPage의 selectionMode)는 이것과
+  // 다르게 선택된 파일이 있는지만 본다 — "항상 활성화" 설정이 켜져 있어도
+  // 아무것도 선택되지 않은 상태라면 탭은 그냥 평소처럼 열기/보기로 동작해야
+  // 하기 때문이다(꾹 눌러야 첫 항목이 선택되고, 그때부터 탭이 선택 토글로 바뀐다).
   const toolkitVisible = toolkitAlwaysOn || selectedIds.size > 0;
   const allSelected = visibleItems.length > 0 && visibleItems.every((it) => selectedIds.has(it.id));
 
@@ -257,8 +261,9 @@ export default function App() {
               onNewFolder={handleNewFolder}
               canGoBack={isFiles && folderPath.length > 0}
               onBack={() => setFolderPath((p) => p.slice(0, -1))}
-              transferActive={Boolean(activeTransfer)}
-              transferDirection={activeTransfer?.direction}
+              transferVisible={transfers.length > 0}
+              transferInProgress={Boolean(activeTransfer)}
+              transferDirection={(activeTransfer ?? transfers[0])?.direction}
               transferProgress={transferRing}
               onOpenTransfers={() => setShowTransfers(true)}
               allSelected={allSelected}
@@ -275,7 +280,7 @@ export default function App() {
                 onOpenFolder={(item) => setFolderPath((p) => [...p, { id: item.id, name: item.name }])}
                 onOpenFile={handleOpenFile}
                 refreshKey={refreshKey}
-                selectionMode={toolkitVisible}
+                selectionMode={selectedIds.size > 0}
                 selectedIds={selectedIds}
                 onToggleSelect={toggleSelect}
                 onLongPressItem={toggleSelect}
