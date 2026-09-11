@@ -47,6 +47,8 @@ export default function PageHeader({
   onDownloadSelected,
   onTrashSelected,
   onBlurSelected,
+  infoVisible,
+  onToggleInfo,
 }) {
   const ref = useRef(null);
   const [collapsed, setCollapsed] = useState(!searchAlwaysOn);
@@ -216,6 +218,8 @@ export default function PageHeader({
           onDownloadSelected={onDownloadSelected}
           onTrashSelected={onTrashSelected}
           onBlurSelected={onBlurSelected}
+          infoVisible={infoVisible}
+          onToggleInfo={onToggleInfo}
           style={{ transform: collapsed ? `translateY(-${toolkitLift}px)` : "none" }}
         />
       )}

@@ -1,11 +1,24 @@
 import { useEffect, useState } from "react";
-import { listFiles, thumbnailUrls } from "../lib/drive";
+import { folderSizes, listFiles, thumbnailUrls } from "../lib/drive";
+import { formatBytes } from "../lib/format";
 import { CheckIcon, FileIcon, FolderIcon } from "../components/icons";
 import useLongPress from "../hooks/useLongPress";
 
+// 스튜디오 툴킷의 정보(i) 아이콘이 켜져 있을 때만 항목 밑에 보여줄 용량 문구.
+// 폴더는 재귀 합산 값이 folderSizeMap에 도착해야 나오고(그 전엔 로딩 중이라
+// 아무것도 안 보여준다), 파일은 이미 목록에 들어 있는 size를 바로 쓴다.
+function sizeLabel(item, infoVisible, folderSizeMap) {
+  if (!infoVisible) return null;
+  if (item.is_folder) {
+    const bytes = folderSizeMap[item.id];
+    return bytes === undefined ? null : formatBytes(bytes);
+  }
+  return formatBytes(item.size);
+}
+
 // 갤러리 타일 하나. 꾹 누르면 선택 모드로 들어가고(App.jsx가 스튜디오 툴킷을
 // 띄운다), 선택된 동안은 눌린 것처럼 살짝 눌려 보이며 체크 배지가 뜬다.
-function GalleryTile({ item, thumb, selected, onTap, onLongPress }) {
+function GalleryTile({ item, thumb, selected, size, onTap, onLongPress }) {
   const press = useLongPress(onTap, onLongPress);
   return (
     <button className={`drive-tile-btn${selected ? " selected" : ""}`} type="button" {...press}>
@@ -20,7 +33,10 @@ function GalleryTile({ item, thumb, selected, onTap, onLongPress }) {
             loading="lazy"
             draggable={false}
           />
-          <span className="drive-tile-overlay-name">{item.name}</span>
+          <span className="drive-tile-overlay-name">
+            <span className="drive-tile-overlay-title">{item.name}</span>
+            {size && <span className="drive-tile-overlay-size">{size}</span>}
+          </span>
           {selected && (
             <span className="drive-select-badge">
               <CheckIcon />
@@ -37,19 +53,25 @@ function GalleryTile({ item, thumb, selected, onTap, onLongPress }) {
               </span>
             )}
           </span>
-          <span className="drive-tile-name">{item.name}</span>
+          <span className="drive-tile-caption">
+            <span className="drive-tile-name">{item.name}</span>
+            {size && <span className="drive-tile-size">{size}</span>}
+          </span>
         </>
       )}
     </button>
   );
 }
 
-function ListRow({ item, selected, onTap, onLongPress }) {
+function ListRow({ item, selected, size, onTap, onLongPress }) {
   const press = useLongPress(onTap, onLongPress);
   return (
     <button className={`drive-row${selected ? " selected" : ""}`} type="button" {...press}>
       <span className="drive-row-icon">{item.is_folder ? <FolderIcon size={20} /> : <FileIcon size={20} />}</span>
-      <span className="drive-row-name">{item.name}</span>
+      <span className="drive-row-text">
+        <span className="drive-row-name">{item.name}</span>
+        {size && <span className="drive-row-size">{size}</span>}
+      </span>
       {selected && (
         <span className="drive-row-check">
           <CheckIcon />
@@ -80,9 +102,11 @@ export default function FilesPage({
   onToggleSelect,
   onLongPressItem,
   onItemsChange,
+  infoVisible,
 }) {
   const [items, setItems] = useState([]);
   const [thumbs, setThumbs] = useState({});
+  const [folderSizeMap, setFolderSizeMap] = useState({});
   const [state, setState] = useState("loading"); // loading | ready | error
 
   useEffect(() => {
@@ -116,6 +140,22 @@ export default function FilesPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.token, parentId, refreshKey]);
 
+  // 정보 아이콘이 켜져 있을 때만 폴더 용량을 받아 온다(꺼져 있으면 굳이 계산할
+  // 필요가 없다). 폴더는 자체 용량이 없어 하위 파일을 재귀 합산해야 하므로
+  // 서버에 따로 물어본다.
+  useEffect(() => {
+    if (!infoVisible) return;
+    const folderIds = items.filter((it) => it.is_folder).map((it) => it.id);
+    if (!folderIds.length) return;
+    let cancelled = false;
+    folderSizes(session.token, folderIds).then((sizes) => {
+      if (!cancelled) setFolderSizeMap(sizes);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session.token, items, infoVisible]);
+
   const openOrToggle = (item) =>
     selectionMode ? onToggleSelect(item) : item.is_folder ? onOpenFolder(item) : onOpenFile(item);
 
@@ -131,6 +171,7 @@ export default function FilesPage({
             <ListRow
               item={item}
               selected={selectionMode && selectedIds.has(item.id)}
+              size={sizeLabel(item, infoVisible, folderSizeMap)}
               onTap={() => openOrToggle(item)}
               onLongPress={() => onLongPressItem(item)}
             />
@@ -148,6 +189,7 @@ export default function FilesPage({
             item={item}
             thumb={item.thumb_key ? thumbs[item.thumb_key] : null}
             selected={selectionMode && selectedIds.has(item.id)}
+            size={sizeLabel(item, infoVisible, folderSizeMap)}
             onTap={() => openOrToggle(item)}
             onLongPress={() => onLongPressItem(item)}
           />

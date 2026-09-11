@@ -32,6 +32,13 @@ export async function createFolder(token, name, parentId = null) {
   return rpcResult(await supabase.rpc("create_folder", { p_token: token, p_name: name, p_parent_id: parentId }));
 }
 
+// 스튜디오 툴킷의 정보 아이콘으로 켠 용량 표시용. 폴더는 자체 용량이 없어서
+// 하위 파일들을 재귀적으로 합산해 서버에서 계산해 온다. { [폴더id]: bytes } 형태.
+export async function folderSizes(token, ids) {
+  if (!ids.length) return {};
+  return rpcResult(await supabase.rpc("folder_sizes", { p_token: token, p_ids: ids }));
+}
+
 // 갤러리 썸네일 블러 처리(스튜디오 툴킷의 눈 아이콘). 서버에 저장돼 있어
 // 새로고침해도 유지된다.
 export async function setBlur(token, ids, blurred) {

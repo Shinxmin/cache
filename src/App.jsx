@@ -48,6 +48,9 @@ export default function App() {
 
   // 파일 탭(웹드라이브) 상태
   const [viewMode, setViewMode] = useState("gallery");
+  // 스튜디오 툴킷의 정보(i) 아이콘 토글 — 켜면 각 파일·폴더 제목 밑에 용량을
+  // 작은 글씨로 보여준다.
+  const [infoVisible, setInfoVisible] = useState(false);
   const [folderPath, setFolderPath] = useState([]); // [{id, name}] — 루트는 빈 배열
   const [refreshKey, setRefreshKey] = useState(0);
   // 지금 폴더에서 FilesPage가 실제로 보여주고 있는 항목들. "전체 선택"과
@@ -307,6 +310,8 @@ export default function App() {
               onDownloadSelected={handleDownloadSelected}
               onTrashSelected={handleTrashSelected}
               onBlurSelected={handleBlurSelected}
+              infoVisible={infoVisible}
+              onToggleInfo={() => setInfoVisible((v) => !v)}
             />
             {isFiles && (
               <FilesPage
@@ -321,6 +326,7 @@ export default function App() {
                 onToggleSelect={toggleSelect}
                 onLongPressItem={toggleSelect}
                 onItemsChange={setVisibleItems}
+                infoVisible={infoVisible}
               />
             )}
             {tab === "settings" && (
