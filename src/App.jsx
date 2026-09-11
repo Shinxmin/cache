@@ -38,6 +38,7 @@ export default function App() {
   });
   const [tab, setTab] = useState(TABS[0].id);
   const [toolkitActive, setToolkitActive] = useState(false);
+  const [searchAlwaysOn, setSearchAlwaysOn] = useState(true);
   const title = TABS.find((t) => t.id === tab).label;
 
   if (!user) {
@@ -64,8 +65,16 @@ export default function App() {
           resetKey={tab}
           toolkitActive={toolkitActive}
           onCloseToolkit={() => setToolkitActive(false)}
+          searchAlwaysOn={searchAlwaysOn}
         />
-        {tab === "settings" && <SettingsPage toolkitActive={toolkitActive} onToggleToolkit={setToolkitActive} />}
+        {tab === "settings" && (
+          <SettingsPage
+            toolkitActive={toolkitActive}
+            onToggleToolkit={setToolkitActive}
+            searchAlwaysOn={searchAlwaysOn}
+            onToggleSearchAlwaysOn={setSearchAlwaysOn}
+          />
+        )}
       </main>
       <TabBar
         active={tab}

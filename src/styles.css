@@ -497,6 +497,10 @@ button {
 .studio-toolkit-icon-btn:active {
   transform: scale(0.88);
 }
+.studio-toolkit-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
 
 /* ── 설정 탭 리스트: 지금은 스튜디오 툴킷 on/off 한 줄뿐이다. ── */
 .settings-list {
