@@ -1,6 +1,50 @@
 import { useState } from "react";
 import CheckboxVisual from "./Checkbox";
 
+function DownloadIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+      <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
+      />
+    </svg>
+  );
+}
+
+// 60%만 채워진 원형 게이지: 나머지 40%는 점선으로 그려 "비어 있음"을
+// 강조한다(차후 용량 압축 기능용 아이콘).
+function CapacityIcon() {
+  const r = 9;
+  const c = 2 * Math.PI * r;
+  const filled = c * 0.6;
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <circle cx="12" cy="12" r={r} fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="3" strokeDasharray="1.8 2.6" />
+      <circle
+        cx="12"
+        cy="12"
+        r={r}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeDasharray={`${filled} ${c}`}
+        strokeLinecap="round"
+        transform="rotate(-90 12 12)"
+      />
+    </svg>
+  );
+}
+
 function PencilIcon() {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
@@ -18,25 +62,38 @@ function CloseIcon() {
 }
 
 // 홈·파일 탭 전용 "스튜디오 툴킷" 선택 도구줄. 제목·검색바와 같은 fixed 헤더
-// 안에 있어 스크롤해도 함께 고정된다(PageHeader.jsx가 마운트를 조건부로 제어).
-// 좌우 여백 없이 위아래 가로선으로만 구분된 한 줄이며, 왼쪽엔 전체 선택
-// 체크박스+라벨, 오른쪽엔 편집(연필)·닫기(x) 아이콘이 있다.
+// 안에 있어 스크롤해도 함께 고정된다(PageHeader.jsx가 마운트를 조건부로 제어,
+// 검색바가 축소될 때는 style로 넘어온 transform으로 그 자리까지 끌어올려진다).
+// 좌우 여백 없이 위아래 가로선으로만 구분된 한 줄이며,
+// 왼쪽엔 전체 선택 체크박스+라벨+다운로드 아이콘(차후 파일 다운로드용),
+// 오른쪽엔 눈(차후 썸네일 블러용)·용량 게이지(차후 용량 압축용)·편집·닫기 아이콘이 있다.
 //
 // 지금은 이 바 자체의 UI만 구현한 상태다 — 실제로 파일을 꾹 눌러 활성화하는
 // 연결은 파일 목록이 생기면 추가된다(현재는 설정 탭의 체크박스로만 켜고 끌 수 있음).
-export default function StudioToolkitBar({ onClose }) {
+export default function StudioToolkitBar({ onClose, style }) {
   const [selectAll, setSelectAll] = useState(false);
 
   return (
-    <div className="studio-toolkit">
-      <label className="studio-toolkit-left">
-        <span className="checkbox">
-          <input type="checkbox" checked={selectAll} onChange={(e) => setSelectAll(e.target.checked)} />
-          <CheckboxVisual />
-        </span>
-        <span className="studio-toolkit-label">전체 선택</span>
-      </label>
+    <div className="studio-toolkit" style={style}>
+      <div className="studio-toolkit-left">
+        <label className="studio-toolkit-select">
+          <span className="checkbox">
+            <input type="checkbox" checked={selectAll} onChange={(e) => setSelectAll(e.target.checked)} />
+            <CheckboxVisual />
+          </span>
+          <span className="studio-toolkit-label">전체 선택</span>
+        </label>
+        <button className="studio-toolkit-icon-btn" type="button" aria-label="다운로드">
+          <DownloadIcon />
+        </button>
+      </div>
       <div className="studio-toolkit-right">
+        <button className="studio-toolkit-icon-btn" type="button" aria-label="썸네일 블러">
+          <EyeIcon />
+        </button>
+        <button className="studio-toolkit-icon-btn" type="button" aria-label="용량 압축">
+          <CapacityIcon />
+        </button>
         <button className="studio-toolkit-icon-btn" type="button" aria-label="편집">
           <PencilIcon />
         </button>

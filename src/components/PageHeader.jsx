@@ -18,6 +18,7 @@ export default function PageHeader({ title, showSearch, resetKey, toolkitActive,
   const ref = useRef(null);
   const [collapsed, setCollapsed] = useState(false);
   const collapseTimerRef = useRef(0);
+  const [toolkitLift, setToolkitLift] = useState(0);
 
   // 헤더가 fixed라 문서 흐름을 벗어나므로, 실제 렌더링된 높이(제목+검색바 포함)를
   // 재서 --header-h로 넘겨준다. .page의 padding-top이 이 값을 써서 본문이
@@ -37,6 +38,26 @@ export default function PageHeader({ title, showSearch, resetKey, toolkitActive,
   useEffect(() => {
     setCollapsed(false);
   }, [resetKey, showSearch]);
+
+  // 검색바가 축소될 때(스크롤 중) 스튜디오 툴킷이 켜져 있다면, 이제 비어 보이는
+  // 검색바 자리로 툴킷을 끌어올린다. 검색바 칸 자체의 높이(--header-h)는 그대로
+  // 두고(스크롤 중 흔들림 방지, 위 주석 참고) 툴킷만 transform으로 겹쳐 올리므로
+  // 헤더 전체 높이는 변하지 않는다. 검색바-툴킷 사이 실제 간격을 재서 쓰기 때문에
+  // 레이아웃이 바뀌어도 값을 다시 맞출 필요가 없다.
+  useEffect(() => {
+    if (!showSearch || !toolkitActive) return;
+    const headerEl = ref.current;
+    const measure = () => {
+      const sw = headerEl.querySelector(".search-bar-wrap");
+      const tk = headerEl.querySelector(".studio-toolkit");
+      if (!sw || !tk) return;
+      setToolkitLift(tk.offsetTop - sw.offsetTop);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(headerEl);
+    return () => ro.disconnect();
+  }, [showSearch, toolkitActive]);
 
   // 대기 중인 축소 타이머를 지우고 즉시 정상 크기로 펼친다. 축소 아이콘을 직접
   // 누르거나, 축소된 채로 삼점 버튼을 열 때(왼쪽으로 확장되며 충돌 방지) 쓴다.
@@ -102,7 +123,12 @@ export default function PageHeader({ title, showSearch, resetKey, toolkitActive,
       {/* 평소엔 마운트되지 않는다(비활성화). 파일을 꾹 누르면 활성화되거나
           (연결 예정), 지금은 설정 탭 체크박스로 켜고 끌 수 있다. 헤더 자체의
           ResizeObserver가 이 바의 유무에 따라 --header-h를 자동으로 다시 잰다. */}
-      {showSearch && toolkitActive && <StudioToolkitBar onClose={onCloseToolkit} />}
+      {showSearch && toolkitActive && (
+        <StudioToolkitBar
+          onClose={onCloseToolkit}
+          style={{ transform: collapsed ? `translateY(-${toolkitLift}px)` : "none" }}
+        />
+      )}
     </header>
   );
 }
