@@ -78,7 +78,7 @@ export default function StudioToolkitBar({
           <span className="studio-toolkit-label">전체 선택</span>
         </label>
         <button
-          className={`studio-toolkit-icon-btn${infoVisible ? " active" : ""}`}
+          className="studio-toolkit-icon-btn"
           type="button"
           aria-label="파일·폴더 용량 정보"
           aria-pressed={infoVisible}
