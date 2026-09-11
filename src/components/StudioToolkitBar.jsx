@@ -1,13 +1,6 @@
 import { useState } from "react";
 import CheckboxVisual from "./Checkbox";
-
-function DownloadIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
-      <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
-    </svg>
-  );
-}
+import { DownloadIcon, GalleryIcon, ListIcon } from "./icons";
 
 function EyeIcon() {
   return (
@@ -66,11 +59,12 @@ function CloseIcon() {
 // 검색바가 축소될 때는 style로 넘어온 transform으로 그 자리까지 끌어올려진다).
 // 좌우 여백 없이 위아래 가로선으로만 구분된 한 줄이며,
 // 왼쪽엔 전체 선택 체크박스+라벨+다운로드 아이콘(차후 파일 다운로드용),
-// 오른쪽엔 눈(차후 썸네일 블러용)·용량 게이지(차후 용량 압축용)·편집·닫기 아이콘이 있다.
+// 오른쪽엔 보기 전환(갤러리↔리스트)·눈(차후 썸네일 블러용)·용량 게이지(차후 용량
+// 압축용)·편집·닫기 아이콘이 있다. 이 중 실제로 동작하는 것은 보기 전환뿐이고
+// 나머지는 자리만 잡아둔 상태다.
 //
-// 지금은 이 바 자체의 UI만 구현한 상태다 — 실제로 파일을 꾹 눌러 활성화하는
-// 연결은 파일 목록이 생기면 추가된다(현재는 설정 탭의 체크박스로만 켜고 끌 수 있음).
-export default function StudioToolkitBar({ onClose, closeDisabled, style }) {
+// 파일을 꾹 눌러 활성화하는 연결은 아직 없다(설정의 "스튜디오 툴킷 항상 활성화"로만 켠다).
+export default function StudioToolkitBar({ onClose, closeDisabled, viewMode, onToggleView, style }) {
   const [selectAll, setSelectAll] = useState(false);
 
   return (
@@ -88,6 +82,15 @@ export default function StudioToolkitBar({ onClose, closeDisabled, style }) {
         </button>
       </div>
       <div className="studio-toolkit-right">
+        {/* 파일 탭 갤러리형/리스트형 전환. 현재 보기 상태와 반대되는 아이콘을 보여준다. */}
+        <button
+          className="studio-toolkit-icon-btn"
+          type="button"
+          aria-label={viewMode === "gallery" ? "리스트로 보기" : "갤러리로 보기"}
+          onClick={onToggleView}
+        >
+          {viewMode === "gallery" ? <ListIcon /> : <GalleryIcon />}
+        </button>
         <button className="studio-toolkit-icon-btn" type="button" aria-label="썸네일 블러">
           <EyeIcon />
         </button>

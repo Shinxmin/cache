@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import SearchBar, { SearchIcon } from "./SearchBar";
 import HeaderMoreButton from "./HeaderMoreButton";
 import StudioToolkitBar from "./StudioToolkitBar";
+import { BackIcon, DownloadIcon, UploadIcon } from "./icons";
 
 // 상단 좌측정렬 제목(+선택적 검색바). position: fixed로 화면 상단에 고정되어
 // 스크롤 범위 자체에 포함되지 않는다 — 제목과 검색바를 한 박스로 묶어서, 문서를
@@ -18,7 +19,23 @@ import StudioToolkitBar from "./StudioToolkitBar";
 // 축소된다(자동으로 되펼쳐지는 타이머 없음).
 // 두 모드 모두, 축소된 아이콘을 누르거나 축소된 채로 삼점 버튼을 열면(왼쪽으로
 // 확장되며 겹칠 수 있으므로) 즉시 검색바가 정상 크기로 돌아와 충돌을 피한다.
-export default function PageHeader({ title, showSearch, resetKey, toolkitActive, onCloseToolkit, searchAlwaysOn }) {
+export default function PageHeader({
+  title,
+  showSearch,
+  resetKey,
+  toolkitActive,
+  onCloseToolkit,
+  searchAlwaysOn,
+  viewMode,
+  onToggleView,
+  onUpload,
+  onNewFolder,
+  canGoBack,
+  onBack,
+  transferActive,
+  transferDirection,
+  onOpenTransfers,
+}) {
   const ref = useRef(null);
   const [collapsed, setCollapsed] = useState(!searchAlwaysOn);
   const collapseTimerRef = useRef(0);
@@ -114,6 +131,11 @@ export default function PageHeader({ title, showSearch, resetKey, toolkitActive,
       {/* 제목과 액션(축소 검색 아이콘 + 삼점 버튼)을 한 행에 놓고 수직 중앙 정렬한다.
           검색이 없는 탭(설정)도 같은 행 구조를 써서 제목 위치가 항상 동일하다. */}
       <div className="page-header-row">
+        {canGoBack && (
+          <button className="header-back" type="button" aria-label="뒤로" onClick={onBack}>
+            <BackIcon />
+          </button>
+        )}
         <h1 className="page-title">{title}</h1>
         {showSearch && (
           <div className="page-header-actions">
@@ -127,8 +149,20 @@ export default function PageHeader({ title, showSearch, resetKey, toolkitActive,
             >
               <SearchIcon size={18} />
             </button>
+            {/* 전송 중에만 나타나는 버튼. 축소 검색 아이콘과 같은 45px 원·같은
+                타이밍으로 열리고, 검색바와 삼점바 사이에 자리한다. */}
+            <button
+              className={`header-transfer${transferActive ? " visible" : ""}`}
+              type="button"
+              aria-label="전송 현황"
+              aria-hidden={!transferActive}
+              tabIndex={transferActive ? 0 : -1}
+              onClick={onOpenTransfers}
+            >
+              {transferDirection === "down" ? <DownloadIcon /> : <UploadIcon />}
+            </button>
             {/* key={resetKey}: 탭이 바뀌면 새로 마운트되어 열려 있던 상태가 닫힌 채로 초기화된다 */}
-            <HeaderMoreButton key={resetKey} onOpen={expandSearch} />
+            <HeaderMoreButton key={resetKey} onOpen={expandSearch} onUpload={onUpload} onNewFolder={onNewFolder} />
           </div>
         )}
       </div>
@@ -148,6 +182,8 @@ export default function PageHeader({ title, showSearch, resetKey, toolkitActive,
         <StudioToolkitBar
           onClose={onCloseToolkit}
           closeDisabled
+          viewMode={viewMode}
+          onToggleView={onToggleView}
           style={{ transform: collapsed ? `translateY(-${toolkitLift}px)` : "none" }}
         />
       )}
