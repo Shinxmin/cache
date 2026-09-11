@@ -11,8 +11,15 @@ function GalleryTile({ item, thumb, selected, onTap, onLongPress }) {
     <button className={`drive-tile-btn${selected ? " selected" : ""}`} type="button" {...press}>
       {thumb ? (
         // 썸네일이 있는 이미지·영상: 타일을 꽉 채우고 제목은 좌하단에 겹친다.
+        // 블러 처리된 항목은 썸네일에만 블러를 건다(실제로 열어 보면 원본 그대로).
         <span className="drive-tile drive-tile--thumb">
-          <img src={thumb} alt="" loading="lazy" draggable={false} />
+          <img
+            className={item.blurred ? "drive-thumb-blurred" : undefined}
+            src={thumb}
+            alt=""
+            loading="lazy"
+            draggable={false}
+          />
           <span className="drive-tile-overlay-name">{item.name}</span>
           {selected && (
             <span className="drive-select-badge">

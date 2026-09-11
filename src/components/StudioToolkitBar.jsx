@@ -45,28 +45,15 @@ function PencilIcon() {
   );
 }
 
-function CloseIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-      <path d="M12 10.59 6.7 5.29 5.29 6.7 10.59 12l-5.3 5.3 1.41 1.41L12 13.41l5.29 5.3 1.41-1.41L13.41 12l5.3-5.29-1.41-1.42L12 10.59z" />
-    </svg>
-  );
-}
-
 // 홈·파일 탭 전용 "스튜디오 툴킷" 선택 도구줄. 제목·검색바와 같은 fixed 헤더
 // 안에 있어 스크롤해도 함께 고정된다(PageHeader.jsx가 마운트를 조건부로 제어,
 // 검색바가 축소될 때는 style로 넘어온 transform으로 그 자리까지 끌어올려진다).
 // 좌우 여백 없이 위아래 가로선으로만 구분된 한 줄이며,
 // 왼쪽엔 전체 선택 체크박스+라벨+휴지통·다운로드 아이콘(선택된 항목 대상),
-// 오른쪽엔 보기 전환(갤러리↔리스트)·눈(차후 썸네일 블러용)·용량 게이지(차후 용량
-// 압축용)·편집·닫기 아이콘이 있다.
-//
-// 설정의 "스튜디오 툴킷 항상 활성화"가 켜져 있거나(closeDisabled=true, x로 못 끔),
-// 파일을 꾹 눌러 선택이 하나라도 있으면(closeDisabled=false, x를 누르면 선택이
-// 풀리며 닫힌다) 뜬다.
+// 오른쪽엔 보기 전환(갤러리↔리스트)·눈(선택된 이미지·영상 썸네일 블러 토글)·
+// 용량 게이지(차후 용량 압축용)·편집 아이콘이 있다. 닫기 버튼은 없다 — 선택을
+// 모두 풀거나(선택 때문에 떠 있었다면) 설정의 "항상 활성화"를 끄면 사라진다.
 export default function StudioToolkitBar({
-  onClose,
-  closeDisabled,
   viewMode,
   onToggleView,
   allSelected,
@@ -74,6 +61,7 @@ export default function StudioToolkitBar({
   hasSelection,
   onDownloadSelected,
   onTrashSelected,
+  onBlurSelected,
   style,
 }) {
   return (
@@ -115,7 +103,13 @@ export default function StudioToolkitBar({
         >
           {viewMode === "gallery" ? <ListIcon /> : <GalleryIcon />}
         </button>
-        <button className="studio-toolkit-icon-btn" type="button" aria-label="썸네일 블러">
+        <button
+          className="studio-toolkit-icon-btn"
+          type="button"
+          aria-label="선택한 썸네일 블러"
+          disabled={!hasSelection}
+          onClick={onBlurSelected}
+        >
           <EyeIcon />
         </button>
         <button className="studio-toolkit-icon-btn" type="button" aria-label="용량 압축">
@@ -123,15 +117,6 @@ export default function StudioToolkitBar({
         </button>
         <button className="studio-toolkit-icon-btn" type="button" aria-label="편집">
           <PencilIcon />
-        </button>
-        <button
-          className="studio-toolkit-icon-btn"
-          type="button"
-          aria-label="닫기"
-          disabled={closeDisabled}
-          onClick={onClose}
-        >
-          <CloseIcon />
         </button>
       </div>
     </div>
