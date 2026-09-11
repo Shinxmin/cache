@@ -65,5 +65,11 @@ export default function useLongPress(onTap, onLongPress) {
     onTap();
   }, [onTap]);
 
-  return { onPointerDown, onPointerMove, onPointerUp: finish, onPointerCancel, onClick };
+  // CSS의 -webkit-touch-callout: none만으로는 부족한 iOS Safari 버전이 있어서,
+  // 꾹 누르기가 만드는 contextmenu 이벤트(예: "사진에 저장" 메뉴) 자체를 막는다.
+  const onContextMenu = useCallback((e) => {
+    e.preventDefault();
+  }, []);
+
+  return { onPointerDown, onPointerMove, onPointerUp: finish, onPointerCancel, onClick, onContextMenu };
 }

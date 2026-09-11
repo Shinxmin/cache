@@ -605,6 +605,11 @@ button {
   gap: 7px;
   text-align: left;
   transition: transform 0.35s var(--spring);
+  /* 꾹 누르기로 선택하는 요소라, iOS Safari가 자체적으로 띄우는 "사진에 저장"
+     같은 콜아웃 메뉴나 텍스트 선택 루페가 대신 뜨면 안 된다. */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .drive-tile-btn:active {
   transform: scale(0.94);
@@ -629,6 +634,11 @@ button {
   height: 100%;
   object-fit: cover;
   display: block;
+  /* iOS Safari는 이미지 자체를 꾹 누르면 부모의 touch-callout 설정과 별개로
+     "사진에 저장" 메뉴를 띄운다 — img에도 따로 꺼 줘야 한다. */
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
 }
 /* 썸네일 위 제목은 사진이 밝든 어둡든 읽히도록 아래쪽 그라데이션 위에 올린다. */
 .drive-tile-overlay-name {
@@ -676,6 +686,9 @@ button {
   text-align: left;
   border-bottom: 1px solid var(--glass-border);
   transition: transform 0.35s var(--spring);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .drive-row:active {
   transform: scale(0.98);
