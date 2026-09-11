@@ -874,6 +874,108 @@ button {
   color: rgba(255, 255, 255, 0.7);
 }
 
+/* ── 이름 바꾸기 모달: 스튜디오 툴킷의 편집(연필) 아이콘으로 연다. 배경을
+   탭하거나 제목 줄 우측의 작은 x를 누르면 취소된다. ── */
+.rename-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.45);
+}
+.rename-card {
+  width: 100%;
+  max-width: 340px;
+  max-height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 24px;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  backdrop-filter: blur(28px) saturate(200%);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
+}
+.rename-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.rename-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+.rename-close {
+  flex: none;
+  display: flex;
+  color: var(--text-2);
+  transition: transform 0.35s var(--spring);
+}
+.rename-close:active {
+  transform: scale(0.85);
+}
+.rename-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  backdrop-filter: blur(20px) saturate(200%);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
+  outline: none;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--text);
+}
+.rename-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 45vh;
+  overflow-y: auto;
+}
+.rename-list-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rename-list-icon {
+  flex: none;
+  display: flex;
+  color: var(--text-2);
+}
+.rename-actions {
+  display: flex;
+  gap: 10px;
+}
+.rename-action-btn {
+  flex: 1;
+  height: 38px;
+  border-radius: 999px;
+  background: var(--glass);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  transition: transform 0.35s var(--spring);
+}
+.rename-action-btn:active {
+  transform: scale(0.96);
+}
+
 /* ── 전송 현황 화면 ───────────────────────────────────────────────────── */
 .transfer-list {
   list-style: none;

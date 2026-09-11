@@ -39,6 +39,12 @@ export async function folderSizes(token, ids) {
   return rpcResult(await supabase.rpc("folder_sizes", { p_token: token, p_ids: ids }));
 }
 
+// 스튜디오 툴킷의 편집(연필) 아이콘으로 여는 이름 바꾸기. renames는
+// [{ id, name }] 배열이며, 단일 선택이든 다중 선택이든 한 번에 보낸다.
+export async function renameFiles(token, renames) {
+  return rpcResult(await supabase.rpc("rename_files", { p_token: token, p_renames: renames }));
+}
+
 // 갤러리 썸네일 블러 처리(스튜디오 툴킷의 눈 아이콘). 서버에 저장돼 있어
 // 새로고침해도 유지된다.
 export async function setBlur(token, ids, blurred) {

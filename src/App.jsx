@@ -7,8 +7,9 @@ import FilesPage from "./pages/FilesPage";
 import TransfersPage from "./pages/TransfersPage";
 import TrashPage from "./pages/TrashPage";
 import FileViewer from "./pages/FileViewer";
-import { clearSession, loadSession, saveSession, verifySession } from "./lib/session";
-import { createFolder, downloadFile, downloadFolderAsZip, setBlur, trashFiles, uploadFile } from "./lib/drive";
+import RenameModal from "./components/RenameModal";
+import { clearSession, loadSession, saveSession, setToolkitAlwaysOn as persistToolkitAlwaysOn, verifySession } from "./lib/session";
+import { createFolder, downloadFile, downloadFolderAsZip, renameFiles, setBlur, trashFiles, uploadFile } from "./lib/drive";
 import { isImage, isVideo } from "./lib/thumbnail";
 
 // 검색바는 홈·파일 탭에서만 뜬다(설정에는 없음). 제목과 한 fixed 박스로 묶여
@@ -59,6 +60,9 @@ export default function App() {
   // 꾹 눌러(또는 전체 선택으로) 선택된 항목의 id 집합.
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [showTrash, setShowTrash] = useState(false);
+  // 스튜디오 툴킷의 편집(연필) 아이콘으로 연 이름 바꾸기 모달. null이면 닫힌
+  // 상태고, 배열이면 그 항목들(1개=단일, 2개 이상=다중)을 대상으로 떠 있다.
+  const [renameTargets, setRenameTargets] = useState(null);
 
   // 전송(업로드/다운로드) 상태. 진행 중인 것이 있을 때만 헤더에 버튼이 뜬다.
   const [transfers, setTransfers] = useState([]);
@@ -97,6 +101,19 @@ export default function App() {
       cancelled = true;
     };
   }, []);
+
+  // 세션이 (처음 로드되거나 막 로그인해서) 준비되면, 계정에 저장돼 있던
+  // "스튜디오 툴킷 항상 활성화" 값을 그대로 불러온다 — 다른 기기에서
+  // 로그인해도 이 설정이 유지되게 하기 위함이다.
+  useEffect(() => {
+    if (session) setToolkitAlwaysOn(Boolean(session.toolkitAlwaysOn));
+  }, [session]);
+
+  // 체크박스를 바꾸면 화면에 바로 반영하는 동시에 계정에도 저장한다.
+  const handleToggleToolkitAlwaysOn = (value) => {
+    setToolkitAlwaysOn(value);
+    persistToolkitAlwaysOn(session.token, value).catch(() => {});
+  };
 
   const parentId = folderPath.length ? folderPath[folderPath.length - 1].id : null;
   const activeTransfer = useMemo(() => transfers.find((t) => t.status === "active"), [transfers]);
@@ -257,6 +274,24 @@ export default function App() {
     }
   };
 
+  // 선택된 항목으로 이름 바꾸기 모달을 연다(1개=단일, 여러 개=다중 편집).
+  const handleEditSelected = () => {
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    if (!targets.length) return;
+    setRenameTargets(targets);
+  };
+
+  const handleRenameSubmit = async (renames) => {
+    try {
+      await renameFiles(session.token, renames);
+      setRenameTargets(null);
+      setSelectedIds(new Set());
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("이름을 바꾸지 못했습니다");
+    }
+  };
+
   if (checkingSession) return null;
 
   if (!session) {
@@ -312,6 +347,7 @@ export default function App() {
               onBlurSelected={handleBlurSelected}
               infoVisible={infoVisible}
               onToggleInfo={() => setInfoVisible((v) => !v)}
+              onEditSelected={handleEditSelected}
             />
             {isFiles && (
               <FilesPage
@@ -332,7 +368,7 @@ export default function App() {
             {tab === "settings" && (
               <SettingsPage
                 toolkitActive={toolkitAlwaysOn}
-                onToggleToolkit={setToolkitAlwaysOn}
+                onToggleToolkit={handleToggleToolkitAlwaysOn}
                 searchAlwaysOn={searchAlwaysOn}
                 onToggleSearchAlwaysOn={setSearchAlwaysOn}
                 onOpenTrash={() => setShowTrash(true)}
@@ -355,6 +391,9 @@ export default function App() {
           initialIndex={viewerIndex}
           onClose={() => setViewerIndex(null)}
         />
+      )}
+      {renameTargets && (
+        <RenameModal items={renameTargets} onClose={() => setRenameTargets(null)} onSubmit={handleRenameSubmit} />
       )}
     </>
   );

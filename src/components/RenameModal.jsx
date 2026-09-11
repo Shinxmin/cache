@@ -1,0 +1,83 @@
+import { useState } from "react";
+import { CloseIcon, FileIcon, FolderIcon } from "./icons";
+
+// 스튜디오 툴킷의 편집(연필) 아이콘으로 여는 이름 바꾸기 모달. 배경을 탭하거나
+// 제목 줄 우측의 작은 x를 누르면 취소된다.
+//  · 단일 선택: 입력창 하나 + 확인 버튼.
+//  · 다중 선택: 선택한 항목을 각각 편집할 수 있는 입력창 목록 + "전체 지우기"
+//    (모든 입력창을 비운다)·"번호 붙이기"(각 입력창 뒤에 지금 순서대로
+//    1,2,3,4…를 붙인다) + 확인 버튼.
+export default function RenameModal({ items, onClose, onSubmit }) {
+  const [names, setNames] = useState(() => items.map((it) => it.name));
+  const [busy, setBusy] = useState(false);
+  const multi = items.length > 1;
+
+  const setNameAt = (i, value) => setNames((prev) => prev.map((n, idx) => (idx === i ? value : n)));
+  const clearAll = () => setNames((prev) => prev.map(() => ""));
+  const attachNumbers = () => setNames((prev) => prev.map((n, i) => `${n} ${i + 1}`.trim()));
+
+  const canSubmit = names.every((n) => n.trim().length > 0) && !busy;
+
+  const submit = async () => {
+    if (!canSubmit) return;
+    setBusy(true);
+    try {
+      await onSubmit(items.map((it, i) => ({ id: it.id, name: names[i].trim() })));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="rename-overlay" onClick={onClose}>
+      <div className="rename-card" onClick={(e) => e.stopPropagation()}>
+        <div className="rename-card-header">
+          <h2 className="rename-title">이름 바꾸기</h2>
+          <button className="rename-close" type="button" aria-label="취소" onClick={onClose}>
+            <CloseIcon size={16} />
+          </button>
+        </div>
+
+        {multi ? (
+          <>
+            <ul className="rename-list">
+              {items.map((item, i) => (
+                <li className="rename-list-row" key={item.id}>
+                  <span className="rename-list-icon">
+                    {item.is_folder ? <FolderIcon size={18} /> : <FileIcon size={18} />}
+                  </span>
+                  <input
+                    className="rename-input"
+                    type="text"
+                    value={names[i]}
+                    onChange={(e) => setNameAt(i, e.target.value)}
+                  />
+                </li>
+              ))}
+            </ul>
+            <div className="rename-actions">
+              <button className="rename-action-btn" type="button" onClick={clearAll}>
+                전체 지우기
+              </button>
+              <button className="rename-action-btn" type="button" onClick={attachNumbers}>
+                번호 붙이기
+              </button>
+            </div>
+          </>
+        ) : (
+          <input
+            className="rename-input"
+            type="text"
+            value={names[0]}
+            onChange={(e) => setNameAt(0, e.target.value)}
+            autoFocus
+          />
+        )}
+
+        <button className="auth-submit" type="button" disabled={!canSubmit} onClick={submit}>
+          확인
+        </button>
+      </div>
+    </div>
+  );
+}

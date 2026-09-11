@@ -49,6 +49,7 @@ export default function PageHeader({
   onBlurSelected,
   infoVisible,
   onToggleInfo,
+  onEditSelected,
 }) {
   const ref = useRef(null);
   const [collapsed, setCollapsed] = useState(!searchAlwaysOn);
@@ -220,6 +221,7 @@ export default function PageHeader({
           onBlurSelected={onBlurSelected}
           infoVisible={infoVisible}
           onToggleInfo={onToggleInfo}
+          onEditSelected={onEditSelected}
           style={{ transform: collapsed ? `translateY(-${toolkitLift}px)` : "none" }}
         />
       )}
