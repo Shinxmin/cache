@@ -10,12 +10,13 @@ function fileExtension(name) {
   return m ? m[1].toLowerCase() : null;
 }
 
-// 스튜디오 툴킷의 정보(i) 아이콘이 켜져 있을 때만 항목 밑에 보여줄 용량 문구.
+// 스튜디오 툴킷의 정보(i) 아이콘이 켜져 있고, 그 항목이 선택되어 있을 때만
+// 밑에 보여줄 용량 문구 — 블러 처리와 마찬가지로 선택된 항목에만 적용된다.
 // 폴더는 재귀 합산 값이 folderSizeMap에 도착해야 나오고(그 전엔 로딩 중이라
 // 아무것도 안 보여준다), 파일은 이미 목록에 들어 있는 size를 바로 쓰고 그
 // 옆에 확장자를 괄호로 덧붙인다(폴더는 확장자가 없으니 붙이지 않는다).
-function sizeLabel(item, infoVisible, folderSizeMap) {
-  if (!infoVisible) return null;
+function sizeLabel(item, infoVisible, folderSizeMap, selected) {
+  if (!infoVisible || !selected) return null;
   if (item.is_folder) {
     const bytes = folderSizeMap[item.id];
     return bytes === undefined ? null : formatBytes(bytes);
@@ -55,7 +56,7 @@ function GalleryTile({ item, thumb, selected, size, onTap, onLongPress }) {
       ) : (
         <>
           <span className="drive-tile">
-            {item.is_folder ? <FolderIcon size={44} /> : <FileIcon size={38} />}
+            {item.is_folder ? <FolderIcon size={44} className="drive-tile-icon-folder" /> : <FileIcon size={38} />}
             {selected && (
               <span className="drive-select-badge">
                 <CheckIcon />
@@ -149,21 +150,22 @@ export default function FilesPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.token, parentId, refreshKey]);
 
-  // 정보 아이콘이 켜져 있을 때만 폴더 용량을 받아 온다(꺼져 있으면 굳이 계산할
-  // 필요가 없다). 폴더는 자체 용량이 없어 하위 파일을 재귀 합산해야 하므로
-  // 서버에 따로 물어본다.
+  // 정보 아이콘이 켜져 있고 선택된 폴더가 있을 때만 그 폴더들의 용량을 받아
+  // 온다(용량 표시 자체가 선택된 항목에만 적용되므로, 선택 안 된 폴더까지
+  // 계산할 필요가 없다). 폴더는 자체 용량이 없어 하위 파일을 재귀 합산해야
+  // 하므로 서버에 따로 물어본다.
   useEffect(() => {
     if (!infoVisible) return;
-    const folderIds = items.filter((it) => it.is_folder).map((it) => it.id);
+    const folderIds = items.filter((it) => it.is_folder && selectedIds.has(it.id)).map((it) => it.id);
     if (!folderIds.length) return;
     let cancelled = false;
     folderSizes(session.token, folderIds).then((sizes) => {
-      if (!cancelled) setFolderSizeMap(sizes);
+      if (!cancelled) setFolderSizeMap((prev) => ({ ...prev, ...sizes }));
     });
     return () => {
       cancelled = true;
     };
-  }, [session.token, items, infoVisible]);
+  }, [session.token, items, infoVisible, selectedIds]);
 
   const openOrToggle = (item) =>
     selectionMode ? onToggleSelect(item) : item.is_folder ? onOpenFolder(item) : onOpenFile(item);
@@ -180,7 +182,7 @@ export default function FilesPage({
             <ListRow
               item={item}
               selected={selectionMode && selectedIds.has(item.id)}
-              size={sizeLabel(item, infoVisible, folderSizeMap)}
+              size={sizeLabel(item, infoVisible, folderSizeMap, selectedIds.has(item.id))}
               onTap={() => openOrToggle(item)}
               onLongPress={() => onLongPressItem(item)}
             />
@@ -198,7 +200,7 @@ export default function FilesPage({
             item={item}
             thumb={item.thumb_key ? thumbs[item.thumb_key] : null}
             selected={selectionMode && selectedIds.has(item.id)}
-            size={sizeLabel(item, infoVisible, folderSizeMap)}
+            size={sizeLabel(item, infoVisible, folderSizeMap, selectedIds.has(item.id))}
             onTap={() => openOrToggle(item)}
             onLongPress={() => onLongPressItem(item)}
           />
