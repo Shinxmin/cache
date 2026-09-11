@@ -30,6 +30,7 @@ export default function PageHeader({
   resetKey,
   toolkitActive,
   onCloseToolkit,
+  closeDisabled,
   searchAlwaysOn,
   viewMode,
   onToggleView,
@@ -41,6 +42,11 @@ export default function PageHeader({
   transferDirection,
   transferProgress,
   onOpenTransfers,
+  allSelected,
+  onToggleSelectAll,
+  hasSelection,
+  onDownloadSelected,
+  onTrashSelected,
 }) {
   const ref = useRef(null);
   const [collapsed, setCollapsed] = useState(!searchAlwaysOn);
@@ -193,18 +199,22 @@ export default function PageHeader({
           <SearchBar key={resetKey} hidden={collapsed} onSubmit={collapseOnSubmit} />
         </div>
       )}
-      {/* 평소엔 마운트되지 않는다(비활성화). 파일을 꾹 누르면 활성화되거나
-          (연결 예정), 지금은 설정 탭의 "스튜디오 툴킷 항상 활성화" 체크박스로
-          켜고 끌 수 있다. 헤더 자체의 ResizeObserver가 이 바의 유무에 따라
-          --header-h를 자동으로 다시 잰다. 지금은 이 체크박스가 툴킷을 켜는
-          유일한 경로라서(추후 꾹 누르기로 임시 활성화가 추가되기 전까지는)
-          "항상 켜짐" 상태 그 자체이므로 x로 끌 수 없게 막아 둔다. */}
+      {/* 평소엔 마운트되지 않는다(비활성화). 설정의 "스튜디오 툴킷 항상 활성화"가
+          켜져 있거나, 파일을 꾹 눌러 선택이 하나라도 있으면 뜬다. 헤더 자체의
+          ResizeObserver가 이 바의 유무에 따라 --header-h를 자동으로 다시 잰다.
+          "항상 활성화" 설정이 띄운 것이면 x로 끌 수 없다(closeDisabled) — 그
+          설정을 꺼야 사라진다. 선택 때문에 떠 있는 것이면 x가 선택을 지운다. */}
       {showSearch && toolkitActive && (
         <StudioToolkitBar
           onClose={onCloseToolkit}
-          closeDisabled
+          closeDisabled={closeDisabled}
           viewMode={viewMode}
           onToggleView={onToggleView}
+          allSelected={allSelected}
+          onToggleSelectAll={onToggleSelectAll}
+          hasSelection={hasSelection}
+          onDownloadSelected={onDownloadSelected}
+          onTrashSelected={onTrashSelected}
           style={{ transform: collapsed ? `translateY(-${toolkitLift}px)` : "none" }}
         />
       )}

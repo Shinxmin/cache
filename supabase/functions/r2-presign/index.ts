@@ -26,7 +26,7 @@ function json(body: unknown, status = 200) {
 }
 
 type Body = {
-  action?: "put" | "get" | "get-batch" | "delete";
+  action?: "put" | "get" | "get-batch" | "delete" | "delete-batch";
   key?: string;
   keys?: string[];
   contentType?: string;
@@ -111,6 +111,26 @@ Deno.serve(async (req) => {
     if (!keys.every(ownsKey)) return json({ error: "허용되지 않은 키입니다" }, 403);
     const entries = await Promise.all(keys.map(async (k) => [k, await signGet(k)] as const));
     return json({ urls: Object.fromEntries(entries) });
+  }
+
+  // 휴지통 영구 삭제: DB에서 행을 지운 뒤(delete_files_permanently RPC) 남은 R2
+  // 객체들을 한 번에 지운다. 일부 실패해도(이미 없는 키 등) 나머지는 계속 진행하는
+  // 최선을 다한다 — DB 행은 이미 지워졌으니 여기서 실패해도 다시 시도할 수는 없다.
+  if (body.action === "delete-batch") {
+    const keys = Array.isArray(body.keys) ? body.keys.slice(0, 500) : [];
+    if (!keys.every(ownsKey)) return json({ error: "허용되지 않은 키입니다" }, 403);
+    const failed: string[] = [];
+    await Promise.all(
+      keys.map(async (k) => {
+        try {
+          const res = await client.fetch(objectUrl(k), { method: "DELETE" });
+          if (!res.ok && res.status !== 404) failed.push(k);
+        } catch {
+          failed.push(k);
+        }
+      })
+    );
+    return json({ ok: true, failed });
   }
 
   if (!ownsKey(body.key)) return json({ error: "허용되지 않은 키입니다" }, 403);

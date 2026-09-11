@@ -5,9 +5,10 @@ import AuthPage from "./pages/AuthPage";
 import SettingsPage from "./pages/SettingsPage";
 import FilesPage from "./pages/FilesPage";
 import TransfersPage from "./pages/TransfersPage";
+import TrashPage from "./pages/TrashPage";
 import FileViewer from "./pages/FileViewer";
 import { clearSession, loadSession, saveSession, verifySession } from "./lib/session";
-import { createFolder, downloadFile, uploadFile } from "./lib/drive";
+import { createFolder, downloadFile, trashFiles, uploadFile } from "./lib/drive";
 import { isImage, isVideo } from "./lib/thumbnail";
 
 // 검색바는 홈·파일 탭에서만 뜬다(설정에는 없음). 제목과 한 fixed 박스로 묶여
@@ -40,13 +41,21 @@ export default function App() {
   const [checkingSession, setCheckingSession] = useState(true);
 
   const [tab, setTab] = useState(TABS[0].id);
-  const [toolkitActive, setToolkitActive] = useState(false);
+  // 설정의 "스튜디오 툴킷 항상 활성화" 체크박스 값. 실제로 툴킷이 보이는지는
+  // 아래 toolkitVisible이 결정한다(이 설정이 꺼져 있어도 선택 중이면 뜬다).
+  const [toolkitAlwaysOn, setToolkitAlwaysOn] = useState(false);
   const [searchAlwaysOn, setSearchAlwaysOn] = useState(true);
 
   // 파일 탭(웹드라이브) 상태
   const [viewMode, setViewMode] = useState("gallery");
   const [folderPath, setFolderPath] = useState([]); // [{id, name}] — 루트는 빈 배열
   const [refreshKey, setRefreshKey] = useState(0);
+  // 지금 폴더에서 FilesPage가 실제로 보여주고 있는 항목들. "전체 선택"과
+  // 선택 항목 다운로드/삭제가 파일의 r2_key 등 전체 정보를 봐야 해서 필요하다.
+  const [visibleItems, setVisibleItems] = useState([]);
+  // 꾹 눌러(또는 전체 선택으로) 선택된 항목의 id 집합.
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [showTrash, setShowTrash] = useState(false);
 
   // 전송(업로드/다운로드) 상태. 진행 중인 것이 있을 때만 헤더에 버튼이 뜬다.
   const [transfers, setTransfers] = useState([]);
@@ -82,6 +91,28 @@ export default function App() {
 
   const parentId = folderPath.length ? folderPath[folderPath.length - 1].id : null;
   const activeTransfer = useMemo(() => transfers.find((t) => t.status === "active"), [transfers]);
+
+  // 폴더를 옮기면 이전 폴더에서의 선택은 의미가 없다.
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [parentId]);
+
+  // 스튜디오 툴킷은 설정이 항상 켜 두었거나, 선택된 파일이 하나라도 있으면 뜬다.
+  const toolkitVisible = toolkitAlwaysOn || selectedIds.size > 0;
+  const allSelected = visibleItems.length > 0 && visibleItems.every((it) => selectedIds.has(it.id));
+
+  const toggleSelect = (item) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(item.id)) next.delete(item.id);
+      else next.add(item.id);
+      return next;
+    });
+  };
+
+  const handleToggleSelectAll = (checked) => {
+    setSelectedIds(checked ? new Set(visibleItems.map((it) => it.id)) : new Set());
+  };
 
   const track = async (name, direction, run) => {
     const id = crypto.randomUUID();
@@ -152,6 +183,36 @@ export default function App() {
     );
   };
 
+  // 선택된 항목(폴더 제외) 전체를 순서대로 내려받는다.
+  const handleDownloadSelected = async () => {
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && !it.is_folder);
+    for (const item of targets) {
+      setTransferRing(0);
+      await track(item.name, "down", (onProgress) =>
+        downloadFile({
+          token: session.token,
+          item,
+          onProgress: (p) => {
+            onProgress(p);
+            setTransferRing(p);
+          },
+        })
+      );
+    }
+  };
+
+  const handleTrashSelected = async () => {
+    const ids = [...selectedIds];
+    if (!ids.length) return;
+    try {
+      await trashFiles(session.token, ids);
+      setSelectedIds(new Set());
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("휴지통으로 이동하지 못했습니다");
+    }
+  };
+
   if (checkingSession) return null;
 
   if (!session) {
@@ -168,6 +229,10 @@ export default function App() {
     );
   }
 
+  if (showTrash) {
+    return <TrashPage session={session} onBack={() => setShowTrash(false)} />;
+  }
+
   const isFiles = tab === "files";
   const title = isFiles && folderPath.length ? folderPath[folderPath.length - 1].name : TABS.find((t) => t.id === tab).label;
 
@@ -182,8 +247,9 @@ export default function App() {
               title={title}
               showSearch={SEARCH_TABS.has(tab)}
               resetKey={tab}
-              toolkitActive={toolkitActive}
-              onCloseToolkit={() => setToolkitActive(false)}
+              toolkitActive={toolkitVisible}
+              onCloseToolkit={() => setSelectedIds(new Set())}
+              closeDisabled={toolkitAlwaysOn}
               searchAlwaysOn={searchAlwaysOn}
               viewMode={viewMode}
               onToggleView={() => setViewMode((v) => (v === "gallery" ? "list" : "gallery"))}
@@ -195,6 +261,11 @@ export default function App() {
               transferDirection={activeTransfer?.direction}
               transferProgress={transferRing}
               onOpenTransfers={() => setShowTransfers(true)}
+              allSelected={allSelected}
+              onToggleSelectAll={handleToggleSelectAll}
+              hasSelection={selectedIds.size > 0}
+              onDownloadSelected={handleDownloadSelected}
+              onTrashSelected={handleTrashSelected}
             />
             {isFiles && (
               <FilesPage
@@ -204,14 +275,20 @@ export default function App() {
                 onOpenFolder={(item) => setFolderPath((p) => [...p, { id: item.id, name: item.name }])}
                 onOpenFile={handleOpenFile}
                 refreshKey={refreshKey}
+                selectionMode={toolkitVisible}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
+                onLongPressItem={toggleSelect}
+                onItemsChange={setVisibleItems}
               />
             )}
             {tab === "settings" && (
               <SettingsPage
-                toolkitActive={toolkitActive}
-                onToggleToolkit={setToolkitActive}
+                toolkitActive={toolkitAlwaysOn}
+                onToggleToolkit={setToolkitAlwaysOn}
                 searchAlwaysOn={searchAlwaysOn}
                 onToggleSearchAlwaysOn={setSearchAlwaysOn}
+                onOpenTrash={() => setShowTrash(true)}
               />
             )}
           </main>
