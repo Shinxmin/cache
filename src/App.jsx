@@ -9,8 +9,9 @@ import TrashPage from "./pages/TrashPage";
 import FileViewer from "./pages/FileViewer";
 import RenameModal from "./components/RenameModal";
 import MoveModal from "./components/MoveModal";
+import TagModal from "./components/TagModal";
 import { clearSession, loadSession, saveSession, setToolkitAlwaysOn as persistToolkitAlwaysOn, verifySession } from "./lib/session";
-import { createFolder, downloadFile, downloadFolderAsZip, moveFiles, renameFiles, setBlur, trashFiles, uploadFile } from "./lib/drive";
+import { createFolder, downloadFile, downloadFolderAsZip, moveFiles, renameFiles, setBlur, setTag, trashFiles, uploadFile } from "./lib/drive";
 import { isImage, isVideo } from "./lib/thumbnail";
 
 // 검색바는 홈·파일 탭에서만 뜬다(설정에는 없음). 제목과 한 fixed 박스로 묶여
@@ -68,6 +69,8 @@ export default function App() {
   const [renameTargets, setRenameTargets] = useState(null);
   // 스튜디오 툴킷의 이동(→) 아이콘으로 연 이동 모달. null이면 닫힌 상태.
   const [moveTargets, setMoveTargets] = useState(null);
+  // 스튜디오 툴킷의 태그(#) 아이콘으로 연 태그 모달. null이면 닫힌 상태.
+  const [tagTargets, setTagTargets] = useState(null);
 
   // 전송(업로드/다운로드) 상태. 진행 중인 것이 있을 때만 헤더에 버튼이 뜬다.
   const [transfers, setTransfers] = useState([]);
@@ -320,6 +323,23 @@ export default function App() {
     }
   };
 
+  // 선택된 항목으로 태그 모달을 연다.
+  const handleTagSelected = () => {
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    if (!targets.length) return;
+    setTagTargets(targets);
+  };
+
+  const handleTagSubmit = async (tag) => {
+    try {
+      await setTag(session.token, tagTargets.map((it) => it.id), tag);
+      setTagTargets(null);
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("태그를 저장하지 못했습니다");
+    }
+  };
+
   const handleRenameSubmit = async (renames) => {
     try {
       await renameFiles(session.token, renames);
@@ -388,6 +408,7 @@ export default function App() {
               onToggleInfo={handleToggleInfo}
               onEditSelected={handleEditSelected}
               onMoveSelected={handleMoveSelected}
+              onTagSelected={handleTagSelected}
             />
             {isFiles && (
               <FilesPage
@@ -443,6 +464,7 @@ export default function App() {
           onSubmit={handleMoveSubmit}
         />
       )}
+      {tagTargets && <TagModal items={tagTargets} onClose={() => setTagTargets(null)} onSubmit={handleTagSubmit} />}
     </>
   );
 }
