@@ -14,7 +14,17 @@ export default function RenameModal({ items, onClose, onSubmit }) {
 
   const setNameAt = (i, value) => setNames((prev) => prev.map((n, idx) => (idx === i ? value : n)));
   const clearAll = () => setNames((prev) => prev.map(() => ""));
-  const attachNumbers = () => setNames((prev) => prev.map((n, i) => `${n} ${i + 1}`.trim()));
+  // 첫 번째 항목의 값을 기준점으로 삼는다: 끝에 붙은 숫자를 뽑아 그 숫자부터
+  // 순서대로 이어 붙인다 (예: 1번째가 "17"이면 17,18,19…). 숫자가 없으면
+  // 1번째 이름을 접두사로 삼아 1부터 매긴다.
+  const attachNumbers = () =>
+    setNames((prev) => {
+      const first = prev[0] || "";
+      const match = first.match(/^(.*?)(\d+)$/);
+      const prefix = match ? match[1] : first ? `${first} ` : "";
+      const base = match ? parseInt(match[2], 10) : 1;
+      return prev.map((_, i) => `${prefix}${base + i}`);
+    });
 
   const canSubmit = names.every((n) => n.trim().length > 0) && !busy;
 
