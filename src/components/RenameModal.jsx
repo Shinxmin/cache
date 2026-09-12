@@ -52,7 +52,7 @@ export default function RenameModal({ items, onClose, onSubmit }) {
 
         {multi ? (
           <>
-            <ul className="rename-list">
+            <ul className="rename-list" data-scroll-lock-allow>
               {items.map((item, i) => (
                 <li className="rename-list-row" key={item.id}>
                   <span className="rename-list-icon">
