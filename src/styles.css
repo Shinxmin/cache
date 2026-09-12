@@ -1027,15 +1027,6 @@ button {
 .rename-input::placeholder {
   color: var(--text-2);
 }
-/* 태그 모달의 태그 입력창만 밑줄이 아니라 네 면을 감싸는 박스로 강조한다.
-   목록 항목들의 옅은 --glass-border와 헷갈리지 않도록 진한 전경색
-   (라이트=검정 계열, 다크=흰색 계열인 --text)을 테두리로 쓴다. */
-.rename-card .tag-input {
-  height: 40px;
-  padding: 0 12px;
-  border: 1.5px solid var(--text);
-  border-radius: 10px;
-}
 .rename-list {
   list-style: none;
   margin: 0;
