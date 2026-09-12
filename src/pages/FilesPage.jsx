@@ -9,13 +9,13 @@ import useLongPress from "../hooks/useLongPress";
 // 무관하다 — 한 번 켜 두면 선택을 풀어도 계속 표기된 채로 남는다.
 // 폴더는 재귀 합산 값이 folderSizeMap에 도착해야 나오고(그 전엔 로딩 중이라
 // 아무것도 안 보여준다), 파일은 이미 목록에 들어 있는 size를 바로 쓴다.
-// 태그(#)가 붙어 있으면 그 옆에 괄호로 덧붙인다.
+// 태그가 붙어 있으면 그 옆에 "#태그명"처럼 덧붙인다.
 function sizeLabel(item, revealed, folderSizeMap) {
   if (!revealed) return null;
   const size = item.is_folder ? folderSizeMap[item.id] : item.size;
   if (item.is_folder && size === undefined) return null;
   const text = formatBytes(size);
-  return item.tag ? `${text} (${item.tag})` : text;
+  return item.tag ? `${text} #${item.tag}` : text;
 }
 
 // 갤러리 타일 하나. 꾹 누르면 선택 모드로 들어가고(App.jsx가 스튜디오 툴킷을
