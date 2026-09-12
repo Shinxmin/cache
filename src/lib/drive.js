@@ -1,5 +1,6 @@
 import { zipSync } from "fflate";
 import { supabase } from "../supabaseClient";
+import { sortFileList } from "./sort";
 import { isImage, isVideo, makeThumbnail } from "./thumbnail";
 
 // R2 웹드라이브 API. 파일 본체는 R2에, 폴더 구조와 메타데이터는 Supabase에 둔다.
@@ -25,7 +26,8 @@ function rpcResult({ data, error }) {
 }
 
 export async function listFiles(token, parentId = null) {
-  return rpcResult(await supabase.rpc("list_files", { p_token: token, p_parent_id: parentId }));
+  const rows = rpcResult(await supabase.rpc("list_files", { p_token: token, p_parent_id: parentId }));
+  return sortFileList(rows);
 }
 
 export async function createFolder(token, name, parentId = null) {

@@ -951,10 +951,12 @@ button {
   background: rgba(0, 0, 0, 0.45);
 }
 .rename-card {
-  width: 100%;
-  max-width: 340px;
-  max-height: 100%;
-  overflow-y: auto;
+  /* 이름 바꾸기·이동·태그 모달이 모두 같은 가로세로 크기를 갖는다. 내용이
+     적으면 빈 공간이 남고(확인 버튼은 margin-top:auto로 바닥에 붙는다),
+     많으면 카드 자체가 아니라 안쪽 리스트만 스크롤된다(overflow:hidden). */
+  width: min(340px, 100%);
+  height: min(480px, 100%);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -966,10 +968,15 @@ button {
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
 }
 .rename-card-header {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+.rename-card > .auth-submit {
+  flex: none;
+  margin-top: auto;
 }
 .rename-title {
   margin: 0;
@@ -987,6 +994,7 @@ button {
   transform: scale(0.85);
 }
 .rename-input {
+  flex: none;
   width: 100%;
   height: 44px;
   padding: 0 16px;
@@ -1008,7 +1016,8 @@ button {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 45vh;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 .rename-list-row {
@@ -1021,7 +1030,16 @@ button {
   display: flex;
   color: var(--text-2);
 }
+.rename-list-name {
+  min-width: 0;
+  font-size: 15px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .rename-actions {
+  flex: none;
   display: flex;
   gap: 10px;
 }
@@ -1043,6 +1061,7 @@ button {
 /* ── 이동 모달: 카드 껍데기(.rename-overlay/.rename-card)는 이름 바꾸기와
    같은 것을 쓰고, 안쪽 경로 줄과 목록만 따로 정의한다. ── */
 .move-path {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1073,7 +1092,8 @@ button {
   padding: 0;
   display: flex;
   flex-direction: column;
-  max-height: 45vh;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 .move-row {
