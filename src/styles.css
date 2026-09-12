@@ -1019,11 +1019,13 @@ button {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 .rename-list-row {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 .rename-list-icon {
   flex: none;
@@ -1037,6 +1039,14 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* 목록 안의 입력창(이름 바꾸기 다중 선택)은 카드 바로 밑 단독 입력창과 달리
+   가로 방향 flex 안에 있으므로 아이콘 옆에서 줄어들 수 있어야 한다 — 그러지
+   않으면(위 .rename-input의 flex:none을 그대로 물려받으면) 긴 이름에서
+   가로로 넘쳐 목록이 옆으로 스크롤된다. */
+.rename-list-row .rename-input {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .rename-actions {
   flex: none;
@@ -1095,9 +1105,11 @@ button {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 .move-row {
   width: 100%;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 10px;
