@@ -21,7 +21,7 @@ export default function DeleteConfirmModal({ count, onClose, onSubmit }) {
 
   return (
     <div className="rename-overlay" onClick={onClose}>
-      <div className="rename-card" onClick={(e) => e.stopPropagation()}>
+      <div className="rename-card delete-confirm-card" onClick={(e) => e.stopPropagation()}>
         <div className="rename-card-header">
           <h2 className="rename-title">삭제</h2>
           <button className="rename-close" type="button" aria-label="취소" onClick={onClose}>

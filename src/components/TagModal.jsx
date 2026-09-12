@@ -50,7 +50,7 @@ export default function TagModal({ items, onClose, onSubmit }) {
         )}
 
         <input
-          className="rename-input"
+          className="rename-input tag-input"
           type="text"
           value={tag}
           onChange={(e) => setTag(e.target.value)}
