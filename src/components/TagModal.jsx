@@ -54,7 +54,7 @@ export default function TagModal({ items, onClose, onSubmit }) {
           type="text"
           value={tag}
           onChange={(e) => setTag(e.target.value)}
-          placeholder="태그 이름"
+          placeholder=""
           maxLength={24}
           autoFocus
         />

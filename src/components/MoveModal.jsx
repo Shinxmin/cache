@@ -56,9 +56,10 @@ export default function MoveModal({ session, items, onClose, onSubmit }) {
           </button>
         </div>
 
-        {/* 지금 보고 있는 위치. 최상위가 아니면 왼쪽 화살표로 한 단계 나간다. */}
-        <div className="move-path">
-          {path.length > 0 && (
+        {/* 최상위(드라이브)에서는 경로 줄 자체를 보여주지 않는다. 하위 폴더로
+            들어갔을 때만 왼쪽 화살표 + 지금 폴더 이름이 나타난다. */}
+        {path.length > 0 && (
+          <div className="move-path">
             <button
               className="move-path-back"
               type="button"
@@ -67,9 +68,9 @@ export default function MoveModal({ session, items, onClose, onSubmit }) {
             >
               <BackIcon size={18} />
             </button>
-          )}
-          <span className="move-path-name">{path.length ? path[path.length - 1].name : "드라이브"}</span>
-        </div>
+            <span className="move-path-name">{path[path.length - 1].name}</span>
+          </div>
+        )}
 
         <ul className="move-list" data-scroll-lock-allow>
           {state === "loading" && <li className="move-note">불러오는 중…</li>}
