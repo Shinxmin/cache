@@ -54,20 +54,20 @@ function GalleryTile({ item, thumb, selected, size, onTap, onLongPress }) {
           )}
         </span>
       ) : (
-        <>
-          <span className="drive-tile">
-            {item.is_folder ? <FolderIcon size={44} className="drive-tile-icon-folder" /> : <FileIcon size={38} />}
-            {selected && (
-              <span className="drive-select-badge">
-                <CheckIcon />
-              </span>
-            )}
-          </span>
+        // 썸네일이 없는 폴더·일반 파일도 제목(+용량)을 타일 밖이 아니라 안쪽
+        // 아래에 겹쳐서 보여준다(썸네일 타일과 같은 자리).
+        <span className="drive-tile">
+          {item.is_folder ? <FolderIcon size={44} className="drive-tile-icon-folder" /> : <FileIcon size={38} />}
+          {selected && (
+            <span className="drive-select-badge">
+              <CheckIcon />
+            </span>
+          )}
           <span className="drive-tile-caption">
             <span className="drive-tile-name">{item.name}</span>
             {size && <span className="drive-tile-size">{size}</span>}
           </span>
-        </>
+        </span>
       )}
     </button>
   );
