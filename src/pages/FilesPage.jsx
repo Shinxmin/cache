@@ -4,27 +4,18 @@ import { formatBytes } from "../lib/format";
 import { CheckIcon, FileIcon, FolderIcon } from "../components/icons";
 import useLongPress from "../hooks/useLongPress";
 
-// 이름 끝의 확장자를 ".jpg" 형태로 뽑는다. 점이 없는 이름(확장자 없는 파일)이면 null.
-function fileExtension(name) {
-  const m = /\.([^.]+)$/.exec(name);
-  return m ? m[1].toLowerCase() : null;
-}
-
 // 정보(i) 아이콘으로 그 항목의 용량 표기를 켰을 때만(infoRevealedIds에
 // 있을 때만) 밑에 보여줄 용량 문구. 블러와 달리 지금 선택되어 있는지와는
 // 무관하다 — 한 번 켜 두면 선택을 풀어도 계속 표기된 채로 남는다.
 // 폴더는 재귀 합산 값이 folderSizeMap에 도착해야 나오고(그 전엔 로딩 중이라
-// 아무것도 안 보여준다), 파일은 이미 목록에 들어 있는 size를 바로 쓰고 그
-// 옆에 확장자를 괄호로 덧붙인다(폴더는 확장자가 없으니 붙이지 않는다).
+// 아무것도 안 보여준다), 파일은 이미 목록에 들어 있는 size를 바로 쓴다.
+// 태그(#)가 붙어 있으면 그 옆에 괄호로 덧붙인다.
 function sizeLabel(item, revealed, folderSizeMap) {
   if (!revealed) return null;
-  if (item.is_folder) {
-    const bytes = folderSizeMap[item.id];
-    return bytes === undefined ? null : formatBytes(bytes);
-  }
-  const size = formatBytes(item.size);
-  const ext = fileExtension(item.name);
-  return ext ? `${size} (.${ext})` : size;
+  const size = item.is_folder ? folderSizeMap[item.id] : item.size;
+  if (item.is_folder && size === undefined) return null;
+  const text = formatBytes(size);
+  return item.tag ? `${text} (${item.tag})` : text;
 }
 
 // 갤러리 타일 하나. 꾹 누르면 선택 모드로 들어가고(App.jsx가 스튜디오 툴킷을

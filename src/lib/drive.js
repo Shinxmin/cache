@@ -52,6 +52,12 @@ export async function moveFiles(token, ids, parentId) {
   return rpcResult(await supabase.rpc("move_files", { p_token: token, p_ids: ids, p_parent_id: parentId }));
 }
 
+// 스튜디오 툴킷의 태그(#) 아이콘. 선택한 항목 전체에 같은 태그 하나를
+// 붙이거나(문자열), 빈 문자열/공백이면 서버에서 null로 지운다.
+export async function setTag(token, ids, tag) {
+  return rpcResult(await supabase.rpc("set_tag", { p_token: token, p_ids: ids, p_tag: tag }));
+}
+
 // 갤러리 썸네일 블러 처리(스튜디오 툴킷의 눈 아이콘). 서버에 저장돼 있어
 // 새로고침해도 유지된다.
 export async function setBlur(token, ids, blurred) {

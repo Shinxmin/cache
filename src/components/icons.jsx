@@ -27,6 +27,18 @@ export function ArrowRightIcon({ size = 18 }) {
   );
 }
 
+// 태그 — 해시(#) 기호.
+export function HashIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <rect x="8" y="3" width="2" height="18" />
+      <rect x="14" y="3" width="2" height="18" />
+      <rect x="3" y="8" width="18" height="2" />
+      <rect x="3" y="14" width="18" height="2" />
+    </svg>
+  );
+}
+
 export function FolderIcon({ size = 18, className }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true" className={className}>
