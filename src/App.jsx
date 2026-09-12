@@ -11,7 +11,7 @@ import RenameModal from "./components/RenameModal";
 import MoveModal from "./components/MoveModal";
 import TagModal from "./components/TagModal";
 import { clearSession, loadSession, saveSession, setToolkitAlwaysOn as persistToolkitAlwaysOn, verifySession } from "./lib/session";
-import { createFolder, downloadFile, downloadFolderAsZip, moveFiles, renameFiles, setBlur, setTag, trashFiles, uploadFile } from "./lib/drive";
+import { createFolder, downloadFile, downloadFolderAsZip, moveFiles, renameFiles, setBlur, setInfoRevealed, setTag, trashFiles, uploadFile } from "./lib/drive";
 import { isImage, isVideo } from "./lib/thumbnail";
 
 // 검색바는 홈·파일 탭에서만 뜬다(설정에는 없음). 제목과 한 fixed 박스로 묶여
@@ -51,11 +51,6 @@ export default function App() {
 
   // 파일 탭(웹드라이브) 상태
   const [viewMode, setViewMode] = useState("gallery");
-  // 스튜디오 툴킷의 정보(i) 아이콘으로 용량 표기를 켠 항목들의 id. 블러
-  // 처리와 같은 방식 — 누르는 순간 선택되어 있던 항목에 대해서만 켜고 끄지만,
-  // 일단 켜 두면 나중에 선택을 풀어도(그 항목만 더는 선택 상태가 아니어도)
-  // 계속 표기된 채로 남는다(선택 상태를 실시간으로 따라가지 않는다).
-  const [infoRevealedIds, setInfoRevealedIds] = useState(() => new Set());
   const [folderPath, setFolderPath] = useState([]); // [{id, name}] — 루트는 빈 배열
   const [refreshKey, setRefreshKey] = useState(0);
   // 지금 폴더에서 FilesPage가 실제로 보여주고 있는 항목들. "전체 선택"과
@@ -271,18 +266,20 @@ export default function App() {
   };
 
   // 선택된 항목의 용량 표기를 토글한다. 블러와 같은 "일부면 켜는 쪽으로"
-  // 방식이지만, 다른 점은 여기서 켠 표기는 나중에 선택을 풀어도 계속
-  // 남아 있다는 것 — 선택은 그저 "지금부터 이 항목들 표기 여부를 바꾼다"는
-  // 대상 지정일 뿐, 표기 자체는 선택 상태를 실시간으로 따라가지 않는다.
-  const handleToggleInfo = () => {
-    const ids = [...selectedIds];
-    if (!ids.length) return;
-    const allRevealed = ids.every((id) => infoRevealedIds.has(id));
-    setInfoRevealedIds((prev) => {
-      const next = new Set(prev);
-      ids.forEach((id) => (allRevealed ? next.delete(id) : next.add(id)));
-      return next;
-    });
+  // 방식이면서 저장 방식도 같다 — 서버에 저장돼 있어(info_revealed 컬럼)
+  // 선택을 풀거나 새로고침·재접속해도 계속 표기된 채로 남는다. 선택은 그저
+  // "지금부터 이 항목들 표기 여부를 바꾼다"는 대상 지정일 뿐, 표기 자체는
+  // 선택 상태를 실시간으로 따라가지 않는다.
+  const handleToggleInfo = async () => {
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    if (!targets.length) return;
+    const nextRevealed = !targets.every((it) => it.info_revealed);
+    try {
+      await setInfoRevealed(session.token, targets.map((it) => it.id), nextRevealed);
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("정보 표기 설정을 저장하지 못했습니다");
+    }
   };
 
   const handleTrashSelected = async () => {
@@ -404,7 +401,10 @@ export default function App() {
               onDownloadSelected={handleDownloadSelected}
               onTrashSelected={handleTrashSelected}
               onBlurSelected={handleBlurSelected}
-              infoVisible={selectedIds.size > 0 && [...selectedIds].every((id) => infoRevealedIds.has(id))}
+              infoVisible={(() => {
+                const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+                return targets.length > 0 && targets.every((it) => it.info_revealed);
+              })()}
               onToggleInfo={handleToggleInfo}
               onEditSelected={handleEditSelected}
               onMoveSelected={handleMoveSelected}
@@ -423,7 +423,6 @@ export default function App() {
                 onToggleSelect={toggleSelect}
                 onLongPressItem={toggleSelect}
                 onItemsChange={setVisibleItems}
-                infoRevealedIds={infoRevealedIds}
               />
             )}
             {tab === "settings" && (

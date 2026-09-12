@@ -4,9 +4,9 @@ import { formatBytes } from "../lib/format";
 import { CheckIcon, FileIcon, FolderIcon } from "../components/icons";
 import useLongPress from "../hooks/useLongPress";
 
-// 정보(i) 아이콘으로 그 항목의 용량 표기를 켰을 때만(infoRevealedIds에
-// 있을 때만) 밑에 보여줄 용량 문구. 블러와 달리 지금 선택되어 있는지와는
-// 무관하다 — 한 번 켜 두면 선택을 풀어도 계속 표기된 채로 남는다.
+// 정보(i) 아이콘으로 그 항목의 용량 표기를 켰을 때만(item.info_revealed가
+// true일 때만) 밑에 보여줄 용량 문구. 블러와 마찬가지로 서버에 저장돼 있어
+// 선택을 풀거나 새로고침·재접속해도 계속 표기된 채로 남는다.
 // 폴더는 재귀 합산 값이 folderSizeMap에 도착해야 나오고(그 전엔 로딩 중이라
 // 아무것도 안 보여준다), 파일은 이미 목록에 들어 있는 size를 바로 쓴다.
 // 태그가 붙어 있으면 그 옆에 "#태그명"처럼 덧붙인다.
@@ -110,7 +110,6 @@ export default function FilesPage({
   onToggleSelect,
   onLongPressItem,
   onItemsChange,
-  infoRevealedIds,
 }) {
   const [items, setItems] = useState([]);
   const [thumbs, setThumbs] = useState({});
@@ -151,7 +150,7 @@ export default function FilesPage({
   // 용량 표기가 켜진 폴더들의 용량을 받아 온다. 폴더는 자체 용량이 없어
   // 하위 파일을 재귀 합산해야 하므로 서버에 따로 물어본다.
   useEffect(() => {
-    const folderIds = items.filter((it) => it.is_folder && infoRevealedIds.has(it.id)).map((it) => it.id);
+    const folderIds = items.filter((it) => it.is_folder && it.info_revealed).map((it) => it.id);
     if (!folderIds.length) return;
     let cancelled = false;
     folderSizes(session.token, folderIds).then((sizes) => {
@@ -160,7 +159,7 @@ export default function FilesPage({
     return () => {
       cancelled = true;
     };
-  }, [session.token, items, infoRevealedIds]);
+  }, [session.token, items]);
 
   const openOrToggle = (item) =>
     selectionMode ? onToggleSelect(item) : item.is_folder ? onOpenFolder(item) : onOpenFile(item);
@@ -177,7 +176,7 @@ export default function FilesPage({
             <ListRow
               item={item}
               selected={selectionMode && selectedIds.has(item.id)}
-              size={sizeLabel(item, infoRevealedIds.has(item.id), folderSizeMap)}
+              size={sizeLabel(item, item.info_revealed, folderSizeMap)}
               onTap={() => openOrToggle(item)}
               onLongPress={() => onLongPressItem(item)}
             />
@@ -195,7 +194,7 @@ export default function FilesPage({
             item={item}
             thumb={item.thumb_key ? thumbs[item.thumb_key] : null}
             selected={selectionMode && selectedIds.has(item.id)}
-            size={sizeLabel(item, infoRevealedIds.has(item.id), folderSizeMap)}
+            size={sizeLabel(item, item.info_revealed, folderSizeMap)}
             onTap={() => openOrToggle(item)}
             onLongPress={() => onLongPressItem(item)}
           />
