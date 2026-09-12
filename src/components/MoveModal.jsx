@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import useBodyScrollLock from "../hooks/useBodyScrollLock";
 import { listFiles } from "../lib/drive";
 import { BackIcon, CloseIcon, FileIcon, FolderIcon } from "./icons";
 
@@ -9,6 +10,7 @@ import { BackIcon, CloseIcon, FileIcon, FolderIcon } from "./icons";
 // 옮기는 중인 폴더 자신은 목적지가 될 수 없다(자기 안으로 들어가면 그 가지가
 // 트리에서 떨어져 나간다). 서버도 막지만 목록에서 미리 눌리지 않게 해 둔다.
 export default function MoveModal({ session, items, onClose, onSubmit }) {
+  useBodyScrollLock();
   const [path, setPath] = useState([]); // [{ id, name }] — 빈 배열이면 최상위
   const [rows, setRows] = useState([]);
   const [state, setState] = useState("loading"); // loading | ready | error

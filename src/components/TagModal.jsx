@@ -1,4 +1,5 @@
 import { useState } from "react";
+import useBodyScrollLock from "../hooks/useBodyScrollLock";
 import { CloseIcon, FileIcon, FolderIcon } from "./icons";
 
 // 스튜디오 툴킷의 태그(#) 아이콘으로 여는 태그 모달. 이름 바꾸기 모달과 같은
@@ -8,6 +9,7 @@ import { CloseIcon, FileIcon, FolderIcon } from "./icons";
 // 띄우고, 그 아래에 "전체 지우기"를 둔다(입력창을 비우는 것뿐이고, 실제
 // 반영은 확인을 눌러야 된다 — 빈 채로 확인하면 태그가 지워진다).
 export default function TagModal({ items, onClose, onSubmit }) {
+  useBodyScrollLock();
   // 선택한 항목이 전부 같은 태그면 그 값을 보여주고, 섞여 있으면 빈 채로 시작한다.
   const initial = items.every((it) => (it.tag || "") === (items[0].tag || "")) ? items[0].tag || "" : "";
   const [tag, setTag] = useState(initial);

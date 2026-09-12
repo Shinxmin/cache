@@ -1,4 +1,5 @@
 import { useState } from "react";
+import useBodyScrollLock from "../hooks/useBodyScrollLock";
 import { CloseIcon, FileIcon, FolderIcon } from "./icons";
 
 // 스튜디오 툴킷의 편집(연필) 아이콘으로 여는 이름 바꾸기 모달. 배경을 탭하거나
@@ -8,6 +9,7 @@ import { CloseIcon, FileIcon, FolderIcon } from "./icons";
 //    (모든 입력창을 비운다)·"번호 붙이기"(각 입력창 뒤에 지금 순서대로
 //    1,2,3,4…를 붙인다) + 확인 버튼.
 export default function RenameModal({ items, onClose, onSubmit }) {
+  useBodyScrollLock();
   const [names, setNames] = useState(() => items.map((it) => it.name));
   const [busy, setBusy] = useState(false);
   const multi = items.length > 1;
