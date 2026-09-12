@@ -37,7 +37,7 @@ export default function TagModal({ items, onClose, onSubmit }) {
         </div>
 
         {multi && (
-          <ul className="rename-list">
+          <ul className="rename-list" data-scroll-lock-allow>
             {items.map((item) => (
               <li className="rename-list-row" key={item.id}>
                 <span className="rename-list-icon">

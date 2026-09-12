@@ -71,7 +71,7 @@ export default function MoveModal({ session, items, onClose, onSubmit }) {
           <span className="move-path-name">{path.length ? path[path.length - 1].name : "드라이브"}</span>
         </div>
 
-        <ul className="move-list">
+        <ul className="move-list" data-scroll-lock-allow>
           {state === "loading" && <li className="move-note">불러오는 중…</li>}
           {state === "error" && <li className="move-note">불러오지 못했습니다</li>}
           {state === "ready" && !rows.length && <li className="move-note">비어 있습니다</li>}
