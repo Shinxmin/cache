@@ -652,8 +652,9 @@ button {
   height: auto;
   aspect-ratio: 1;
 }
-/* 폴더 아이콘만 기존 크기(87.5%)의 절반으로 줄인다(요청 반영). */
-.drive-tile > svg.drive-tile-icon-folder {
+/* 폴더 아이콘(요청으로 기존의 절반 크기), 그리고 썸네일이 아직 로딩 중인
+   이미지·영상이 잠깐 보여주는 파일 아이콘도 같은 작은 크기로 맞춘다. */
+.drive-tile > svg.drive-tile-icon-small {
   width: 44%;
 }
 .drive-tile--thumb img {
