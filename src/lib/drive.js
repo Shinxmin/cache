@@ -66,6 +66,12 @@ export async function setBlur(token, ids, blurred) {
   return rpcResult(await supabase.rpc("set_blur", { p_token: token, p_ids: ids, p_blurred: blurred }));
 }
 
+// 스튜디오 툴킷의 정보 아이콘으로 켠 용량 표시 여부. 블러와 마찬가지로
+// 서버에 저장돼 있어 새로고침·재접속해도 유지된다.
+export async function setInfoRevealed(token, ids, revealed) {
+  return rpcResult(await supabase.rpc("set_info_revealed", { p_token: token, p_ids: ids, p_revealed: revealed }));
+}
+
 // ── 휴지통 ─────────────────────────────────────────────────────────────
 export async function listTrash(token) {
   return rpcResult(await supabase.rpc("list_trash", { p_token: token }));
