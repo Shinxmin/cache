@@ -18,6 +18,15 @@ export function DownloadIcon({ size = 18 }) {
   );
 }
 
+// 이동 — 업로드/다운로드 화살표와 같은 모양을 오른쪽으로 돌린 것.
+export function ArrowRightIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M21 12 13 4.5v4.9H3v5.2h10v4.9z" />
+    </svg>
+  );
+}
+
 export function FolderIcon({ size = 18, className }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true" className={className}>

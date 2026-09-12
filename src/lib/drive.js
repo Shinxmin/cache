@@ -45,6 +45,13 @@ export async function renameFiles(token, renames) {
   return rpcResult(await supabase.rpc("rename_files", { p_token: token, p_renames: renames }));
 }
 
+// 선택한 항목을 다른 폴더로 옮긴다(parentId가 null이면 최상위로). 폴더를 옮기면
+// 하위 항목은 parent_id로 딸려 있으므로 자동으로 함께 따라온다. 자기 자신이나
+// 자기 하위 폴더로 옮기려 하면 서버가 INVALID_DESTINATION으로 막는다.
+export async function moveFiles(token, ids, parentId) {
+  return rpcResult(await supabase.rpc("move_files", { p_token: token, p_ids: ids, p_parent_id: parentId }));
+}
+
 // 갤러리 썸네일 블러 처리(스튜디오 툴킷의 눈 아이콘). 서버에 저장돼 있어
 // 새로고침해도 유지된다.
 export async function setBlur(token, ids, blurred) {

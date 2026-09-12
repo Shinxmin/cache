@@ -50,6 +50,7 @@ export default function PageHeader({
   infoVisible,
   onToggleInfo,
   onEditSelected,
+  onMoveSelected,
 }) {
   const ref = useRef(null);
   const [collapsed, setCollapsed] = useState(!searchAlwaysOn);
@@ -222,6 +223,7 @@ export default function PageHeader({
           infoVisible={infoVisible}
           onToggleInfo={onToggleInfo}
           onEditSelected={onEditSelected}
+          onMoveSelected={onMoveSelected}
           style={{ transform: collapsed ? `translateY(-${toolkitLift}px)` : "none" }}
         />
       )}
