@@ -10,6 +10,7 @@ import FileViewer from "./pages/FileViewer";
 import RenameModal from "./components/RenameModal";
 import MoveModal from "./components/MoveModal";
 import TagModal from "./components/TagModal";
+import DeleteConfirmModal from "./components/DeleteConfirmModal";
 import { clearSession, loadSession, saveSession, setToolkitAlwaysOn as persistToolkitAlwaysOn, verifySession } from "./lib/session";
 import {
   createFolder,
@@ -78,6 +79,9 @@ export default function App() {
   const [moveTargets, setMoveTargets] = useState(null);
   // 스튜디오 툴킷의 태그(#) 아이콘으로 연 태그 모달. null이면 닫힌 상태.
   const [tagTargets, setTagTargets] = useState(null);
+  // 스튜디오 툴킷의 휴지통 아이콘으로 연 삭제 확인 모달. null이면 닫힌 상태,
+  // 배열이면 그 id들을 실제로 휴지통에 넣을지 확인 중인 상태다.
+  const [deleteTargetIds, setDeleteTargetIds] = useState(null);
 
   // 전송(업로드/다운로드) 상태. 진행 중인 것이 있을 때만 헤더에 버튼이 뜬다.
   const [transfers, setTransfers] = useState([]);
@@ -313,11 +317,17 @@ export default function App() {
     }
   };
 
-  const handleTrashSelected = async () => {
+  // 휴지통 아이콘을 누르면 바로 지우지 않고 확인 모달을 먼저 띄운다.
+  const handleTrashSelected = () => {
     const ids = [...selectedIds];
     if (!ids.length) return;
+    setDeleteTargetIds(ids);
+  };
+
+  const handleTrashConfirm = async () => {
     try {
-      await trashFiles(session.token, ids);
+      await trashFiles(session.token, deleteTargetIds);
+      setDeleteTargetIds(null);
       setSelectedIds(new Set());
       setRefreshKey((k) => k + 1);
     } catch {
@@ -495,6 +505,13 @@ export default function App() {
         />
       )}
       {tagTargets && <TagModal items={tagTargets} onClose={() => setTagTargets(null)} onSubmit={handleTagSubmit} />}
+      {deleteTargetIds && (
+        <DeleteConfirmModal
+          count={deleteTargetIds.length}
+          onClose={() => setDeleteTargetIds(null)}
+          onSubmit={handleTrashConfirm}
+        />
+      )}
     </>
   );
 }
