@@ -890,8 +890,9 @@ button {
   justify-content: center;
   /* 위쪽만 닫기(X) 버튼 높이(safe-area + 14px 여백 + 40px 버튼 + 10px 여유)만큼
      띄워서, 세로로 긴 이미지·영상이라도 버튼을 침범하지 않고 그 바로 밑까지만
-     차지하게 한다. */
-  padding: calc(env(safe-area-inset-top, 0px) + 64px) 20px 20px;
+     차지하게 한다. 아래쪽 여백을 위쪽보다 조금 더 둬서 미디어가 정중앙보다
+     약간 위쪽에 오게 한다. */
+  padding: calc(env(safe-area-inset-top, 0px) + 64px) 20px 60px;
   /* 브라우저가 세로 스와이프로 오인해 스크롤/당겨서 새로고침 제스처를
      가로채지 않도록, 터치 동작을 전부 이 컴포넌트가 직접 처리한다. */
   touch-action: none;
