@@ -251,13 +251,9 @@ async function collectFolderFiles(token, folderId, prefix = "") {
   return files;
 }
 
-// 폴더를 통째로 내려받을 때: 안의 파일들을 전부 받아 브라우저에서 zip으로
-// 묶은 뒤 "<폴더 이름>.zip"으로 저장한다. onProgress는 파일 하나하나가
-// 아니라 폴더 전체(파일 개수) 기준 진행도다.
-export async function downloadFolderAsZip({ token, folder, onProgress }) {
-  const files = await collectFolderFiles(token, folder.id);
-  if (!files.length) throw new Error("폴더가 비어 있습니다");
-
+// files(zipPath가 붙은 항목들)를 실제로 받아 zip 하나로 묶어 저장한다.
+// onProgress는 파일 하나하나가 아니라 전체(파일 개수) 기준 진행도다.
+async function zipAndDownload(token, files, zipName, onProgress) {
   const zipInput = {};
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
@@ -267,5 +263,50 @@ export async function downloadFolderAsZip({ token, folder, onProgress }) {
   }
 
   const zipped = zipSync(zipInput, { level: 6 });
-  triggerBrowserDownload(new Blob([zipped], { type: "application/zip" }), `${folder.name}.zip`);
+  triggerBrowserDownload(new Blob([zipped], { type: "application/zip" }), zipName);
+}
+
+// 폴더를 통째로 내려받을 때: 안의 파일들을 전부 받아 브라우저에서 zip으로
+// 묶은 뒤 "<폴더 이름>.zip"으로 저장한다.
+export async function downloadFolderAsZip({ token, folder, onProgress }) {
+  const files = await collectFolderFiles(token, folder.id);
+  if (!files.length) throw new Error("폴더가 비어 있습니다");
+  await zipAndDownload(token, files, `${folder.name}.zip`, onProgress);
+}
+
+// 2개 이상을 한꺼번에 내려받을 때: 폴더는 재귀적으로 그 안의 파일들을 폴더
+// 이름을 경로로 삼아 모으고, 일반 파일은 최상위에 그대로 두어 zip 하나로
+// 묶는다. 이름이 겹치면(같은 이름으로 여러 번 올렸거나 두 폴더에 같은 이름의
+// 파일이 있으면) 뒤에 "(2)"처럼 번호를 붙여 서로 덮어쓰지 않게 한다.
+export async function downloadSelectionAsZip({ token, items, zipName, onProgress }) {
+  const usedPaths = new Set();
+  const uniquePath = (path) => {
+    if (!usedPaths.has(path)) {
+      usedPaths.add(path);
+      return path;
+    }
+    const dot = path.lastIndexOf(".");
+    const base = dot > 0 ? path.slice(0, dot) : path;
+    const ext = dot > 0 ? path.slice(dot) : "";
+    let n = 2;
+    let candidate = `${base} (${n})${ext}`;
+    while (usedPaths.has(candidate)) {
+      n++;
+      candidate = `${base} (${n})${ext}`;
+    }
+    usedPaths.add(candidate);
+    return candidate;
+  };
+
+  const files = [];
+  for (const item of items) {
+    if (item.is_folder) {
+      const nested = await collectFolderFiles(token, item.id, item.name);
+      for (const f of nested) files.push({ ...f, zipPath: uniquePath(f.zipPath) });
+    } else if (item.r2_key) {
+      files.push({ ...item, zipPath: uniquePath(item.name) });
+    }
+  }
+  if (!files.length) throw new Error("내려받을 파일이 없습니다");
+  await zipAndDownload(token, files, zipName, onProgress);
 }
