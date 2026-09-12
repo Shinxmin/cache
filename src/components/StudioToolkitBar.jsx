@@ -1,5 +1,5 @@
 import CheckboxVisual from "./Checkbox";
-import { DownloadIcon, GalleryIcon, InfoIcon, ListIcon, TrashIcon } from "./icons";
+import { ArrowRightIcon, DownloadIcon, GalleryIcon, InfoIcon, ListIcon, TrashIcon } from "./icons";
 
 function EyeIcon() {
   return (
@@ -75,6 +75,7 @@ export default function StudioToolkitBar({
   onDownloadSelected,
   onTrashSelected,
   onBlurSelected,
+  onMoveSelected,
   infoVisible,
   onToggleInfo,
   onEditSelected,
@@ -117,6 +118,15 @@ export default function StudioToolkitBar({
           onClick={onDownloadSelected}
         >
           <DownloadIcon />
+        </button>
+        <button
+          className="studio-toolkit-icon-btn"
+          type="button"
+          aria-label="이동"
+          disabled={!hasSelection}
+          onClick={onMoveSelected}
+        >
+          <ArrowRightIcon />
         </button>
       </div>
       <div className="studio-toolkit-right">

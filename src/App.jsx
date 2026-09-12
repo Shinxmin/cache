@@ -8,8 +8,9 @@ import TransfersPage from "./pages/TransfersPage";
 import TrashPage from "./pages/TrashPage";
 import FileViewer from "./pages/FileViewer";
 import RenameModal from "./components/RenameModal";
+import MoveModal from "./components/MoveModal";
 import { clearSession, loadSession, saveSession, setToolkitAlwaysOn as persistToolkitAlwaysOn, verifySession } from "./lib/session";
-import { createFolder, downloadFile, downloadFolderAsZip, renameFiles, setBlur, trashFiles, uploadFile } from "./lib/drive";
+import { createFolder, downloadFile, downloadFolderAsZip, moveFiles, renameFiles, setBlur, trashFiles, uploadFile } from "./lib/drive";
 import { isImage, isVideo } from "./lib/thumbnail";
 
 // 검색바는 홈·파일 탭에서만 뜬다(설정에는 없음). 제목과 한 fixed 박스로 묶여
@@ -63,6 +64,8 @@ export default function App() {
   // 스튜디오 툴킷의 편집(연필) 아이콘으로 연 이름 바꾸기 모달. null이면 닫힌
   // 상태고, 배열이면 그 항목들(1개=단일, 2개 이상=다중)을 대상으로 떠 있다.
   const [renameTargets, setRenameTargets] = useState(null);
+  // 스튜디오 툴킷의 이동(→) 아이콘으로 연 이동 모달. null이면 닫힌 상태.
+  const [moveTargets, setMoveTargets] = useState(null);
 
   // 전송(업로드/다운로드) 상태. 진행 중인 것이 있을 때만 헤더에 버튼이 뜬다.
   const [transfers, setTransfers] = useState([]);
@@ -281,6 +284,25 @@ export default function App() {
     setRenameTargets(targets);
   };
 
+  // 선택된 항목으로 이동 모달을 연다. 폴더를 옮기면 하위 항목은 parent_id로
+  // 딸려 있어 서버에서 자동으로 함께 따라온다.
+  const handleMoveSelected = () => {
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    if (!targets.length) return;
+    setMoveTargets(targets);
+  };
+
+  const handleMoveSubmit = async (destinationId) => {
+    try {
+      await moveFiles(session.token, moveTargets.map((it) => it.id), destinationId);
+      setMoveTargets(null);
+      setSelectedIds(new Set());
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("옮기지 못했습니다");
+    }
+  };
+
   const handleRenameSubmit = async (renames) => {
     try {
       await renameFiles(session.token, renames);
@@ -348,6 +370,7 @@ export default function App() {
               infoVisible={infoVisible}
               onToggleInfo={() => setInfoVisible((v) => !v)}
               onEditSelected={handleEditSelected}
+              onMoveSelected={handleMoveSelected}
             />
             {isFiles && (
               <FilesPage
@@ -394,6 +417,14 @@ export default function App() {
       )}
       {renameTargets && (
         <RenameModal items={renameTargets} onClose={() => setRenameTargets(null)} onSubmit={handleRenameSubmit} />
+      )}
+      {moveTargets && (
+        <MoveModal
+          session={session}
+          items={moveTargets}
+          onClose={() => setMoveTargets(null)}
+          onSubmit={handleMoveSubmit}
+        />
       )}
     </>
   );
