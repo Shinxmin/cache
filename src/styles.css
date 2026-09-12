@@ -1074,9 +1074,10 @@ button {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* 태그 모달이 "전체 적용"으로 항목별 모드에 들어가면, 목록 각 행이 이름
-   바꾸기처럼 입력창 하나만 있는 게 아니라 파일 이름(어떤 항목인지 계속
-   보여주기 위해) + 그 옆의 작은 태그 입력창, 둘로 나뉜다. */
+/* 태그 모달의 목록 행은 이름 바꾸기처럼 입력창 하나만 있는 게 아니라 파일
+   이름(어떤 항목인지 계속 보여주기 위해) + 그 옆의 태그 입력창, 둘로
+   나뉜다. 다만 입력창 자체의 디자인은 이름 바꾸기의 .rename-input과 완전히
+   동일한 밑줄 스타일을 쓴다(테두리 박스가 아니라 아래쪽 선 하나). */
 .tag-list-item-name {
   flex: 1 1 auto;
   min-width: 0;
@@ -1088,17 +1089,22 @@ button {
 }
 .tag-list-input {
   flex: none;
-  width: 84px;
+  width: 40%;
   min-width: 0;
-  height: 30px;
-  padding: 0 8px;
-  border: 1.5px solid var(--text);
-  border-radius: 8px;
+  height: 36px;
+  padding: 0 4px;
+  border: 0;
+  border-bottom: 1px solid var(--glass-border);
+  border-radius: 0;
   background: none;
   outline: none;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text);
+  transition: border-color 0.2s var(--ease);
+}
+.tag-list-input:focus {
+  border-bottom-color: var(--text);
 }
 .rename-actions {
   flex: none;
