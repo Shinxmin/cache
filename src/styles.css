@@ -1083,6 +1083,32 @@ button {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* 태그 모달이 "전체 적용"으로 항목별 모드에 들어가면, 목록 각 행이 이름
+   바꾸기처럼 입력창 하나만 있는 게 아니라 파일 이름(어떤 항목인지 계속
+   보여주기 위해) + 그 옆의 작은 태그 입력창, 둘로 나뉜다. */
+.tag-list-item-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 15px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tag-list-input {
+  flex: none;
+  width: 84px;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 1.5px solid var(--text);
+  border-radius: 8px;
+  background: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+}
 .rename-actions {
   flex: none;
   display: flex;

@@ -368,9 +368,22 @@ export default function App() {
     setTagTargets(targets);
   };
 
-  const handleTagSubmit = async (tag) => {
+  // payload는 공유 입력 모드에선 문자열 하나(전부 같은 태그), 항목별 모드에선
+  // [{id, tag}] 배열이다. 후자는 같은 태그 값끼리 묶어 그룹별로 한 번씩만
+  // set_tag를 호출한다(서버 RPC 자체는 여러 id에 같은 태그 하나만 받는다).
+  const handleTagSubmit = async (payload) => {
     try {
-      await setTag(session.token, tagTargets.map((it) => it.id), tag);
+      if (Array.isArray(payload)) {
+        const groups = new Map();
+        for (const { id, tag } of payload) {
+          const key = tag || "";
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key).push(id);
+        }
+        await Promise.all([...groups.entries()].map(([tag, ids]) => setTag(session.token, ids, tag)));
+      } else {
+        await setTag(session.token, tagTargets.map((it) => it.id), payload);
+      }
       setTagTargets(null);
       setRefreshKey((k) => k + 1);
     } catch {
