@@ -9,6 +9,7 @@ export default function SettingsPage({
   onToggleSearchAlwaysOn,
   onOpenTrash,
   onOpenTags,
+  onLogout,
 }) {
   return (
     <div className="settings-list">
@@ -37,6 +38,9 @@ export default function SettingsPage({
       <button className="settings-row settings-row--link" type="button" onClick={onOpenTags}>
         <span className="settings-row-label">태그</span>
         <ChevronRightIcon size={18} />
+      </button>
+      <button className="settings-logout" type="button" onClick={onLogout}>
+        로그아웃
       </button>
     </div>
   );
