@@ -631,6 +631,33 @@ button {
   opacity: 0.35;
 }
 
+/* ── 원형 리퀴드글라스 삭제 버튼: 제목 우측에서 .header-more(삼점 버튼)와
+   같은 재질·크기(45px 원, 같은 블러·그림자)를 쓰지만 펼쳐지지 않는 단순
+   버튼이다. 전송 현황의 "기록 삭제", 태그 화면의 "전체 삭제"처럼 메뉴 없이
+   누르면 바로 그 자리에서 실행되는 원형 삭제 버튼에 공통으로 쓴다. 아이콘
+   색은 다른 원형 버튼들(.header-more-item 등)과 같은 --text-2. ── */
+.header-circle-btn {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 45px;
+  height: 45px;
+  border-radius: 999px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  backdrop-filter: blur(28px) saturate(200%);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
+  color: var(--text-2);
+  transition: transform 0.35s var(--spring);
+}
+.header-circle-btn:active {
+  transform: scale(0.88);
+}
+.header-circle-btn:disabled {
+  opacity: 0.35;
+}
+
 /* ── 웹드라이브(파일 탭) ─────────────────────────────────────────────────
    갤러리형: 정사각 타일. 폴더·일반 파일은 중앙 아이콘 + 타일 아래 제목,
    썸네일이 있는 이미지·영상은 타일을 꽉 채우고 제목을 좌하단에 겹친다.

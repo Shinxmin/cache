@@ -80,6 +80,23 @@ export async function setInfoRevealed(token, ids, revealed) {
   return rpcResult(await supabase.rpc("set_info_revealed", { p_token: token, p_ids: ids, p_revealed: revealed }));
 }
 
+// ── 태그 관리(설정 → 태그) ──────────────────────────────────────────────
+// 지금 쓰이고 있는(휴지통에 있지 않은 파일에 붙어 있는) 태그를 중복 없이
+// 나열한다.
+export async function listDistinctTags(token) {
+  return rpcResult(await supabase.rpc("list_distinct_tags", { p_token: token }));
+}
+
+// 그 태그가 붙어 있던 모든 파일에서 태그만 뗀다(파일 자체는 그대로).
+export async function deleteTag(token, tag) {
+  return rpcResult(await supabase.rpc("delete_tag", { p_token: token, p_tag: tag }));
+}
+
+// 태그가 붙어 있는 모든 파일에서 태그를 전부 뗀다.
+export async function deleteAllTags(token) {
+  return rpcResult(await supabase.rpc("delete_all_tags", { p_token: token }));
+}
+
 // ── 휴지통 ─────────────────────────────────────────────────────────────
 export async function listTrash(token) {
   return rpcResult(await supabase.rpc("list_trash", { p_token: token }));
