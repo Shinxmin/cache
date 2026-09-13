@@ -1125,47 +1125,57 @@ button {
   opacity: 0.55;
 }
 
-/* ── 삭제 확인 모달: 목록·입력창이 없어 다른 모달만큼 세로로 길 필요가
-   없으므로, 공통 고정 높이 대신 내용에 맞춰 자연스럽게 여백만 두고
-   줄어든다(가로폭은 다른 모달과 동일하게 유지). ── */
-.delete-confirm-card {
+/* ── 확인 모달(휴지통의 삭제·복원 확인): 목록·입력창이 없어 다른 모달만큼
+   세로로 길 필요가 없으므로, 공통 고정 높이 대신 내용에 맞춰 자연스럽게
+   여백만 두고 줄어든다(가로폭은 다른 모달과 동일하게 유지). 등장·퇴장에
+   간단한 페이드+스케일 애니메이션이 붙는다(컴포넌트가 실제 언마운트 전에
+   .is-closing을 잠깐 켜서 퇴장 트랜지션이 재생될 시간을 준다). ── */
+.confirm-modal-card {
   height: auto;
   /* 제목·문구·버튼 사이 상하 여백을 공통 16px보다 20% 좁힌다. */
   gap: 12.8px;
-  animation: delete-modal-card-in 0.18s var(--spring);
+  animation: confirm-modal-card-in 0.18s var(--spring);
 }
-.delete-confirm-message {
+.confirm-modal-message {
   margin: 6.4px 0 0;
   text-align: center;
   font-size: 15px;
   color: var(--text);
 }
-.rename-overlay.delete-confirm-overlay {
-  animation: delete-modal-fade-in 0.18s var(--ease);
+.confirm-modal-message p {
+  margin: 0;
 }
-.rename-overlay.delete-confirm-overlay.is-closing {
-  animation: delete-modal-fade-out 0.18s var(--ease) forwards;
+.confirm-modal-warning {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--danger);
 }
-.rename-overlay.delete-confirm-overlay.is-closing .delete-confirm-card {
-  animation: delete-modal-card-out 0.18s var(--ease) forwards;
+.rename-overlay.confirm-modal-overlay {
+  animation: confirm-modal-fade-in 0.18s var(--ease);
 }
-@keyframes delete-modal-fade-in {
+.rename-overlay.confirm-modal-overlay.is-closing {
+  animation: confirm-modal-fade-out 0.18s var(--ease) forwards;
+}
+.rename-overlay.confirm-modal-overlay.is-closing .confirm-modal-card {
+  animation: confirm-modal-card-out 0.18s var(--ease) forwards;
+}
+@keyframes confirm-modal-fade-in {
   from {
     opacity: 0;
   }
 }
-@keyframes delete-modal-fade-out {
+@keyframes confirm-modal-fade-out {
   to {
     opacity: 0;
   }
 }
-@keyframes delete-modal-card-in {
+@keyframes confirm-modal-card-in {
   from {
     opacity: 0;
     transform: scale(0.92);
   }
 }
-@keyframes delete-modal-card-out {
+@keyframes confirm-modal-card-out {
   to {
     opacity: 0;
     transform: scale(0.92);
