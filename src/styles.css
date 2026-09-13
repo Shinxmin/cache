@@ -1556,7 +1556,7 @@ button {
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
   outline: none;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 13px;
   color: var(--text);
   transition: transform 0.35s var(--spring);
 }
