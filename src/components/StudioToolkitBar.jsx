@@ -65,7 +65,9 @@ function PencilIcon() {
 // 블러·용량 압축·태그·이름 바꾸기)가 하나의 그룹으로 나란히 있다. 9개 모두
 // 같은 폭의 버튼이라 .studio-toolkit-icons에 justify-content:space-between을
 // 주는 것만으로 서로 간격이 고르게 벌어진다(그룹을 둘로 나눠 오른쪽 그룹만
-// margin-left:auto로 밀던 예전 방식은 두 그룹 "사이"만 넓어 보였다). 닫기
+// margin-left:auto로 밀던 예전 방식은 두 그룹 "사이"만 넓어 보였다). 뒤에
+// 보이지 않는 .studio-toolkit-spacer가 남는 공간의 20%를 대신 가져가
+// 아이콘 사이 간격이 화면 끝까지 다 벌어지지 않고 20% 좁게 유지된다. 닫기
 // 버튼은 없다 — 선택을 모두 풀거나(선택 때문에 떠 있었다면) 설정의
 // "항상 활성화"를 끄면 사라진다.
 export default function StudioToolkitBar({
@@ -178,6 +180,11 @@ export default function StudioToolkitBar({
           <PencilIcon />
         </button>
       </div>
+      {/* 아이콘 그룹이 남는 공간을 전부 차지하지 않고 80%만 가져가게 해,
+          간격이 너무 벌어지지 않도록 나머지 20%는 이 보이지 않는 칸이
+          오른쪽 끝에서 대신 흡수한다(styles.css의 .studio-toolkit-icons
+          .studio-toolkit-spacer 주석 참고). */}
+      <span className="studio-toolkit-spacer" aria-hidden="true" />
     </div>
   );
 }
