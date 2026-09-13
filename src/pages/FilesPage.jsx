@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { folderSizes, listFiles, thumbnailUrls } from "../lib/drive";
-import { extensionFromMime, formatBytes } from "../lib/format";
+import { formatBytes } from "../lib/format";
 import { CheckIcon, FileIcon, FolderIcon } from "../components/icons";
 import useLongPress from "../hooks/useLongPress";
 
@@ -10,20 +10,12 @@ import useLongPress from "../hooks/useLongPress";
 // 폴더는 재귀 합산 값이 folderSizeMap에 도착해야 나오고(그 전엔 로딩 중이라
 // 아무것도 안 보여준다), 파일은 이미 목록에 들어 있는 size를 바로 쓴다.
 // 태그가 붙어 있으면 그 옆에 "#태그명"처럼 덧붙인다.
-// 리스트형(showExtension)에서는 파일에 한해 끝에 "(.mp4)"처럼 확장자도 붙는다
-// — 파일 이름이 아니라 실제 MIME 메타데이터로 알아내므로, 이름에 확장자
-// 표기가 없어도 정확하게 나온다(폴더는 확장자 개념이 없어 붙이지 않는다).
-function sizeLabel(item, revealed, folderSizeMap, showExtension) {
+function sizeLabel(item, revealed, folderSizeMap) {
   if (!revealed) return null;
   const size = item.is_folder ? folderSizeMap[item.id] : item.size;
   if (item.is_folder && size === undefined) return null;
   const text = formatBytes(size);
-  let label = item.tag ? `${text} #${item.tag}` : text;
-  if (showExtension && !item.is_folder) {
-    const ext = extensionFromMime(item.mime);
-    if (ext) label += ` (.${ext})`;
-  }
-  return label;
+  return item.tag ? `${text} #${item.tag}` : text;
 }
 
 // 갤러리 타일 하나. 꾹 누르면 선택 모드로 들어가고(App.jsx가 스튜디오 툴킷을
@@ -184,7 +176,7 @@ export default function FilesPage({
             <ListRow
               item={item}
               selected={selectionMode && selectedIds.has(item.id)}
-              size={sizeLabel(item, item.info_revealed, folderSizeMap, true)}
+              size={sizeLabel(item, item.info_revealed, folderSizeMap)}
               onTap={() => openOrToggle(item)}
               onLongPress={() => onLongPressItem(item)}
             />

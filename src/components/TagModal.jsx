@@ -1,16 +1,14 @@
 import { useState } from "react";
 import useBodyScrollLock from "../hooks/useBodyScrollLock";
-import { dedupeStrings } from "../lib/dedupe";
 import { CloseIcon, FileIcon, FolderIcon } from "./icons";
 
-// 스튜디오 툴킷의 태그(#) 아이콘으로 여는 태그 모달. 이름 바꾸기 모달과 세부
-// 로직이 동일하다.
+// 스튜디오 툴킷의 태그(#) 아이콘으로 여는 태그 모달.
 //  · 단일 선택: 입력창 하나 + "전체 지우기" + 확인 버튼.
 //  · 다중 선택: 목록의 각 행이 파일/폴더 이름 옆에 자기만의 태그 입력창을
 //    갖는다(처음부터 바로 활성화되어 있다) + "전체 지우기"(모두 비운다)·
-//    "전체 적용"(1번째 입력창 값을 모두에게 그대로 적용 — 이 시점엔 전부
-//    똑같은 값으로 놔둔다) + 확인 버튼. 확인을 누르는 순간 겹치는 태그가
-//    있으면 그때 (1),(2),(3)…을 붙인다.
+//    "전체 적용"(1번째 입력창 값을 모두에게 그대로 적용) + 확인 버튼.
+//    태그는 이름과 달리 여러 항목이 똑같아도 되므로(오히려 그게 태그의
+//    쓰임이다) 이름 바꾸기와 달리 중복 방지 번호를 붙이지 않는다.
 export default function TagModal({ items, onClose, onSubmit }) {
   useBodyScrollLock();
   const [tags, setTags] = useState(() => items.map((it) => it.tag || ""));
@@ -25,11 +23,10 @@ export default function TagModal({ items, onClose, onSubmit }) {
     if (busy) return;
     setBusy(true);
     try {
-      const finalTags = dedupeStrings(tags);
       if (multi) {
-        await onSubmit(items.map((it, i) => ({ id: it.id, tag: finalTags[i] })));
+        await onSubmit(items.map((it, i) => ({ id: it.id, tag: tags[i] })));
       } else {
-        await onSubmit(finalTags[0]);
+        await onSubmit(tags[0]);
       }
     } finally {
       setBusy(false);
