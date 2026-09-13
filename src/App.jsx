@@ -387,11 +387,14 @@ export default function App() {
     }
   };
 
-  // 선택된 항목 중 이미지 파일만 골라 최적화 모달을 연다(폴더·이미지가 아닌
-  // 파일은 캔버스로 다시 인코딩할 수 없어 대상에서 빠진다). 대상이 하나도
-  // 없으면(폴더만 선택했거나 등) 모달을 띄우지 않는다.
+  // 선택된 항목 중 폴더만 뺀 파일들로 최적화 모달을 연다(폴더는 자체 용량이
+  // 없어 대상이 아니다). 실제로 캔버스가 읽지 못하는 형식(이미지가 아니거나
+  // 브라우저가 못 여는 포맷)은 압축 단계에서 그 파일만 건너뛴다 — mime
+  // 문자열만으로 미리 걸러내면, 사진 형식에 따라 브라우저가 mime을 빈
+  // 문자열로 주는 경우(예: 일부 환경의 HEIC) 정작 열리는 이미지까지 모달 자체가
+  // 뜨지 않는 문제가 있었다.
   const handleOptimizeSelected = () => {
-    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && !it.is_folder && isImage(it.mime));
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && !it.is_folder);
     if (!targets.length) return;
     setOptimizeTargets(targets);
   };

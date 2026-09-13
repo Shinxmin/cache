@@ -521,10 +521,18 @@ button {
 .studio-toolkit-icons {
   display: flex;
   align-items: center;
-  flex: 1 1 auto;
+  /* 남는 공간의 80%만 가져간다(20%는 뒤의 .studio-toolkit-spacer가
+     대신 가져가 아이콘 사이 간격에 안 쓰인다) — 이 비율만큼 아이콘 사이
+     간격이 정확히 20% 줄어든다. justify-content:space-between이 이
+     80% 몫 안에서 8개 틈에 고르게 나눠 주는 건 그대로다. */
+  flex: 0.8 1 auto;
   justify-content: space-between;
   min-width: 198px;
   color: var(--text-2);
+}
+.studio-toolkit-spacer {
+  flex: 0.2 0 0px;
+  min-width: 0;
 }
 /* 아이콘마다 실제 그려지는 폭이 달라도(예: 원형 그래프 vs 화살표) 버튼
    자체는 같은 폭을 차지하도록 고정해, 아이콘 사이 간격이 고르게 보이게

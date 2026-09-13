@@ -228,31 +228,39 @@ async function compressImageTo(blob, targetSize) {
   }
 }
 
-// 스튜디오 툴킷의 용량 압축(원그래프) 아이콘. 선택된 이미지 파일들을 각각
+// 스튜디오 툴킷의 용량 압축(원그래프) 아이콘. 선택된 파일들을 각각
 // ratioPercent(25/50/75)만큼의 용량으로 다시 인코딩해 같은 r2_key에
-// 덮어쓰고, DB에 저장된 용량·mime도 함께 갱신한다.
+// 덮어쓰고, DB에 저장된 용량·mime도 함께 갱신한다. mime 문자열로 미리
+// 걸러내지 않고 브라우저가 실제로 열 수 있는지로 판단한다 — 일부 환경은
+// HEIC 등에 mime을 빈 문자열로 주지만 <img>는 그래도 그려내는 경우가 있어서,
+// 여기서 미리 막으면 오히려 열리는 이미지까지 건너뛰게 된다. 이미지가
+// 아니거나 브라우저가 못 여는 파일은 조용히 건너뛰고 나머지를 계속 처리한다.
 export async function optimizeFiles({ token, items, ratioPercent, onProgress }) {
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     const step = (base) => onProgress?.((i + base) / items.length);
 
-    const { url: getUrl } = await presign(token, { action: "get", key: item.r2_key });
-    const original = await xhrGetBlob(getUrl, (p) => step(p * 0.5));
+    try {
+      const { url: getUrl } = await presign(token, { action: "get", key: item.r2_key });
+      const original = await xhrGetBlob(getUrl, (p) => step(p * 0.5));
 
-    const targetSize = Math.max(1, Math.round(original.size * (ratioPercent / 100)));
-    const compressed = await compressImageTo(original, targetSize);
+      const targetSize = Math.max(1, Math.round(original.size * (ratioPercent / 100)));
+      const compressed = await compressImageTo(original, targetSize);
 
-    const { url: putUrl } = await presign(token, { action: "put", key: item.r2_key, contentType: "image/jpeg" });
-    await xhrPut(putUrl, compressed, "image/jpeg", (p) => step(0.5 + p * 0.5));
+      const { url: putUrl } = await presign(token, { action: "put", key: item.r2_key, contentType: "image/jpeg" });
+      await xhrPut(putUrl, compressed, "image/jpeg", (p) => step(0.5 + p * 0.5));
 
-    await rpcResult(
-      await supabase.rpc("update_file_content", {
-        p_token: token,
-        p_id: item.id,
-        p_size: compressed.size,
-        p_mime: "image/jpeg",
-      })
-    );
+      await rpcResult(
+        await supabase.rpc("update_file_content", {
+          p_token: token,
+          p_id: item.id,
+          p_size: compressed.size,
+          p_mime: "image/jpeg",
+        })
+      );
+    } catch {
+      // 이 파일만 건너뛴다(이미지가 아니거나 캔버스가 못 읽는 형식).
+    }
   }
 }
 
