@@ -1088,6 +1088,13 @@ button {
 .rename-input::placeholder {
   color: var(--text-2);
 }
+/* 새 폴더 모달처럼 목록 없이 .rename-card에 입력창 하나만 바로 들어갈 때는
+   align-self:center 대신 이걸 써서 가운데가 아니라 카드 왼쪽에 붙인다.
+   (이름 바꾸기·태그 모달의 목록 행 안에서는 부모가 가로 방향 flex라 이
+   속성이 적용되지 않으므로 영향이 없다.) */
+.rename-input--left {
+  align-self: flex-start;
+}
 .rename-list {
   list-style: none;
   margin: 0;
