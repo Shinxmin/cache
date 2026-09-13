@@ -34,7 +34,7 @@ export default function NewFolderModal({ onClose, onSubmit }) {
         </div>
 
         <input
-          className="rename-input"
+          className="rename-input rename-input--left"
           type="text"
           placeholder="폴더 이름"
           value={name}
