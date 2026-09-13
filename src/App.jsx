@@ -542,6 +542,10 @@ export default function App() {
                 onToggleSearchAlwaysOn={setSearchAlwaysOn}
                 onOpenTrash={() => setShowTrash(true)}
                 onOpenTags={() => setShowTags(true)}
+                onLogout={() => {
+                  clearSession();
+                  setSession(null);
+                }}
               />
             )}
           </main>
