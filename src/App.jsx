@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import TabBar, { TABS } from "./components/TabBar";
 import PageHeader from "./components/PageHeader";
 import AuthPage from "./pages/AuthPage";
@@ -158,17 +158,34 @@ export default function App() {
 
   // 탭을 바꾸면 검색어를 비운다 — SearchBar도 key={tab}으로 새로 마운트돼
   // 입력창 자체가 비워지므로, 여기 상태도 같이 맞춰 다음에 파일 탭으로
-  // 돌아왔을 때 지난 검색 결과가 아니라 지금 폴더가 보이게 한다.
+  // 돌아왔을 때 지난 검색 결과가 아니라 지금 폴더가 보이게 한다. 다만 홈
+  // 탭에서 타이핑을 시작해 handleSearch가 스스로 파일 탭으로 넘겼을 때는
+  // (아래) 이 초기화를 건너뛴다 — 방금 친 글자가 그대로 이어져야 하므로.
+  const suppressSearchClearRef = useRef(false);
   useEffect(() => {
+    if (suppressSearchClearRef.current) {
+      suppressSearchClearRef.current = false;
+      return;
+    }
     setSearchQuery("");
   }, [tab]);
 
-  // 스튜디오 툴킷 "바"는 설정이 항상 켜 두었거나, 선택된 파일이 하나라도 있으면
-  // 뜬다. 하지만 탭했을 때 선택을 토글할지(FilesPage의 selectionMode)는 이것과
-  // 다르게 선택된 파일이 있는지만 본다 — "항상 활성화" 설정이 켜져 있어도
-  // 아무것도 선택되지 않은 상태라면 탭은 그냥 평소처럼 열기/보기로 동작해야
-  // 하기 때문이다(꾹 눌러야 첫 항목이 선택되고, 그때부터 탭이 선택 토글로 바뀐다).
-  const toolkitVisible = toolkitAlwaysOn || selectedIds.size > 0;
+  // 홈 탭은 파일 목록 화면(FilesPage) 자체가 없어 검색해도 결과를 보여줄 곳이
+  // 없다. 그래서 한 글자라도 치는 순간 파일 탭으로 넘기면서 방금 친 검색어를
+  // 그대로 이어받게 한다(위 tab 변경 시 검색어 초기화 effect를 한 번 건너뜀).
+  const handleSearch = (value) => {
+    setSearchQuery(value);
+    if (isSearchActive(value) && tab !== "files") {
+      suppressSearchClearRef.current = true;
+      setTab("files");
+    }
+  };
+
+  // 스튜디오 툴킷 "바"는 파일 탭에서만 뜬다. 설정이 항상 켜 두었거나 선택된
+  // 파일이 하나라도 있으면 뜨지만(선택은 애초에 파일 탭에서만 생기니 사실상
+  // "항상 활성화" 설정만 문제인데), 홈 탭에는 선택할 파일 목록 자체가 없으므로
+  // "항상 활성화"가 켜져 있어도 홈 탭에서는 뜨지 않아야 한다.
+  const toolkitVisible = tab === "files" && (toolkitAlwaysOn || selectedIds.size > 0);
   const allSelected = visibleItems.length > 0 && visibleItems.every((it) => selectedIds.has(it.id));
 
   const toggleSelect = (item) => {
@@ -200,7 +217,10 @@ export default function App() {
 
   // 확장자 제한 없이 고른 파일을 순서대로 R2에 올린다. 헤더의 원형 게이지는
   // 지금 올리는 파일 하나가 아니라 이번에 고른 파일 전체 기준 진행도를 보여준다.
+  // 홈 탭에는 업로드 결과를 보여줄 목록 자체가 없으므로, 홈 탭에서 눌렀다면
+  // 먼저 파일 탭으로 넘긴다.
   const handleUpload = async (fileList) => {
+    if (tab !== "files") setTab("files");
     const files = Array.from(fileList ?? []);
     const target = parentId;
     setTransferRing(0);
@@ -222,7 +242,12 @@ export default function App() {
     }
   };
 
-  const handleNewFolder = () => setNewFolderOpen(true);
+  // 새 폴더도 업로드와 같은 이유로, 홈 탭에서 눌렀다면 먼저 파일 탭으로
+  // 넘긴 뒤 모달을 연다.
+  const handleNewFolder = () => {
+    if (tab !== "files") setTab("files");
+    setNewFolderOpen(true);
+  };
 
   const handleNewFolderSubmit = async (name) => {
     try {
@@ -480,7 +505,8 @@ export default function App() {
               resetKey={tab}
               toolkitActive={toolkitVisible}
               searchAlwaysOn={searchAlwaysOn}
-              onSearch={setSearchQuery}
+              searchQuery={searchQuery}
+              onSearch={handleSearch}
               viewMode={viewMode}
               onToggleView={() => setViewMode((v) => (v === "gallery" ? "list" : "gallery"))}
               onUpload={handleUpload}
