@@ -980,7 +980,8 @@ button {
   gap: 12px;
 }
 /* 모달 안의 버튼(전체 지우기·번호 붙이기·확인)은 다른 리퀴드글라스 버튼과
-   달리 배경·그림자·구분선 없이 텍스트만 있다 — 밑줄은 대신 입력창 쪽에 쓴다. */
+   달리 배경·그림자·구분선 없이 텍스트만 있다 — 밑줄은 대신 입력창 쪽에 쓴다.
+   글자 크기는 제목(17px)보다 항상 작아야 하므로 기본 16px에서 20% 줄인다. */
 .rename-card > .auth-submit {
   flex: none;
   margin-top: auto;
@@ -988,6 +989,7 @@ button {
   background: none;
   box-shadow: none;
   border-radius: 0;
+  font-size: 12.8px;
 }
 .rename-title {
   margin: 0;
@@ -1114,7 +1116,7 @@ button {
 .rename-action-btn {
   flex: 1;
   height: 40px;
-  font-size: 13px;
+  font-size: 10.4px;
   font-weight: 600;
   color: var(--text);
   transition: opacity 0.2s var(--ease);
@@ -1128,12 +1130,46 @@ button {
    줄어든다(가로폭은 다른 모달과 동일하게 유지). ── */
 .delete-confirm-card {
   height: auto;
+  /* 제목·문구·버튼 사이 상하 여백을 공통 16px보다 20% 좁힌다. */
+  gap: 12.8px;
+  animation: delete-modal-card-in 0.18s var(--spring);
 }
 .delete-confirm-message {
-  margin: 8px 0 0;
+  margin: 6.4px 0 0;
   text-align: center;
   font-size: 15px;
   color: var(--text);
+}
+.rename-overlay.delete-confirm-overlay {
+  animation: delete-modal-fade-in 0.18s var(--ease);
+}
+.rename-overlay.delete-confirm-overlay.is-closing {
+  animation: delete-modal-fade-out 0.18s var(--ease) forwards;
+}
+.rename-overlay.delete-confirm-overlay.is-closing .delete-confirm-card {
+  animation: delete-modal-card-out 0.18s var(--ease) forwards;
+}
+@keyframes delete-modal-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes delete-modal-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes delete-modal-card-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+@keyframes delete-modal-card-out {
+  to {
+    opacity: 0;
+    transform: scale(0.92);
+  }
 }
 
 /* ── 이동 모달: 카드 껍데기(.rename-overlay/.rename-card)는 이름 바꾸기와
