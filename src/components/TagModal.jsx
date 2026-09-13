@@ -50,7 +50,6 @@ export default function TagModal({ items, onClose, onSubmit }) {
                 <span className="rename-list-icon">
                   {item.is_folder ? <FolderIcon size={18} /> : <FileIcon size={18} />}
                 </span>
-                <span className="tag-list-item-name">{item.name}</span>
                 <input
                   className="tag-list-input"
                   type="text"
@@ -58,6 +57,7 @@ export default function TagModal({ items, onClose, onSubmit }) {
                   onChange={(e) => setTagAt(i, e.target.value)}
                   maxLength={24}
                 />
+                <span className="tag-list-item-name">{item.name}</span>
               </li>
             ))}
           </ul>

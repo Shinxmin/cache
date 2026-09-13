@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { folderSizes, listFiles, thumbnailUrls } from "../lib/drive";
 import { formatBytes } from "../lib/format";
 import { CheckIcon, FileIcon, FolderIcon } from "../components/icons";
@@ -115,10 +115,23 @@ export default function FilesPage({
   const [thumbs, setThumbs] = useState({});
   const [folderSizeMap, setFolderSizeMap] = useState({});
   const [state, setState] = useState("loading"); // loading | ready | error
+  const thumbsRef = useRef(thumbs);
+  thumbsRef.current = thumbs;
+  const prevParentIdRef = useRef(parentId);
 
   useEffect(() => {
     let cancelled = false;
-    setState("loading");
+    // 다른 폴더로 들어갈 때만 "불러오는 중…" 화면으로 갈아치운다. 같은
+    // 폴더에서 태그·정보표시 등 사소한 변경으로 refreshKey만 바뀌었을 땐
+    // 이미 떠 있는 화면을 그대로 둔 채 조용히 데이터만 바꿔치기한다 —
+    // 안 그러면 매번 화면이 깜빡이고 썸네일도 다시 로드되어 눈에 거슬린다.
+    const changedFolder = prevParentIdRef.current !== parentId;
+    prevParentIdRef.current = parentId;
+    if (changedFolder) {
+      setState("loading");
+      setItems([]);
+      setThumbs({});
+    }
 
     (async () => {
       try {
@@ -128,13 +141,15 @@ export default function FilesPage({
         setState("ready");
         onItemsChange?.(rows);
 
-        // 썸네일 URL은 만료되는 presigned URL이라 목록을 받은 뒤 한 번에 발급받는다.
+        // 썸네일 URL은 만료되는 presigned URL이라 목록을 받은 뒤 한 번에
+        // 발급받는다 — 다만 이미 받아 둔 키는 다시 요청하지 않는다. 같은
+        // 이미지인데도 매번 새 서명 URL로 바뀌면 <img src>가 달라져 브라우저가
+        // 다시 그리면서 깜빡이기 때문이다.
         const keys = rows.filter((r) => r.thumb_key).map((r) => r.thumb_key);
-        if (keys.length) {
-          const urls = await thumbnailUrls(session.token, keys);
-          if (!cancelled) setThumbs(urls);
-        } else {
-          setThumbs({});
+        const newKeys = keys.filter((k) => !thumbsRef.current[k]);
+        if (newKeys.length) {
+          const urls = await thumbnailUrls(session.token, newKeys);
+          if (!cancelled) setThumbs((prev) => ({ ...prev, ...urls }));
         }
       } catch {
         if (!cancelled) setState("error");

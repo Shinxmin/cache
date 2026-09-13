@@ -4,20 +4,12 @@ import { BackIcon, FileIcon, FolderIcon, RestoreIcon, TrashIcon } from "../compo
 import TrashMoreButton from "../components/TrashMoreButton";
 import ConfirmModal from "../components/ConfirmModal";
 
-// 확인 모달에 띄울 제목·문구를 액션 종류별로 만든다. 영구 삭제는 되돌릴 수
-// 없으므로 그 사실을 알리는 경고 문구를 하나 더 붙인다.
+// 확인 모달에 띄울 제목·문구. 전체/개별, 삭제/복원 네 가지 액션이지만
+// 모달 자체는 삭제 둘, 복원 둘을 각각 하나로 통일한다 — 어떤 파일인지,
+// 몇 개인지는 따지지 않고 문구가 항상 같다.
 function describeAction(action) {
-  const count = action.ids.length;
-  if (action.kind === "deleteAll") {
-    return { title: "완전 삭제", message: `휴지통의 파일 ${count}개를 완전히 삭제하시겠습니까?`, warning: "삭제하면 복구할 수 없습니다." };
-  }
-  if (action.kind === "restoreAll") {
-    return { title: "복원", message: `휴지통의 파일 ${count}개를 모두 복원하시겠습니까?` };
-  }
-  if (action.kind === "delete") {
-    return { title: "완전 삭제", message: `"${action.name}"을(를) 완전히 삭제하시겠습니까?`, warning: "삭제하면 복구할 수 없습니다." };
-  }
-  return { title: "복원", message: `"${action.name}"을(를) 복원하시겠습니까?` };
+  const isDelete = action.kind === "deleteAll" || action.kind === "delete";
+  return isDelete ? { title: "삭제", message: "데이터를 삭제하시겠습니까?" } : { title: "복구", message: "데이터를 복구하시겠습니까?" };
 }
 
 // 설정 → 휴지통에서 열리는 화면. 앱의 다른 화면과 같은 제목 레이아웃·리스트
