@@ -6,6 +6,7 @@ import SettingsPage from "./pages/SettingsPage";
 import FilesPage from "./pages/FilesPage";
 import TransfersPage from "./pages/TransfersPage";
 import TrashPage from "./pages/TrashPage";
+import TagsPage from "./pages/TagsPage";
 import FileViewer from "./pages/FileViewer";
 import RenameModal from "./components/RenameModal";
 import MoveModal from "./components/MoveModal";
@@ -79,6 +80,7 @@ export default function App() {
   // 꾹 눌러(또는 전체 선택으로) 선택된 항목의 id 집합.
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [showTrash, setShowTrash] = useState(false);
+  const [showTags, setShowTags] = useState(false);
   // 스튜디오 툴킷의 편집(연필) 아이콘으로 연 이름 바꾸기 모달. null이면 닫힌
   // 상태고, 배열이면 그 항목들(1개=단일, 2개 이상=다중)을 대상으로 떠 있다.
   const [renameTargets, setRenameTargets] = useState(null);
@@ -454,6 +456,10 @@ export default function App() {
     return <TrashPage session={session} onBack={() => setShowTrash(false)} />;
   }
 
+  if (showTags) {
+    return <TagsPage session={session} onBack={() => setShowTags(false)} />;
+  }
+
   const isFiles = tab === "files";
   const title = isFiles && folderPath.length ? folderPath[folderPath.length - 1].name : TABS.find((t) => t.id === tab).label;
 
@@ -531,6 +537,7 @@ export default function App() {
                 searchAlwaysOn={searchAlwaysOn}
                 onToggleSearchAlwaysOn={setSearchAlwaysOn}
                 onOpenTrash={() => setShowTrash(true)}
+                onOpenTags={() => setShowTags(true)}
               />
             )}
           </main>

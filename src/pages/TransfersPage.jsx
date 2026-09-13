@@ -3,11 +3,11 @@ import { BackIcon, DownloadIcon, TrashIcon, UploadIcon } from "../components/ico
 const STATUS_LABEL = { active: "진행 중", done: "완료", error: "실패" };
 
 // 헤더의 업로드/다운로드 버튼을 누르면 열리는 전송 현황 화면. 앱의 다른 화면과
-// 같은 제목 레이아웃과 유리 재질을 쓴다. 우측 상단의 기록 삭제 버튼은 왼쪽의
-// 뒤로가기 버튼과 똑같은 디자인·눌림 애니메이션(.header-back)을 쓰되 아이콘만
-// 휴지통 삭제와 같은 TrashIcon으로 바꿨다 — 누르면 이 화면의 목록뿐 아니라
-// 헤더의 전송 현황 버튼(더 이상 보여줄 전송이 없으면 자동으로 사라진다) 도
-// 함께 없어진다.
+// 같은 제목 레이아웃과 유리 재질을 쓴다. 우측 상단의 기록 삭제 버튼은 삼점
+// 버튼과 같은 원형 리퀴드글라스 재질의 .header-circle-btn(태그 화면의 전체
+// 삭제 버튼과도 공유)이고, 아이콘은 휴지통 삭제와 같은 TrashIcon이다 —
+// 누르면 이 화면의 목록뿐 아니라 헤더의 전송 현황 버튼(더 이상 보여줄 전송이
+// 없으면 자동으로 사라진다) 도 함께 없어진다.
 export default function TransfersPage({ transfers, onBack, onClearAll }) {
   return (
     <>
@@ -18,7 +18,7 @@ export default function TransfersPage({ transfers, onBack, onClearAll }) {
           </button>
           <h1 className="page-title">전송 현황</h1>
           <button
-            className="header-back"
+            className="header-circle-btn"
             type="button"
             aria-label="기록 삭제"
             disabled={transfers.length === 0}

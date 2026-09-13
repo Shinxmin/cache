@@ -8,6 +8,7 @@ export default function SettingsPage({
   searchAlwaysOn,
   onToggleSearchAlwaysOn,
   onOpenTrash,
+  onOpenTags,
 }) {
   return (
     <div className="settings-list">
@@ -31,6 +32,10 @@ export default function SettingsPage({
       </label>
       <button className="settings-row settings-row--link" type="button" onClick={onOpenTrash}>
         <span className="settings-row-label">휴지통</span>
+        <ChevronRightIcon size={18} />
+      </button>
+      <button className="settings-row settings-row--link" type="button" onClick={onOpenTags}>
+        <span className="settings-row-label">태그</span>
         <ChevronRightIcon size={18} />
       </button>
     </div>
