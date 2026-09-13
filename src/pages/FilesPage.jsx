@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { folderSizes, listFiles, thumbnailUrls } from "../lib/drive";
+import { folderSizes, listFiles, searchFiles, thumbnailUrls } from "../lib/drive";
 import { formatBytes } from "../lib/format";
+import { isSearchActive, parseSearchQuery } from "../lib/search";
 import { CheckIcon, FileIcon, FolderIcon } from "../components/icons";
 import Spinner from "../components/Spinner";
 import useLongPress from "../hooks/useLongPress";
@@ -103,6 +104,7 @@ export default function FilesPage({
   session,
   viewMode,
   parentId,
+  searchQuery,
   onOpenFolder,
   onOpenFile,
   refreshKey,
@@ -119,24 +121,32 @@ export default function FilesPage({
   const thumbsRef = useRef(thumbs);
   thumbsRef.current = thumbs;
   const prevParentIdRef = useRef(parentId);
+  const prevSearchActiveRef = useRef(false);
+  const searching = isSearchActive(searchQuery ?? "");
 
   useEffect(() => {
     let cancelled = false;
-    // 다른 폴더로 들어갈 때만 "불러오는 중…" 화면으로 갈아치운다. 같은
-    // 폴더에서 태그·정보표시 등 사소한 변경으로 refreshKey만 바뀌었을 땐
-    // 이미 떠 있는 화면을 그대로 둔 채 조용히 데이터만 바꿔치기한다 —
-    // 안 그러면 매번 화면이 깜빡이고 썸네일도 다시 로드되어 눈에 거슬린다.
-    const changedFolder = prevParentIdRef.current !== parentId;
+    // 검색을 새로 시작하거나(폴더 목록 → 검색 결과) 끝낼 때(검색 결과 →
+    // 지금 폴더), 또는 검색 중이 아닐 때 실제로 폴더를 옮기면 "불러오는
+    // 중…" 화면으로 갈아치운다. 반면 검색어를 한 글자씩 이어 치는 동안이나
+    // 같은 폴더에서 태그·정보표시 등 사소한 변경으로 refreshKey만 바뀌었을
+    // 땐 이미 떠 있는 화면을 그대로 둔 채 조용히 데이터만 바꿔치기한다 —
+    // 안 그러면 실시간 검색인데도 매 타이핑마다 화면이 깜빡이게 된다.
+    const changedFolder = !searching && (prevSearchActiveRef.current || prevParentIdRef.current !== parentId);
+    const enteredSearch = searching && !prevSearchActiveRef.current;
     prevParentIdRef.current = parentId;
-    if (changedFolder) {
+    prevSearchActiveRef.current = searching;
+    if (changedFolder || enteredSearch) {
       setState("loading");
       setItems([]);
       setThumbs({});
     }
 
+    const { name, tag } = parseSearchQuery(searchQuery ?? "");
+
     (async () => {
       try {
-        const rows = await listFiles(session.token, parentId);
+        const rows = searching ? await searchFiles(session.token, { name, tag }) : await listFiles(session.token, parentId);
         if (cancelled) return;
         setItems(rows);
         setState("ready");
@@ -161,7 +171,7 @@ export default function FilesPage({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session.token, parentId, refreshKey]);
+  }, [session.token, parentId, refreshKey, searchQuery]);
 
   // 용량 표기가 켜진 폴더들의 용량을 받아 온다. 폴더는 자체 용량이 없어
   // 하위 파일을 재귀 합산해야 하므로 서버에 따로 물어본다.
@@ -182,7 +192,7 @@ export default function FilesPage({
 
   if (state === "loading") return <p className="drive-note"><Spinner /></p>;
   if (state === "error") return <p className="drive-note">파일을 불러오지 못했습니다</p>;
-  if (!items.length) return <p className="drive-note">아직 파일이 없습니다</p>;
+  if (!items.length) return <p className="drive-note">{searching ? "검색 결과가 없습니다" : "아직 파일이 없습니다"}</p>;
 
   if (viewMode === "list") {
     return (

@@ -34,6 +34,14 @@ export async function createFolder(token, name, parentId = null) {
   return rpcResult(await supabase.rpc("create_folder", { p_token: token, p_name: name, p_parent_id: parentId }));
 }
 
+// 검색바 실시간 검색. 지금 폴더에 국한하지 않고 사용자의 전체 드라이브에서
+// 이름·태그로 찾는다(둘 다 부분 일치, 둘 다 주면 AND). name/tag 파싱은
+// src/lib/search.js의 parseSearchQuery가 맡는다.
+export async function searchFiles(token, { name, tag } = {}) {
+  const rows = rpcResult(await supabase.rpc("search_files", { p_token: token, p_name: name || null, p_tag: tag || null }));
+  return sortFileList(rows);
+}
+
 // 스튜디오 툴킷의 정보 아이콘으로 켠 용량 표시용. 폴더는 자체 용량이 없어서
 // 하위 파일들을 재귀적으로 합산해 서버에서 계산해 온다. { [폴더id]: bytes } 형태.
 export async function folderSizes(token, ids) {

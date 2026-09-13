@@ -27,6 +27,7 @@ import {
   uploadFile,
 } from "./lib/drive";
 import { isImage, isVideo } from "./lib/thumbnail";
+import { isSearchActive } from "./lib/search";
 
 // 검색바는 홈·파일 탭에서만 뜬다(설정에는 없음). 제목과 한 fixed 박스로 묶여
 // PageHeader 안에서 렌더링된다(PageHeader.jsx 참고).
@@ -67,6 +68,11 @@ export default function App() {
   const [viewMode, setViewMode] = useState("gallery");
   const [folderPath, setFolderPath] = useState([]); // [{id, name}] — 루트는 빈 배열
   const [refreshKey, setRefreshKey] = useState(0);
+  // 검색바에 입력된 원문. 비어 있지 않으면 FilesPage가 지금 폴더 대신 전체
+  // 드라이브 검색 결과를 보여준다(파싱은 src/lib/search.js). 탭을 바꾸면
+  // 초기화한다 — SearchBar 자신도 key={tab}으로 새로 마운트돼 입력창 값이
+  // 비워지므로, 여기 상태도 같이 맞춰 줘야 한다.
+  const [searchQuery, setSearchQuery] = useState("");
   // 지금 폴더에서 FilesPage가 실제로 보여주고 있는 항목들. "전체 선택"과
   // 선택 항목 다운로드/삭제가 파일의 r2_key 등 전체 정보를 봐야 해서 필요하다.
   const [visibleItems, setVisibleItems] = useState([]);
@@ -139,10 +145,18 @@ export default function App() {
   const parentId = folderPath.length ? folderPath[folderPath.length - 1].id : null;
   const activeTransfer = useMemo(() => transfers.find((t) => t.status === "active"), [transfers]);
 
-  // 폴더를 옮기면 이전 폴더에서의 선택은 의미가 없다.
+  // 폴더를 옮기거나 검색어가 바뀌면(검색 결과 자체가 통째로 달라지므로)
+  // 이전에 보이던 항목 기준의 선택은 의미가 없다.
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [parentId]);
+  }, [parentId, searchQuery]);
+
+  // 탭을 바꾸면 검색어를 비운다 — SearchBar도 key={tab}으로 새로 마운트돼
+  // 입력창 자체가 비워지므로, 여기 상태도 같이 맞춰 다음에 파일 탭으로
+  // 돌아왔을 때 지난 검색 결과가 아니라 지금 폴더가 보이게 한다.
+  useEffect(() => {
+    setSearchQuery("");
+  }, [tab]);
 
   // 스튜디오 툴킷 "바"는 설정이 항상 켜 두었거나, 선택된 파일이 하나라도 있으면
   // 뜬다. 하지만 탭했을 때 선택을 토글할지(FilesPage의 selectionMode)는 이것과
@@ -456,6 +470,7 @@ export default function App() {
               resetKey={tab}
               toolkitActive={toolkitVisible}
               searchAlwaysOn={searchAlwaysOn}
+              onSearch={setSearchQuery}
               viewMode={viewMode}
               onToggleView={() => setViewMode((v) => (v === "gallery" ? "list" : "gallery"))}
               onUpload={handleUpload}
@@ -488,7 +503,18 @@ export default function App() {
                 session={session}
                 viewMode={viewMode}
                 parentId={parentId}
-                onOpenFolder={(item) => setFolderPath((p) => [...p, { id: item.id, name: item.name }])}
+                searchQuery={searchQuery}
+                onOpenFolder={(item) => {
+                  // 검색 결과에서 연 폴더는 지금 폴더 경로의 하위가 아니라
+                  // 드라이브 어디에나 있을 수 있으므로, 기존 경로에 이어
+                  // 붙이지 않고 검색을 끝낸 뒤 그 폴더를 새 최상위처럼 연다.
+                  if (isSearchActive(searchQuery)) {
+                    setSearchQuery("");
+                    setFolderPath([{ id: item.id, name: item.name }]);
+                  } else {
+                    setFolderPath((p) => [...p, { id: item.id, name: item.name }]);
+                  }
+                }}
                 onOpenFile={handleOpenFile}
                 refreshKey={refreshKey}
                 selectionMode={selectedIds.size > 0}
