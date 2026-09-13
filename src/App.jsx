@@ -12,6 +12,7 @@ import RenameModal from "./components/RenameModal";
 import MoveModal from "./components/MoveModal";
 import TagModal from "./components/TagModal";
 import OptimizeModal from "./components/OptimizeModal";
+import NewFolderModal from "./components/NewFolderModal";
 import { clearSession, loadSession, saveSession, setToolkitAlwaysOn as persistToolkitAlwaysOn, verifySession } from "./lib/session";
 import {
   createFolder,
@@ -92,6 +93,8 @@ export default function App() {
   // 닫힌 상태. 폴더나 이미지가 아닌 파일은 대상에서 빠진다(캔버스로 다시
   // 인코딩할 수 있는 게 이미지뿐이라서).
   const [optimizeTargets, setOptimizeTargets] = useState(null);
+  // 헤더 삼점 버튼의 "새 폴더"로 여는 모달. true면 열려 있는 상태.
+  const [newFolderOpen, setNewFolderOpen] = useState(false);
 
   // 전송(업로드/다운로드) 상태. 진행 중인 것이 있을 때만 헤더에 버튼이 뜬다.
   const [transfers, setTransfers] = useState([]);
@@ -219,11 +222,12 @@ export default function App() {
     }
   };
 
-  const handleNewFolder = async () => {
-    const name = window.prompt("새 폴더 이름");
-    if (!name?.trim()) return;
+  const handleNewFolder = () => setNewFolderOpen(true);
+
+  const handleNewFolderSubmit = async (name) => {
     try {
-      await createFolder(session.token, name.trim(), parentId);
+      await createFolder(session.token, name, parentId);
+      setNewFolderOpen(false);
       setRefreshKey((k) => k + 1);
     } catch {
       window.alert("폴더를 만들지 못했습니다");
@@ -573,6 +577,7 @@ export default function App() {
       {optimizeTargets && (
         <OptimizeModal items={optimizeTargets} onClose={() => setOptimizeTargets(null)} onSubmit={handleOptimizeSubmit} />
       )}
+      {newFolderOpen && <NewFolderModal onClose={() => setNewFolderOpen(false)} onSubmit={handleNewFolderSubmit} />}
     </>
   );
 }
