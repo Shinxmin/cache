@@ -96,6 +96,10 @@ export default function StudioToolkitBar({
         </span>
         <span className="studio-toolkit-label">전체 선택</span>
       </label>
+      {/* "전체 선택" 글자와 첫 아이콘이 바로 붙어 있지 않도록, 아이콘 그룹
+          앞에도 뒤(.studio-toolkit-spacer)와 똑같은 몫의 보이지 않는 칸을
+          하나 더 둔다 — 왼쪽 여백과 오른쪽 여백이 정확히 같아진다. */}
+      <span className="studio-toolkit-spacer" aria-hidden="true" />
       <div className="studio-toolkit-icons">
         <button
           className="studio-toolkit-icon-btn"
@@ -180,9 +184,8 @@ export default function StudioToolkitBar({
           <PencilIcon />
         </button>
       </div>
-      {/* 아이콘 그룹이 남는 공간을 전부 차지하지 않고 80%만 가져가게 해,
-          간격이 너무 벌어지지 않도록 나머지 20%는 이 보이지 않는 칸이
-          오른쪽 끝에서 대신 흡수한다(styles.css의 .studio-toolkit-icons
+      {/* 위 왼쪽 spacer와 짝을 이루는 오른쪽 spacer — 둘이 남는 공간을 10%씩
+          똑같이 나눠 가져가 좌우 여백이 같아진다(styles.css의
           .studio-toolkit-spacer 주석 참고). */}
       <span className="studio-toolkit-spacer" aria-hidden="true" />
     </div>

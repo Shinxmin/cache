@@ -521,17 +521,20 @@ button {
 .studio-toolkit-icons {
   display: flex;
   align-items: center;
-  /* 남는 공간의 80%만 가져간다(20%는 뒤의 .studio-toolkit-spacer가
-     대신 가져가 아이콘 사이 간격에 안 쓰인다) — 이 비율만큼 아이콘 사이
-     간격이 정확히 20% 줄어든다. justify-content:space-between이 이
-     80% 몫 안에서 8개 틈에 고르게 나눠 주는 건 그대로다. */
+  /* 남는 공간의 80%만 가져간다(나머지 20%는 앞뒤 .studio-toolkit-spacer
+     둘이 10%씩 나눠 가져가 아이콘 사이 간격에 안 쓰인다) — 이 비율만큼
+     아이콘 사이 간격이 정확히 20% 줄어든다. justify-content:space-between이
+     이 80% 몫 안에서 8개 틈에 고르게 나눠 주는 건 그대로다. */
   flex: 0.8 1 auto;
   justify-content: space-between;
   min-width: 198px;
   color: var(--text-2);
 }
+/* "전체 선택" 뒤(첫 아이콘 앞)와 마지막 아이콘 뒤에 하나씩, 남는 공간을
+   똑같이 10%씩 나눠 가져가는 보이지 않는 칸. 둘이 같은 몫이라 왼쪽 여백과
+   오른쪽 여백이 항상 정확히 같다. */
 .studio-toolkit-spacer {
-  flex: 0.2 0 0px;
+  flex: 0.1 0 0px;
   min-width: 0;
 }
 /* 아이콘마다 실제 그려지는 폭이 달라도(예: 원형 그래프 vs 화살표) 버튼
