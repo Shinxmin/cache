@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 // 하단바 아이콘(단일 solid fill, currentColor)과 같은 방식으로 그린 돋보기 아이콘.
 // 링은 두 원을 evenodd로 겹쳐 만든 진짜 구멍(반투명 색에서도 이중 톤이 생기지
@@ -18,12 +18,14 @@ export function SearchIcon({ size = 18 }) {
   );
 }
 
-// 홈·파일 탭 제목 밑에 붙는 검색바. 탭이 바뀔 때 부모가 key={tab}으로 이 컴포넌트를
-// 통째로 새로 마운트하므로, 여기 내부 상태(입력 글자)는 탭 전환마다 자동으로 초기화된다.
-// hidden이 true인 동안(스크롤 중 축소된 상태)은 포커스를 받을 수 없고, 포커스가
-// 있었다면 바로 blur해 숨겨진 입력창에 키보드가 떠 있지 않게 한다.
-export default function SearchBar({ onSearch, onSubmit, hidden }) {
-  const [value, setValue] = useState("");
+// 홈·파일 탭 제목 밑에 붙는 검색바. 입력값은 부모(App.jsx)가 들고 있는
+// 완전한 controlled 컴포넌트다 — 홈 탭에서 타이핑을 시작하면 부모가 탭을
+// 파일 탭으로 바꾸면서도 검색어 상태는 그대로 이어받으므로, 이 입력창이
+// 탭 전환 도중 다시 마운트되어도(부모가 key={tab}을 준다) 화면에 보이는
+// 글자가 지워지지 않고 그대로 이어진다. hidden이 true인 동안(스크롤 중
+// 축소된 상태)은 포커스를 받을 수 없고, 포커스가 있었다면 바로 blur해
+// 숨겨진 입력창에 키보드가 떠 있지 않게 한다.
+export default function SearchBar({ value, onSearch, onSubmit, hidden }) {
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -44,10 +46,7 @@ export default function SearchBar({ onSearch, onSubmit, hidden }) {
         placeholder="검색"
         tabIndex={hidden ? -1 : 0}
         value={value}
-        onChange={(e) => {
-          setValue(e.target.value);
-          onSearch?.(e.target.value);
-        }}
+        onChange={(e) => onSearch?.(e.target.value)}
         onKeyDown={(e) => {
           // 모바일 키보드의 "검색" 확인 버튼도 엔터와 동일한 keydown을 발생시킨다.
           if (e.key === "Enter") {

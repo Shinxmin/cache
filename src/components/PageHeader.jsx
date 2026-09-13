@@ -30,6 +30,7 @@ export default function PageHeader({
   resetKey,
   toolkitActive,
   searchAlwaysOn,
+  searchQuery,
   onSearch,
   viewMode,
   onToggleView,
@@ -205,7 +206,7 @@ export default function PageHeader({
       {showSearch && (
         <div className={`search-bar-wrap${collapsed ? " hidden" : ""}`}>
           {/* key={resetKey}: 탭이 바뀌면 새로 마운트되어 입력값이 초기화된다 */}
-          <SearchBar key={resetKey} hidden={collapsed} onSearch={onSearch} onSubmit={collapseOnSubmit} />
+          <SearchBar key={resetKey} value={searchQuery} hidden={collapsed} onSearch={onSearch} onSubmit={collapseOnSubmit} />
         </div>
       )}
       {/* 평소엔 마운트되지 않는다(비활성화). 설정의 "스튜디오 툴킷 항상 활성화"가
