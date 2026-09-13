@@ -1161,6 +1161,7 @@ button {
 .optimize-quality-label {
   margin: 0;
   font-size: 12px;
+  font-weight: 700;
   color: var(--text);
 }
 .optimize-bar {
