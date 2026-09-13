@@ -923,6 +923,14 @@ button {
   height: 52px;
   border-bottom: 1px solid var(--glass-border);
 }
+/* 태그 화면에서 태그 이름 바로 오른쪽에 붙는 "N개 항목" — 작은 글씨로,
+   이름처럼 grow하지 않아 이름 바로 옆에 붙는다(태그 모달의 이름·경고
+   배치와 같은 요령). */
+.trash-row-count {
+  flex: none;
+  font-size: 12px;
+  color: var(--text-2);
+}
 .trash-row-actions {
   flex: none;
   margin-left: auto;
