@@ -251,6 +251,9 @@ button {
 .header-more-item:active {
   transform: scale(0.94);
 }
+.header-more-item:disabled {
+  opacity: 0.35;
+}
 .header-more-toggle {
   width: 45px;
 }
@@ -981,7 +984,7 @@ button {
 }
 /* 모달 안의 버튼(전체 지우기·번호 붙이기·확인)은 다른 리퀴드글라스 버튼과
    달리 배경·그림자·구분선 없이 텍스트만 있다 — 밑줄은 대신 입력창 쪽에 쓴다.
-   글자 크기는 제목(17px)보다 항상 작아야 하므로 기본 16px에서 20% 줄인다. */
+   메인급 버튼(확인)은 15px, 제목은 20px로 그보다 크다. */
 .rename-card > .auth-submit {
   flex: none;
   margin-top: auto;
@@ -989,11 +992,11 @@ button {
   background: none;
   box-shadow: none;
   border-radius: 0;
-  font-size: 12.8px;
+  font-size: 15px;
 }
 .rename-title {
   margin: 0;
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--text);
 }
@@ -1019,7 +1022,7 @@ button {
   background: none;
   outline: none;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 12px;
   color: var(--text);
   transition: border-color 0.2s var(--ease);
 }
@@ -1070,20 +1073,21 @@ button {
   height: 36px;
   padding: 0 4px;
   border-bottom: 1px solid var(--glass-border);
-  font-size: 15px;
+  font-size: 12px;
   color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* 태그 모달의 목록 행은 이름 바꾸기처럼 입력창 하나만 있는 게 아니라 파일
-   이름(어떤 항목인지 계속 보여주기 위해) + 그 옆의 태그 입력창, 둘로
-   나뉜다. 다만 입력창 자체의 디자인은 이름 바꾸기의 .rename-input과 완전히
-   동일한 밑줄 스타일을 쓴다(테두리 박스가 아니라 아래쪽 선 하나). */
+/* 태그 모달의 목록 행은 이름 바꾸기처럼 입력창 하나만 있는 게 아니라 태그
+   입력창(왼쪽, 아이콘 바로 옆) + 파일 이름(오른쪽, 어떤 항목인지 계속
+   보여주기 위해), 둘로 나뉜다. 입력창 자체의 디자인은 이름 바꾸기의
+   .rename-input과 완전히 동일한 밑줄 스타일을 쓴다(테두리 박스가 아니라
+   아래쪽 선 하나). */
 .tag-list-item-name {
   flex: 1 1 auto;
   min-width: 0;
-  font-size: 15px;
+  font-size: 12px;
   color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1101,25 +1105,37 @@ button {
   background: none;
   outline: none;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 12px;
   color: var(--text);
   transition: border-color 0.2s var(--ease);
 }
 .tag-list-input:focus {
   border-bottom-color: var(--text);
 }
+/* 서브급 버튼(전체 지우기·전체 적용·번호 붙이기)은 모달 가로폭 전체를
+   차지하는 위아래 구분선 두 줄에 감싸이고, 버튼 사이사이에는 세로
+   구분선이 하나씩 들어간다. margin으로 카드의 좌우 padding(20px) 밖으로
+   빼내 카드 폭 전체에 닿게 한 뒤, 카드 자체의 overflow:hidden이 둥근
+   모서리에 맞춰 자연스럽게 잘라낸다. */
 .rename-actions {
   flex: none;
   display: flex;
-  gap: 10px;
+  margin: 0 -20px;
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
 }
 .rename-action-btn {
   flex: 1;
   height: 40px;
-  font-size: 10.4px;
+  padding: 0 8px;
+  border-right: 1px solid var(--glass-border);
+  font-size: 12px;
   font-weight: 600;
   color: var(--text);
   transition: opacity 0.2s var(--ease);
+}
+.rename-action-btn:last-child {
+  border-right: 0;
 }
 .rename-action-btn:active {
   opacity: 0.55;
@@ -1139,7 +1155,7 @@ button {
 .confirm-modal-message {
   margin: 6.4px 0 0;
   text-align: center;
-  font-size: 15px;
+  font-size: 12px;
   color: var(--text);
 }
 .confirm-modal-message p {
@@ -1203,7 +1219,7 @@ button {
 }
 .move-path-name {
   min-width: 0;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text);
   overflow: hidden;
@@ -1253,7 +1269,7 @@ button {
 }
 .move-row-name {
   min-width: 0;
-  font-size: 15px;
+  font-size: 12px;
   color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
