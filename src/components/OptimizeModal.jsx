@@ -55,17 +55,19 @@ export default function OptimizeModal({ items, onClose, onSubmit }) {
         </ul>
 
         <div className="optimize-levels">
+          <p className="optimize-quality-label">품질</p>
           <div className="optimize-bar" role="group" aria-label="압축 비율">
-            {LEVELS.map((pct, i) => (
+            {LEVELS.flatMap((pct, i) => [
+              i > 0 && <span key={`line-${pct}`} className={`optimize-line${i <= level ? " filled" : ""}`} />,
               <button
                 key={pct}
                 type="button"
-                className={`optimize-segment${i <= level ? " filled" : ""}`}
+                className={`optimize-dot${i <= level ? " filled" : ""}`}
                 aria-label={`${pct}%`}
                 aria-pressed={level === i}
                 onClick={() => setLevel(i)}
-              />
-            ))}
+              />,
+            ])}
           </div>
           <div className="optimize-marks">
             {LEVELS.map((pct, i) => (

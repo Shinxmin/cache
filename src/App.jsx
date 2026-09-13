@@ -446,7 +446,7 @@ export default function App() {
   return (
     <>
       {showTransfers ? (
-        <TransfersPage transfers={transfers} onBack={() => setShowTransfers(false)} />
+        <TransfersPage transfers={transfers} onBack={() => setShowTransfers(false)} onClearAll={() => setTransfers([])} />
       ) : (
         <>
           <main className="page">

@@ -627,6 +627,9 @@ button {
 .header-back:active {
   transform: scale(0.88);
 }
+.header-back:disabled {
+  opacity: 0.35;
+}
 
 /* ── 웹드라이브(파일 탭) ─────────────────────────────────────────────────
    갤러리형: 정사각 타일. 폴더·일반 파일은 중앙 아이콘 + 타일 아래 제목,
@@ -1145,28 +1148,47 @@ button {
 .tag-list-input:focus {
   border-bottom-color: var(--text);
 }
-/* 최적화 모달의 압축 비율 선택. 리스트 밑, 확인 버튼 위에 온다. 25/50/75%
-   세 구간짜리 프로그레스 바처럼 생겼다 — 고른 구간까지(자신 포함) 채워져
-   지금까지 고른 값이 한눈에 보이고, 막대나 그 밑 숫자 어느 쪽을 눌러도
-   그 구간이 선택된다. */
+/* 최적화 모달의 압축 비율 선택. 리스트 밑, 확인 버튼 위에 온다. 제목("품질")
+   아래 점 3개(25/50/75%)를 선으로 이은 스테퍼(•----•----•) 모양이다 —
+   고른 점까지(자신 포함) 점과 그 사이 선이 채워져 지금까지 고른 값이
+   한눈에 보이고, 점이나 그 밑 숫자 어느 쪽을 눌러도 그 구간이 선택된다. */
 .optimize-levels {
   flex: none;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
+.optimize-quality-label {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text);
+}
 .optimize-bar {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  height: 20px;
 }
-.optimize-segment {
-  flex: 1;
+.optimize-dot {
+  flex: none;
+  width: 10px;
   height: 10px;
-  border-radius: 5px;
+  border-radius: 50%;
+  background: var(--glass-border);
+  transition: background 0.2s var(--ease), transform 0.2s var(--spring);
+}
+.optimize-dot.filled {
+  background: var(--text);
+}
+.optimize-dot:active {
+  transform: scale(0.8);
+}
+.optimize-line {
+  flex: 1;
+  height: 2px;
   background: var(--glass-border);
   transition: background 0.2s var(--ease);
 }
-.optimize-segment.filled {
+.optimize-line.filled {
   background: var(--text);
 }
 .optimize-marks {
