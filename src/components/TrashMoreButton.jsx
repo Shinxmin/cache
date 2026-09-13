@@ -35,6 +35,7 @@ export default function TrashMoreButton({ onDeleteAll, onRestoreAll, disabled })
           <span className="header-more-icon">
             <TrashIcon size={17} />
           </span>
+          <span className="header-more-label">전체 삭제</span>
         </button>
         <button
           className="header-more-item"
@@ -50,6 +51,7 @@ export default function TrashMoreButton({ onDeleteAll, onRestoreAll, disabled })
           <span className="header-more-icon">
             <RestoreIcon size={17} />
           </span>
+          <span className="header-more-label">전체 복원</span>
         </button>
         <button
           className="header-more-item header-more-toggle"
