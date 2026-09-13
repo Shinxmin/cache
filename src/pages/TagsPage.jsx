@@ -5,8 +5,10 @@ import ConfirmModal from "../components/ConfirmModal";
 import Spinner from "../components/Spinner";
 
 // 설정 → 태그에서 열리는 화면. 지금 쓰이고 있는(휴지통에 있지 않은 파일에
-// 붙어 있는) 태그를 전부 나열한다. 각 행 오른쪽의 휴지통 아이콘은 그 태그
-// 하나만(붙어 있던 모든 파일에서 태그만 뗀다, 파일 자체는 그대로) 지우고,
+// 붙어 있는) 태그를 전부 나열하고, 이름 바로 오른쪽에 그 태그가 붙은
+// 파일·폴더 개수를 작은 글씨로 덧붙인다("3개 항목"). 각 행 오른쪽의 휴지통
+// 아이콘은 그 태그 하나만(붙어 있던 모든 파일에서 태그만 뗀다, 파일
+// 자체는 그대로) 지우고,
 // 제목 우측의 원형 삭제 버튼(전송 현황의 기록 삭제와 같은 .header-circle-btn
 // 재질·아이콘)은 지금 목록에 있는 태그를 한꺼번에 전부 지운다. 휴지통
 // 화면과 마찬가지로 두 액션 모두 ConfirmModal로 한 번 확인을 거친다.
@@ -74,12 +76,13 @@ export default function TagsPage({ session, onBack }) {
         {state === "ready" && tags.length === 0 && <p className="drive-note">태그가 없습니다</p>}
         {state === "ready" && tags.length > 0 && (
           <ul className="drive-list">
-            {tags.map((tag) => (
+            {tags.map(({ tag, count }) => (
               <li key={tag} className="trash-row">
                 <span className="drive-row-icon">
                   <HashIcon size={20} />
                 </span>
                 <span className="drive-row-name">{tag}</span>
+                <span className="trash-row-count">{count}개 항목</span>
                 <span className="trash-row-actions">
                   <button
                     className="studio-toolkit-icon-btn"

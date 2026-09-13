@@ -82,7 +82,7 @@ export async function setInfoRevealed(token, ids, revealed) {
 
 // ── 태그 관리(설정 → 태그) ──────────────────────────────────────────────
 // 지금 쓰이고 있는(휴지통에 있지 않은 파일에 붙어 있는) 태그를 중복 없이
-// 나열한다.
+// 나열한다. 각 항목은 { tag, count }(그 태그가 붙은 파일·폴더 개수) 형태다.
 export async function listDistinctTags(token) {
   return rpcResult(await supabase.rpc("list_distinct_tags", { p_token: token }));
 }
