@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { fileUrl } from "../lib/drive";
 import { isImage, isVideo } from "../lib/thumbnail";
 import { CloseIcon } from "../components/icons";
+import Spinner from "../components/Spinner";
 
 const SWIPE_THRESHOLD = 50;
 
@@ -92,7 +93,7 @@ export default function FileViewer({ session, items, initialIndex, onClose }) {
           전체(미디어+여백)에 걸어 둔다. */}
       <div className="viewer-content" onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
         {failed && <p className="viewer-note">불러오지 못했습니다</p>}
-        {!failed && !url && <p className="viewer-note">불러오는 중…</p>}
+        {!failed && !url && <p className="viewer-note"><Spinner /></p>}
         {url && isImage(item.mime) && (
           <img
             className="viewer-media"

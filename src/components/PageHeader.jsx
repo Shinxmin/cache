@@ -52,6 +52,7 @@ export default function PageHeader({
   onEditSelected,
   onMoveSelected,
   onTagSelected,
+  onOptimizeSelected,
 }) {
   const ref = useRef(null);
   const [collapsed, setCollapsed] = useState(!searchAlwaysOn);
@@ -226,6 +227,7 @@ export default function PageHeader({
           onEditSelected={onEditSelected}
           onMoveSelected={onMoveSelected}
           onTagSelected={onTagSelected}
+          onOptimizeSelected={onOptimizeSelected}
           style={{ transform: collapsed ? `translateY(-${toolkitLift}px)` : "none" }}
         />
       )}
