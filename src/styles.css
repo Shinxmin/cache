@@ -487,19 +487,14 @@ button {
   transition: transform 0.45s var(--spring);
   will-change: transform;
 }
-.studio-toolkit-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  color: var(--text-2);
-}
 .studio-toolkit-select {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex: none;
   min-width: 0;
   cursor: pointer;
+  color: var(--text-2);
 }
 .studio-toolkit-label {
   font-size: 13px;
@@ -515,25 +510,28 @@ button {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.studio-toolkit-right {
+/* 9개 아이콘을 하나의 그룹으로 묶어 flex:1로 남는 폭을 전부 차지하게 하고,
+   그 안에서 justify-content:space-between으로 서로 간격을 고르게 벌린다.
+   "전체 선택" 바로 옆부터 시작해 카드 오른쪽 끝까지 균등하게 퍼진다 —
+   예전처럼 왼쪽 5개·오른쪽 4개로 나눠 그 "사이"만 넓어 보이던 문제가 없다.
+   min-width는 아이콘 9개(각 22px, flex-shrink:0이라 줄어들지 않는다)가
+   차지하는 최소 폭이라, 화면이 그보다 좁아지면 줄어드는 대신(뭉개지거나
+   겹치는 대신) 부모(.studio-toolkit)의 flex-wrap으로 통째로 다음 줄에
+   내려가 "전체 선택" 옆이 아니라 그 아래 한 줄 전체를 차지한다. */
+.studio-toolkit-icons {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex: none;
-  /* 부모의 justify-content 대신 이걸로 오른쪽 끝에 붙인다 — 한 줄에 다
-     들어갈 때는 왼쪽 그룹과 이 그룹 사이 남는 공간을 전부 밀어내고,
-     좁아서 둘째 줄로 넘어갈 때는(flex-wrap) 그 줄에서 이 그룹 혼자
-     오른쪽 끝에 붙는다(같은 줄에 왼쪽 그룹과 나눌 필요가 없을 때도
-     자동 여백이 그 줄의 남는 공간을 전부 흡수해 오른쪽으로 밀어준다). */
-  margin-left: auto;
+  flex: 1 1 auto;
+  justify-content: space-between;
+  min-width: 198px;
   color: var(--text-2);
 }
 /* 아이콘마다 실제 그려지는 폭이 달라도(예: 원형 그래프 vs 화살표) 버튼
    자체는 같은 폭을 차지하도록 고정해, 아이콘 사이 간격이 고르게 보이게
-   한다. 아이콘이 9개(왼쪽 5 + 오른쪽 4)라 iPhone 최소 폭(375px)에서도
-   겹치지 않도록 22px로 맞췄다 — 26px였을 때는 "전체 선택" 글자를 포함한
-   전체 폭이 좁은 화면의 실제 사용 가능 폭을 넘어서 태그(#)와 갤러리·
-   리스트 전환 아이콘이 서로 겹쳤다. */
+   한다. 아이콘이 9개라 iPhone 최소 폭(375px)에서도 겹치지 않도록 22px로
+   맞췄다 — 26px였을 때는 "전체 선택" 글자를 포함한 전체 폭이 좁은 화면의
+   실제 사용 가능 폭을 넘어서 태그(#)와 갤러리·리스트 전환 아이콘이 서로
+   겹쳤다. */
 .studio-toolkit-icon-btn {
   display: flex;
   flex-shrink: 0;
@@ -625,6 +623,8 @@ button {
    리스트형: 왼쪽 아이콘 + 오른쪽 제목 한 줄. ── */
 .drive-note {
   margin: 24px 0;
+  display: flex;
+  justify-content: center;
   font-size: 14px;
   color: var(--text-2);
   text-align: center;
@@ -941,8 +941,15 @@ button {
   border-radius: 12px;
 }
 .viewer-note {
-  font-size: 14px;
   color: rgba(255, 255, 255, 0.7);
+}
+.spinner {
+  animation: spinner-spin 0.8s linear infinite;
+}
+@keyframes spinner-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── 이름 바꾸기 모달: 스튜디오 툴킷의 편집(연필) 아이콘으로 연다. 배경을
@@ -983,26 +990,16 @@ button {
   gap: 12px;
 }
 /* 모달 안의 버튼(전체 지우기·번호 붙이기·확인)은 다른 리퀴드글라스 버튼과
-   달리 배경·그림자 없이 텍스트뿐이고, 서브 버튼(.rename-actions)과 같은
-   방식으로 카드 폭 전체를 차지하는 구분선에 감싸인다. 메인급 버튼(확인)은
-   15px, 제목은 20px로 그보다 크다. */
+   달리 배경·그림자·구분선 없이 텍스트만 있다. 메인급 버튼(확인)은 15px,
+   제목은 20px로 그보다 크다. */
 .rename-card > .auth-submit {
   flex: none;
-  margin: auto -20px 0;
+  margin-top: auto;
   height: 48px;
-  padding: 0 20px;
   background: none;
   box-shadow: none;
   border-radius: 0;
-  border-top: 1px solid var(--glass-border);
-  border-bottom: 1px solid var(--glass-border);
   font-size: 15px;
-}
-/* 서브 버튼 바로 밑에 확인 버튼이 오면(이름 바꾸기 다중 선택, 태그 모달)
-   서브 버튼의 아래쪽 선과 확인 버튼의 위쪽 선이 겹쳐 두 줄로 보이므로,
-   확인 버튼 쪽 위쪽 선은 생략해 하나로 합친다. */
-.rename-actions + .auth-submit {
-  border-top: none;
 }
 .rename-title {
   margin: 0;
@@ -1095,7 +1092,11 @@ button {
    .rename-input과 완전히 동일한 밑줄 스타일을 쓴다(테두리 박스가 아니라
    아래쪽 선 하나). */
 .tag-list-item-name {
-  flex: 1 1 auto;
+  /* flex-grow를 주지 않는다 — 안 그러면 남는 공간을 전부 자기가 먹어
+     태그 입력창이 줄 끝으로 밀려나면서 이름과 입력창 사이가 크게 벌어진다.
+     grow 없이 shrink만 허용해 태그 입력창이 이름 바로 옆에 붙게 하고,
+     남는 공간은 입력창 뒤(줄 끝)에 남는다. */
+  flex: 0 1 auto;
   min-width: 0;
   font-size: 12px;
   color: var(--text);
@@ -1121,6 +1122,43 @@ button {
 }
 .tag-list-input:focus {
   border-bottom-color: var(--text);
+}
+/* 최적화 모달의 압축 비율 선택. 리스트 밑, 확인 버튼 위에 온다. 25/50/75%
+   세 구간짜리 프로그레스 바처럼 생겼다 — 고른 구간까지(자신 포함) 채워져
+   지금까지 고른 값이 한눈에 보이고, 막대나 그 밑 숫자 어느 쪽을 눌러도
+   그 구간이 선택된다. */
+.optimize-levels {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.optimize-bar {
+  display: flex;
+  gap: 4px;
+}
+.optimize-segment {
+  flex: 1;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--glass-border);
+  transition: background 0.2s var(--ease);
+}
+.optimize-segment.filled {
+  background: var(--text);
+}
+.optimize-marks {
+  display: flex;
+}
+.optimize-mark {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-2);
+  transition: color 0.2s var(--ease);
+}
+.optimize-mark.active {
+  color: var(--text);
+  font-weight: 700;
 }
 /* 서브급 버튼(전체 지우기·전체 적용·번호 붙이기)은 모달 가로폭 전체를
    차지하는 위아래 구분선 두 줄에 감싸이고, 버튼 사이사이에는 세로
@@ -1287,6 +1325,8 @@ button {
 }
 .move-note {
   padding: 14px 0;
+  display: flex;
+  justify-content: center;
   font-size: 14px;
   color: var(--text-2);
 }

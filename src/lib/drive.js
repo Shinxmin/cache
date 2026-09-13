@@ -184,6 +184,78 @@ export async function uploadFile({ token, userId, file, parentId = null, onProgr
   );
 }
 
+function loadImage(blob) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => resolve({ img, url });
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("이미지를 열지 못했습니다"));
+    };
+    img.src = url;
+  });
+}
+
+function encodeJpeg(img, quality) {
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  canvas.getContext("2d").drawImage(img, 0, 0);
+  return new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+}
+
+// 원본 용량의 targetSize에 최대한 가깝도록(근접) JPEG 품질을 이진 탐색으로
+// 찾는다. 화질(quality)만 낮출 뿐 가로세로 크기는 그대로 둔다 — 용량
+// 압축이지 리사이즈가 아니기 때문이다.
+async function compressImageTo(blob, targetSize) {
+  const { img, url } = await loadImage(blob);
+  try {
+    let lo = 0.05;
+    let hi = 0.95;
+    let best = null;
+    for (let i = 0; i < 7; i++) {
+      const mid = (lo + hi) / 2;
+      const out = await encodeJpeg(img, mid);
+      if (!out) continue;
+      if (!best || Math.abs(out.size - targetSize) < Math.abs(best.size - targetSize)) best = out;
+      if (out.size > targetSize) hi = mid;
+      else lo = mid;
+    }
+    return best ?? blob;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+// 스튜디오 툴킷의 용량 압축(원그래프) 아이콘. 선택된 이미지 파일들을 각각
+// ratioPercent(25/50/75)만큼의 용량으로 다시 인코딩해 같은 r2_key에
+// 덮어쓰고, DB에 저장된 용량·mime도 함께 갱신한다.
+export async function optimizeFiles({ token, items, ratioPercent, onProgress }) {
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const step = (base) => onProgress?.((i + base) / items.length);
+
+    const { url: getUrl } = await presign(token, { action: "get", key: item.r2_key });
+    const original = await xhrGetBlob(getUrl, (p) => step(p * 0.5));
+
+    const targetSize = Math.max(1, Math.round(original.size * (ratioPercent / 100)));
+    const compressed = await compressImageTo(original, targetSize);
+
+    const { url: putUrl } = await presign(token, { action: "put", key: item.r2_key, contentType: "image/jpeg" });
+    await xhrPut(putUrl, compressed, "image/jpeg", (p) => step(0.5 + p * 0.5));
+
+    await rpcResult(
+      await supabase.rpc("update_file_content", {
+        p_token: token,
+        p_id: item.id,
+        p_size: compressed.size,
+        p_mime: "image/jpeg",
+      })
+    );
+  }
+}
+
 // 일반적인 "브라우저 다운로드" 방식(a[download] 클릭) — Downloads 폴더나
 // 파일 앱으로 저장된다. 공유 시트를 쓸 수 없거나 사용자가 공유 자체에
 // 실패했을 때(취소는 제외) 대체 경로로도 쓰인다.

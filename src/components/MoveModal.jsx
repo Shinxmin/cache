@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import useBodyScrollLock from "../hooks/useBodyScrollLock";
 import { listFiles } from "../lib/drive";
 import { BackIcon, CloseIcon, FileIcon, FolderIcon } from "./icons";
+import Spinner from "./Spinner";
 
 // 스튜디오 툴킷의 이동(→) 아이콘으로 여는 이동 모달. 드라이브 전체를 리스트로
 // 보여주고, 폴더를 눌러 안으로 들어간 뒤 확인을 누르면 그 폴더로 옮긴다.
@@ -73,7 +74,7 @@ export default function MoveModal({ session, items, onClose, onSubmit }) {
         )}
 
         <ul className="move-list" data-scroll-lock-allow>
-          {state === "loading" && <li className="move-note">불러오는 중…</li>}
+          {state === "loading" && <li className="move-note"><Spinner /></li>}
           {state === "error" && <li className="move-note">불러오지 못했습니다</li>}
           {state === "ready" && !rows.length && <li className="move-note">비어 있습니다</li>}
           {state === "ready" &&

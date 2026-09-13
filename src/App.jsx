@@ -10,6 +10,7 @@ import FileViewer from "./pages/FileViewer";
 import RenameModal from "./components/RenameModal";
 import MoveModal from "./components/MoveModal";
 import TagModal from "./components/TagModal";
+import OptimizeModal from "./components/OptimizeModal";
 import { clearSession, loadSession, saveSession, setToolkitAlwaysOn as persistToolkitAlwaysOn, verifySession } from "./lib/session";
 import {
   createFolder,
@@ -17,6 +18,7 @@ import {
   downloadFolderAsZip,
   downloadSelectionAsZip,
   moveFiles,
+  optimizeFiles,
   renameFiles,
   setBlur,
   setInfoRevealed,
@@ -78,6 +80,10 @@ export default function App() {
   const [moveTargets, setMoveTargets] = useState(null);
   // 스튜디오 툴킷의 태그(#) 아이콘으로 연 태그 모달. null이면 닫힌 상태.
   const [tagTargets, setTagTargets] = useState(null);
+  // 스튜디오 툴킷의 용량 압축(원그래프) 아이콘으로 연 최적화 모달. null이면
+  // 닫힌 상태. 폴더나 이미지가 아닌 파일은 대상에서 빠진다(캔버스로 다시
+  // 인코딩할 수 있는 게 이미지뿐이라서).
+  const [optimizeTargets, setOptimizeTargets] = useState(null);
 
   // 전송(업로드/다운로드) 상태. 진행 중인 것이 있을 때만 헤더에 버튼이 뜬다.
   const [transfers, setTransfers] = useState([]);
@@ -381,6 +387,25 @@ export default function App() {
     }
   };
 
+  // 선택된 항목 중 이미지 파일만 골라 최적화 모달을 연다(폴더·이미지가 아닌
+  // 파일은 캔버스로 다시 인코딩할 수 없어 대상에서 빠진다). 대상이 하나도
+  // 없으면(폴더만 선택했거나 등) 모달을 띄우지 않는다.
+  const handleOptimizeSelected = () => {
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && !it.is_folder && isImage(it.mime));
+    if (!targets.length) return;
+    setOptimizeTargets(targets);
+  };
+
+  const handleOptimizeSubmit = async (ratioPercent) => {
+    try {
+      await optimizeFiles({ token: session.token, items: optimizeTargets, ratioPercent });
+      setOptimizeTargets(null);
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("용량을 줄이지 못했습니다");
+    }
+  };
+
   const handleRenameSubmit = async (renames) => {
     try {
       await renameFiles(session.token, renames);
@@ -453,6 +478,7 @@ export default function App() {
               onEditSelected={handleEditSelected}
               onMoveSelected={handleMoveSelected}
               onTagSelected={handleTagSelected}
+              onOptimizeSelected={handleOptimizeSelected}
             />
             {isFiles && (
               <FilesPage
@@ -508,6 +534,9 @@ export default function App() {
         />
       )}
       {tagTargets && <TagModal items={tagTargets} onClose={() => setTagTargets(null)} onSubmit={handleTagSubmit} />}
+      {optimizeTargets && (
+        <OptimizeModal items={optimizeTargets} onClose={() => setOptimizeTargets(null)} onSubmit={handleOptimizeSubmit} />
+      )}
     </>
   );
 }

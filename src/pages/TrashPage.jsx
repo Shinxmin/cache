@@ -3,6 +3,7 @@ import { deleteFilesPermanently, listTrash, restoreFiles } from "../lib/drive";
 import { BackIcon, FileIcon, FolderIcon, RestoreIcon, TrashIcon } from "../components/icons";
 import TrashMoreButton from "../components/TrashMoreButton";
 import ConfirmModal from "../components/ConfirmModal";
+import Spinner from "../components/Spinner";
 
 // 확인 모달에 띄울 제목·문구. 전체/개별, 삭제/복원 네 가지 액션이지만
 // 모달 자체는 삭제 둘, 복원 둘을 각각 하나로 통일한다 — 어떤 파일인지,
@@ -87,7 +88,7 @@ export default function TrashPage({ session, onBack }) {
         </div>
       </header>
       <div className="page page--flush">
-        {state === "loading" && <p className="drive-note">불러오는 중…</p>}
+        {state === "loading" && <p className="drive-note"><Spinner /></p>}
         {state === "error" && <p className="drive-note">불러오지 못했습니다</p>}
         {state === "ready" && items.length === 0 && <p className="drive-note">휴지통이 비어 있습니다</p>}
         {state === "ready" && items.length > 0 && (

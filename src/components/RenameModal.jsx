@@ -4,14 +4,13 @@ import { dedupeStrings } from "../lib/dedupe";
 import { CloseIcon, FileIcon, FolderIcon } from "./icons";
 
 // 스튜디오 툴킷의 편집(연필) 아이콘으로 여는 이름 바꾸기 모달. 배경을 탭하거나
-// 제목 줄 우측의 작은 x를 누르면 취소된다.
-//  · 단일 선택: 입력창 하나 + 확인 버튼.
-//  · 다중 선택: 선택한 항목을 각각 편집할 수 있는 입력창 목록 + "전체 지우기"
-//    (모든 입력창을 비운다)·"전체 적용"(1번째 입력창 값을 모두에게 그대로
-//    적용 — 이 시점엔 전부 똑같은 값으로 놔둔다)·"번호 붙이기"(1번째 값 끝의
-//    숫자를 기준점 삼아 순서대로 번호를 잇는다) + 확인 버튼. 이름은 중복될 수
-//    없으므로, 중복 여부는 "전체 적용" 때가 아니라 확인을 누르는 순간에
-//    판단해 그때 겹치는 이름에만 (1),(2),(3)…을 붙인다.
+// 제목 줄 우측의 작은 x를 누르면 취소된다. 단일 선택이든 다중 선택이든 목록
+// 형식(아이콘 + 입력창 한 줄씩)은 똑같고, 다중 선택일 때만 그 밑에 액션
+// 버튼이 붙는다: "전체 지우기"(모든 입력창을 비운다)·"전체 적용"(1번째
+// 입력창 값을 모두에게 그대로 적용 — 이 시점엔 전부 똑같은 값으로 놔둔다)·
+// "번호 붙이기"(1번째 값 끝의 숫자를 기준점 삼아 순서대로 번호를 잇는다).
+// 이름은 중복될 수 없으므로, 중복 여부는 "전체 적용" 때가 아니라 확인을
+// 누르는 순간에 판단해 그때 겹치는 이름에만 (1),(2),(3)…을 붙인다.
 export default function RenameModal({ items, onClose, onSubmit }) {
   useBodyScrollLock();
   const [names, setNames] = useState(() => items.map((it) => it.name));
@@ -60,43 +59,35 @@ export default function RenameModal({ items, onClose, onSubmit }) {
           </button>
         </div>
 
-        {multi ? (
-          <>
-            <ul className="rename-list" data-scroll-lock-allow>
-              {items.map((item, i) => (
-                <li className="rename-list-row" key={item.id}>
-                  <span className="rename-list-icon">
-                    {item.is_folder ? <FolderIcon size={18} /> : <FileIcon size={18} />}
-                  </span>
-                  <input
-                    className="rename-input"
-                    type="text"
-                    value={names[i]}
-                    onChange={(e) => setNameAt(i, e.target.value)}
-                  />
-                </li>
-              ))}
-            </ul>
-            <div className="rename-actions">
-              <button className="rename-action-btn" type="button" onClick={clearAll}>
-                전체 지우기
-              </button>
-              <button className="rename-action-btn" type="button" onClick={applyToAll}>
-                전체 적용
-              </button>
-              <button className="rename-action-btn" type="button" onClick={attachNumbers}>
-                번호 붙이기
-              </button>
-            </div>
-          </>
-        ) : (
-          <input
-            className="rename-input"
-            type="text"
-            value={names[0]}
-            onChange={(e) => setNameAt(0, e.target.value)}
-            autoFocus
-          />
+        <ul className="rename-list" data-scroll-lock-allow>
+          {items.map((item, i) => (
+            <li className="rename-list-row" key={item.id}>
+              <span className="rename-list-icon">
+                {item.is_folder ? <FolderIcon size={18} /> : <FileIcon size={18} />}
+              </span>
+              <input
+                className="rename-input"
+                type="text"
+                value={names[i]}
+                onChange={(e) => setNameAt(i, e.target.value)}
+                autoFocus={!multi}
+              />
+            </li>
+          ))}
+        </ul>
+
+        {multi && (
+          <div className="rename-actions">
+            <button className="rename-action-btn" type="button" onClick={clearAll}>
+              전체 지우기
+            </button>
+            <button className="rename-action-btn" type="button" onClick={applyToAll}>
+              전체 적용
+            </button>
+            <button className="rename-action-btn" type="button" onClick={attachNumbers}>
+              번호 붙이기
+            </button>
+          </div>
         )}
 
         <button className="auth-submit" type="button" disabled={!canSubmit} onClick={submit}>

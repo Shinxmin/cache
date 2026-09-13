@@ -2,13 +2,13 @@ import { useState } from "react";
 import useBodyScrollLock from "../hooks/useBodyScrollLock";
 import { CloseIcon, FileIcon, FolderIcon } from "./icons";
 
-// 스튜디오 툴킷의 태그(#) 아이콘으로 여는 태그 모달.
-//  · 단일 선택: 입력창 하나 + "전체 지우기" + 확인 버튼.
-//  · 다중 선택: 목록의 각 행이 파일/폴더 이름 옆에 자기만의 태그 입력창을
-//    갖는다(처음부터 바로 활성화되어 있다) + "전체 지우기"(모두 비운다)·
-//    "전체 적용"(1번째 입력창 값을 모두에게 그대로 적용) + 확인 버튼.
-//    태그는 이름과 달리 여러 항목이 똑같아도 되므로(오히려 그게 태그의
-//    쓰임이다) 이름 바꾸기와 달리 중복 방지 번호를 붙이지 않는다.
+// 스튜디오 툴킷의 태그(#) 아이콘으로 여는 태그 모달. 단일 선택이든 다중
+// 선택이든 목록 형식(아이콘 + 파일 이름 + 태그 입력창 한 줄씩)은 똑같다.
+// "전체 지우기"(모두 비운다)는 항상 있고, "전체 적용"(1번째 입력창 값을
+// 모두에게 그대로 적용)은 여러 개를 선택했을 때만 의미가 있어 다중
+// 선택일 때만 나타난다. 태그는 이름과 달리 여러 항목이 똑같아도 되므로
+// (오히려 그게 태그의 쓰임이다) 이름 바꾸기와 달리 중복 방지 번호를
+// 붙이지 않는다.
 export default function TagModal({ items, onClose, onSubmit }) {
   useBodyScrollLock();
   const [tags, setTags] = useState(() => items.map((it) => it.tag || ""));
@@ -43,34 +43,24 @@ export default function TagModal({ items, onClose, onSubmit }) {
           </button>
         </div>
 
-        {multi ? (
-          <ul className="rename-list" data-scroll-lock-allow>
-            {items.map((item, i) => (
-              <li className="rename-list-row" key={item.id}>
-                <span className="rename-list-icon">
-                  {item.is_folder ? <FolderIcon size={18} /> : <FileIcon size={18} />}
-                </span>
-                <span className="tag-list-item-name">{item.name}</span>
-                <input
-                  className="tag-list-input"
-                  type="text"
-                  value={tags[i]}
-                  onChange={(e) => setTagAt(i, e.target.value)}
-                  maxLength={24}
-                />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <input
-            className="rename-input"
-            type="text"
-            value={tags[0]}
-            onChange={(e) => setTagAt(0, e.target.value)}
-            maxLength={24}
-            autoFocus
-          />
-        )}
+        <ul className="rename-list" data-scroll-lock-allow>
+          {items.map((item, i) => (
+            <li className="rename-list-row" key={item.id}>
+              <span className="rename-list-icon">
+                {item.is_folder ? <FolderIcon size={18} /> : <FileIcon size={18} />}
+              </span>
+              <span className="tag-list-item-name">{item.name}</span>
+              <input
+                className="tag-list-input"
+                type="text"
+                value={tags[i]}
+                onChange={(e) => setTagAt(i, e.target.value)}
+                maxLength={24}
+                autoFocus={!multi}
+              />
+            </li>
+          ))}
+        </ul>
 
         <div className="rename-actions">
           <button className="rename-action-btn" type="button" onClick={clearAll}>

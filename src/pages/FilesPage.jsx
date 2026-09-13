@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { folderSizes, listFiles, thumbnailUrls } from "../lib/drive";
 import { formatBytes } from "../lib/format";
 import { CheckIcon, FileIcon, FolderIcon } from "../components/icons";
+import Spinner from "../components/Spinner";
 import useLongPress from "../hooks/useLongPress";
 
 // 정보(i) 아이콘으로 그 항목의 용량 표기를 켰을 때만(item.info_revealed가
@@ -179,7 +180,7 @@ export default function FilesPage({
   const openOrToggle = (item) =>
     selectionMode ? onToggleSelect(item) : item.is_folder ? onOpenFolder(item) : onOpenFile(item);
 
-  if (state === "loading") return <p className="drive-note">불러오는 중…</p>;
+  if (state === "loading") return <p className="drive-note"><Spinner /></p>;
   if (state === "error") return <p className="drive-note">파일을 불러오지 못했습니다</p>;
   if (!items.length) return <p className="drive-note">아직 파일이 없습니다</p>;
 

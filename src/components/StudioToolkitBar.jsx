@@ -60,12 +60,14 @@ function PencilIcon() {
 // 홈·파일 탭 전용 "스튜디오 툴킷" 선택 도구줄. 제목·검색바와 같은 fixed 헤더
 // 안에 있어 스크롤해도 함께 고정된다(PageHeader.jsx가 마운트를 조건부로 제어,
 // 검색바가 축소될 때는 style로 넘어온 transform으로 그 자리까지 끌어올려진다).
-// 좌우 여백 없이 위아래 가로선으로만 구분된 한 줄이며,
-// 왼쪽엔 전체 선택 체크박스+라벨+정보(용량 표시 토글)·휴지통·다운로드·
-// 이동 아이콘(뒤 셋은 선택된 항목 대상), 오른쪽엔 보기 전환
-// (갤러리↔리스트)·눈(선택된 이미지·영상 썸네일 블러 토글)·용량 게이지(차후
-// 용량 압축용)·태그·편집 아이콘이 있다. 닫기 버튼은 없다 — 선택을 모두 풀거나
-// (선택 때문에 떠 있었다면) 설정의 "항상 활성화"를 끄면 사라진다.
+// 좌우 여백 없이 위아래 가로선으로만 구분된 한 줄이며, 왼쪽에 전체 선택
+// 체크박스+라벨, 그 오른쪽에 아이콘 9개(정보·휴지통·다운로드·이동·보기 전환·
+// 블러·용량 압축·태그·이름 바꾸기)가 하나의 그룹으로 나란히 있다. 9개 모두
+// 같은 폭의 버튼이라 .studio-toolkit-icons에 justify-content:space-between을
+// 주는 것만으로 서로 간격이 고르게 벌어진다(그룹을 둘로 나눠 오른쪽 그룹만
+// margin-left:auto로 밀던 예전 방식은 두 그룹 "사이"만 넓어 보였다). 닫기
+// 버튼은 없다 — 선택을 모두 풀거나(선택 때문에 떠 있었다면) 설정의
+// "항상 활성화"를 끄면 사라진다.
 export default function StudioToolkitBar({
   viewMode,
   onToggleView,
@@ -77,6 +79,7 @@ export default function StudioToolkitBar({
   onBlurSelected,
   onMoveSelected,
   onTagSelected,
+  onOptimizeSelected,
   infoVisible,
   onToggleInfo,
   onEditSelected,
@@ -84,14 +87,14 @@ export default function StudioToolkitBar({
 }) {
   return (
     <div className="studio-toolkit" style={style}>
-      <div className="studio-toolkit-left">
-        <label className="studio-toolkit-select">
-          <span className="checkbox">
-            <input type="checkbox" checked={allSelected} onChange={(e) => onToggleSelectAll(e.target.checked)} />
-            <CheckboxVisual />
-          </span>
-          <span className="studio-toolkit-label">전체 선택</span>
-        </label>
+      <label className="studio-toolkit-select">
+        <span className="checkbox">
+          <input type="checkbox" checked={allSelected} onChange={(e) => onToggleSelectAll(e.target.checked)} />
+          <CheckboxVisual />
+        </span>
+        <span className="studio-toolkit-label">전체 선택</span>
+      </label>
+      <div className="studio-toolkit-icons">
         <button
           className="studio-toolkit-icon-btn"
           type="button"
@@ -129,8 +132,6 @@ export default function StudioToolkitBar({
         >
           <ArrowRightIcon />
         </button>
-      </div>
-      <div className="studio-toolkit-right">
         {/* 파일 탭 갤러리형/리스트형 전환. 현재 보기 상태와 반대되는 아이콘을 보여준다. */}
         <button
           className="studio-toolkit-icon-btn"
@@ -149,7 +150,13 @@ export default function StudioToolkitBar({
         >
           <EyeIcon />
         </button>
-        <button className="studio-toolkit-icon-btn" type="button" aria-label="용량 압축">
+        <button
+          className="studio-toolkit-icon-btn"
+          type="button"
+          aria-label="용량 압축"
+          disabled={!hasSelection}
+          onClick={onOptimizeSelected}
+        >
           <CapacityIcon />
         </button>
         <button
