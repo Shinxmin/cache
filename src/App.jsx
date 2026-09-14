@@ -30,6 +30,7 @@ import {
 } from "./lib/drive";
 import { isImage, isVideo } from "./lib/thumbnail";
 import { isSearchActive } from "./lib/search";
+import { loadTheme, saveTheme } from "./lib/theme";
 
 // 검색바는 홈·파일 탭에서만 뜬다(설정에는 없음). 제목과 한 fixed 박스로 묶여
 // PageHeader 안에서 렌더링된다(PageHeader.jsx 참고).
@@ -37,23 +38,23 @@ const SEARCH_TABS = new Set(["home", "files"]);
 
 const THEME_COLORS = { dark: "#1B1B1B", light: "#F5F5F7" };
 
-// 시스템 다크/라이트 설정을 따라 html[data-theme]와 theme-color를 맞춘다.
-function useSystemTheme() {
-  useEffect(() => {
-    const mq = matchMedia("(prefers-color-scheme: dark)");
-    const apply = () => {
-      const theme = mq.matches ? "dark" : "light";
-      document.documentElement.setAttribute("data-theme", theme);
-      document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLORS[theme]);
-    };
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
-}
-
 export default function App() {
-  useSystemTheme();
+  // 설정의 테마 스위치가 고른 값. 기기에 저장된 값이 있으면 그걸 따르고,
+  // 처음 접속이라 저장된 값이 없을 때만 시스템 설정을 기본값으로 삼는다 —
+  // 이후로는 시스템이 바뀌어도(라이브 추적하지 않음) 사용자가 고른 값이
+  // 그대로 유지된다.
+  const [theme, setTheme] = useState(() => loadTheme() ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLORS[theme]);
+  }, [theme]);
+
+  const handleToggleTheme = (dark) => {
+    const next = dark ? "dark" : "light";
+    setTheme(next);
+    saveTheme(next);
+  };
 
   // 저장된 토큰이 서버에서도 유효한지 확인될 때까지는 아무것도 그리지 않는다
   // (로그인 화면이 잠깐 번쩍이는 것을 막기 위함).
@@ -562,6 +563,8 @@ export default function App() {
             )}
             {tab === "settings" && (
               <SettingsPage
+                dark={theme === "dark"}
+                onToggleTheme={handleToggleTheme}
                 toolkitActive={toolkitAlwaysOn}
                 onToggleToolkit={handleToggleToolkitAlwaysOn}
                 searchAlwaysOn={searchAlwaysOn}

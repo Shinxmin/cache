@@ -1,8 +1,11 @@
 import CheckboxVisual from "../components/Checkbox";
+import ThemeSwitch from "../components/ThemeSwitch";
 import { ChevronRightIcon } from "../components/icons";
 
 // 설정 탭 본문.
 export default function SettingsPage({
+  dark,
+  onToggleTheme,
   toolkitActive,
   onToggleToolkit,
   searchAlwaysOn,
@@ -13,14 +16,18 @@ export default function SettingsPage({
 }) {
   return (
     <div className="settings-list">
-      <label className="settings-row">
+      <label className="settings-row settings-row--toggle">
+        <span className="settings-row-label">테마</span>
+        <ThemeSwitch dark={dark} onChange={onToggleTheme} />
+      </label>
+      <label className="settings-row settings-row--toggle">
         <span className="settings-row-label">스튜디오 툴킷 항상 활성화</span>
         <span className="checkbox">
           <input type="checkbox" checked={toolkitActive} onChange={(e) => onToggleToolkit(e.target.checked)} />
           <CheckboxVisual />
         </span>
       </label>
-      <label className="settings-row">
+      <label className="settings-row settings-row--toggle">
         <span className="settings-row-label">검색바 항상 활성화</span>
         <span className="checkbox">
           <input
