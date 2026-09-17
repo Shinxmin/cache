@@ -1716,13 +1716,15 @@ button {
   border-radius: 10px;
   object-fit: contain;
 }
+/* 상위 5색을 가로 2열로 배치한다 — 5개면 자연히 세로 3줄(2+2+1)이 된다. */
 .palette-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 16px;
+  row-gap: 8px;
 }
 .palette-row {
   display: flex;
@@ -1919,6 +1921,35 @@ button {
 }
 .settings-chevron.is-open {
   transform: rotate(90deg);
+}
+/* "스튜디오 툴킷 사용자 정렬" 행: 제목·초기화·펼치기 화살표가 각각 따로
+   눌리는 버튼 세 개로 이루어진 한 줄이다(제목 버튼과 화살표 버튼 둘 다
+   펼치고 접기를 맡고, 그 사이 "초기화"만 따로 반응한다 — 버튼 안에 버튼을
+   또 넣을 수 없어서 이렇게 나눴다). */
+.settings-arrange-row {
+  justify-content: flex-start;
+  gap: 0;
+}
+.settings-arrange-toggle {
+  flex: none;
+  display: flex;
+}
+.settings-reset-link {
+  flex: none;
+  margin-left: 10px;
+  font-size: 12px;
+  color: var(--text-2);
+  text-decoration: underline;
+  transition: opacity 0.2s var(--ease);
+}
+.settings-reset-link:active {
+  opacity: 0.55;
+}
+.settings-arrange-chevron-btn {
+  flex: none;
+  margin-left: auto;
+  display: flex;
+  color: var(--text-2);
 }
 .settings-arrange {
   padding: 10px 0 4px;

@@ -14,6 +14,7 @@ export default function SettingsPage({
   toolkitLayout,
   viewMode,
   onChangeToolkitLayout,
+  onResetToolkitLayout,
   searchAlwaysOn,
   onToggleSearchAlwaysOn,
   onOpenTrash,
@@ -34,17 +35,30 @@ export default function SettingsPage({
           <CheckboxVisual />
         </span>
       </label>
-      <button
-        className="settings-row settings-row--link"
-        type="button"
-        aria-expanded={arrangeOpen}
-        onClick={() => setArrangeOpen((v) => !v)}
-      >
-        <span className="settings-row-label">스튜디오 툴킷 사용자 정렬</span>
-        <span className={`settings-chevron${arrangeOpen ? " is-open" : ""}`}>
-          <ChevronRightIcon size={18} />
-        </span>
-      </button>
+      <div className="settings-row settings-arrange-row">
+        <button
+          className="settings-arrange-toggle"
+          type="button"
+          aria-expanded={arrangeOpen}
+          onClick={() => setArrangeOpen((v) => !v)}
+        >
+          <span className="settings-row-label">스튜디오 툴킷 사용자 정렬</span>
+        </button>
+        <button className="settings-reset-link" type="button" onClick={onResetToolkitLayout}>
+          초기화
+        </button>
+        <button
+          className="settings-arrange-chevron-btn"
+          type="button"
+          aria-label={arrangeOpen ? "접기" : "펼치기"}
+          aria-expanded={arrangeOpen}
+          onClick={() => setArrangeOpen((v) => !v)}
+        >
+          <span className={`settings-chevron${arrangeOpen ? " is-open" : ""}`}>
+            <ChevronRightIcon size={18} />
+          </span>
+        </button>
+      </div>
       {arrangeOpen && (
         <div className="settings-arrange">
           <ToolkitArranger layout={toolkitLayout} viewMode={viewMode} onChange={onChangeToolkitLayout} />

@@ -222,6 +222,22 @@ export default function App() {
     setSearchQuery("");
   }, [tab]);
 
+  // 탭을 바꾸면 그 탭의 기본 화면이 뜨게 한다 — 파일 탭에서 폴더를 열어 둔
+  // 채로 다른 탭에 갔다 돌아와도 항상 최상위(루트)부터 다시 보여주고, 홈
+  // 탭에서 즐겨찾기 화면을 보던 중 다른 탭에 갔다 돌아오면 즐겨찾기가 아니라
+  // 홈 기본 화면(대시보드)이 뜬다. 다만 검색·즐겨찾기 결과에서 폴더를 열어
+  // 파일 탭으로 넘어갈 때(openFolder)는 그 폴더 경로를 그대로 유지해야
+  // 하므로, 그 경우엔 suppressFolderResetRef로 이 초기화를 한 번 건너뛴다.
+  const suppressFolderResetRef = useRef(false);
+  useEffect(() => {
+    if (suppressFolderResetRef.current) {
+      suppressFolderResetRef.current = false;
+    } else if (tab === "files") {
+      setFolderPath([]);
+    }
+    setShowFavorites(false);
+  }, [tab]);
+
   // 홈 탭은 파일 목록 화면(FilesPage) 자체가 없어 검색해도 결과를 보여줄 곳이
   // 없다. 그래서 한 글자라도 치는 순간 파일 탭으로 넘기면서 방금 친 검색어를
   // 그대로 이어받게 한다(위 tab 변경 시 검색어 초기화 effect를 한 번 건너뜀).
@@ -638,7 +654,10 @@ export default function App() {
       setSearchQuery("");
       setShowFavorites(false);
       setFolderPath([{ id: item.id, name: item.name }]);
-      if (tab !== "files") setTab("files");
+      if (tab !== "files") {
+        suppressFolderResetRef.current = true;
+        setTab("files");
+      }
     } else {
       setFolderPath((p) => [...p, { id: item.id, name: item.name }]);
     }
@@ -721,6 +740,7 @@ export default function App() {
                 toolkitLayout={toolkitLayout}
                 viewMode={viewMode}
                 onChangeToolkitLayout={changeToolkitLayout}
+                onResetToolkitLayout={() => changeToolkitLayout(BASE_TOOL_IDS, "reset")}
                 searchAlwaysOn={searchAlwaysOn}
                 onToggleSearchAlwaysOn={setSearchAlwaysOn}
                 onOpenTrash={() => setShowTrash(true)}
