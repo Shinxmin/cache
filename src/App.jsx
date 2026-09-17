@@ -8,12 +8,12 @@ import TransfersPage from "./pages/TransfersPage";
 import TrashPage from "./pages/TrashPage";
 import TagsPage from "./pages/TagsPage";
 import FileViewer from "./pages/FileViewer";
+import SplitCompareViewer from "./pages/SplitCompareViewer";
 import RenameModal from "./components/RenameModal";
 import MoveModal from "./components/MoveModal";
 import TagModal from "./components/TagModal";
 import OptimizeModal from "./components/OptimizeModal";
 import NewFolderModal from "./components/NewFolderModal";
-import PaletteModal from "./components/PaletteModal";
 import Toast from "./components/Toast";
 import HomePage from "./pages/HomePage";
 import AddonStorePage from "./pages/AddonStorePage";
@@ -89,8 +89,11 @@ export default function App() {
   // 검색·스튜디오 툴킷이 파일 탭과 똑같이 동작한다.
   const [showFavorites, setShowFavorites] = useState(false);
   const [showAddonStore, setShowAddonStore] = useState(false);
-  // 팔레트 추출 애드온 모달의 대상 파일. null이면 닫힌 상태.
-  const [paletteTarget, setPaletteTarget] = useState(null);
+  // 팔레트 추출 애드온(v1.1)의 대상 파일. null이면 닫힌 상태 — 열리면 별도
+  // 모달이 아니라 FileViewer를 paletteMode로 띄운다.
+  const [paletteViewerItem, setPaletteViewerItem] = useState(null);
+  // 스플릿 비교 애드온의 대상 두 파일 [A, B]. null이면 닫힌 상태.
+  const [splitCompareTargets, setSplitCompareTargets] = useState(null);
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(0);
 
@@ -540,9 +543,13 @@ export default function App() {
     }
   };
 
-  // 팔레트 추출 애드온: 한 번에 파일 하나에만 실행된다. 이미지 파일 딱 하나가
-  // 선택돼 있을 때만 모달을 열고, 그 외(아무것도 없거나 둘 이상, 또는 폴더·
-  // 이미지가 아닌 파일)에는 토스트로 안내한다.
+  const looksLikeImageFile = (it) =>
+    isImage(it.mime) || isOptimizableFile(it.name) || /\.(gif|webp)$/i.test(it.name);
+
+  // 팔레트 추출 애드온(v1.1): 한 번에 파일 하나에만 실행된다. 이미지 파일 딱
+  // 하나가 선택돼 있을 때만 파일 클릭 시 뜨는 기본 뷰어를 palette 모드로
+  // 열고, 그 외(아무것도 없거나 둘 이상, 또는 폴더·이미지가 아닌 파일)에는
+  // 토스트로 안내한다. 더 이상 별도 모달을 열지 않는다.
   const handlePaletteSelected = () => {
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
     if (targets.length !== 1 || targets[0].is_folder) {
@@ -550,11 +557,27 @@ export default function App() {
       return;
     }
     const target = targets[0];
-    if (!(isImage(target.mime) || isOptimizableFile(target.name) || /\.(gif|webp)$/i.test(target.name))) {
+    if (!looksLikeImageFile(target)) {
       showToast("이미지 파일만 선택할 수 있습니다");
       return;
     }
-    setPaletteTarget(target);
+    setPaletteViewerItem(target);
+  };
+
+  // 스플릿 비교 애드온: 정확히 두 개의 이미지(움짤 포함)가 선택돼 있어야
+  // 하며, 먼저 선택한 순서가 곧 A(왼쪽)·B(오른쪽)가 된다 — selectedIds는
+  // Set이라 삽입 순서를 그대로 보존한다. 그 외에는 토스트로 안내한다.
+  const handleSplitCompareSelected = () => {
+    const targets = [...selectedIds].map((id) => visibleItems.find((it) => it.id === id)).filter(Boolean);
+    if (targets.length !== 2) {
+      showToast("두 개의 파일만 선택할 수 있습니다");
+      return;
+    }
+    if (targets.some((it) => it.is_folder || !looksLikeImageFile(it))) {
+      showToast("이미지 파일만 선택할 수 있습니다");
+      return;
+    }
+    setSplitCompareTargets(targets);
   };
 
   // 스튜디오 툴킷의 아이콘은 도구 id로 눌리고, 여기서 실제 동작에 연결한다.
@@ -582,6 +605,8 @@ export default function App() {
         return handleEditSelected();
       case "palette":
         return handlePaletteSelected();
+      case "split":
+        return handleSplitCompareSelected();
       default:
         return undefined;
     }
@@ -785,7 +810,22 @@ export default function App() {
         <OptimizeModal items={optimizeTargets} onClose={() => setOptimizeTargets(null)} onSubmit={handleOptimizeSubmit} />
       )}
       {newFolderOpen && <NewFolderModal onClose={() => setNewFolderOpen(false)} onSubmit={handleNewFolderSubmit} />}
-      {paletteTarget && <PaletteModal session={session} item={paletteTarget} onClose={() => setPaletteTarget(null)} />}
+      {paletteViewerItem && (
+        <FileViewer
+          session={session}
+          items={[paletteViewerItem]}
+          initialIndex={0}
+          paletteMode
+          onClose={() => setPaletteViewerItem(null)}
+        />
+      )}
+      {splitCompareTargets && (
+        <SplitCompareViewer
+          session={session}
+          items={splitCompareTargets}
+          onClose={() => setSplitCompareTargets(null)}
+        />
+      )}
       <Toast message={toast} />
     </>
   );

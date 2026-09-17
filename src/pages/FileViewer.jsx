@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { fileUrl } from "../lib/drive";
+import { fetchFileBlob, fileUrl } from "../lib/drive";
+import { extractPalette } from "../lib/palette";
 import { isImage, isVideo } from "../lib/thumbnail";
 import { CloseIcon } from "../components/icons";
 import Spinner from "../components/Spinner";
@@ -11,10 +12,14 @@ const SWIPE_THRESHOLD = 50;
 // 좌우로 스와이프하면 같은 폴더의 다른 이미지·영상으로 넘어간다(items가 그
 // 목록, index는 그 안에서 지금 보고 있는 위치). 영상·움짤(gif/webp)은 열리면
 // 바로 재생되고 끝나면 처음부터 반복한다.
-export default function FileViewer({ session, items, initialIndex, onClose }) {
+//
+// paletteMode(팔레트 추출 애드온 v1.1)가 켜져 있으면 별도 모달 없이 이 화면
+// 위, 닫기(X) 버튼 쪽 좌측에 상위 5색을 바로 얹어 보여준다.
+export default function FileViewer({ session, items, initialIndex, onClose, paletteMode = false }) {
   const [index, setIndex] = useState(initialIndex);
   const [url, setUrl] = useState(null);
   const [failed, setFailed] = useState(false);
+  const [paletteColors, setPaletteColors] = useState(null);
   const swipeStart = useRef(null);
   // 드래그(스와이프) 끝에는 브라우저가 mouseup 위치에서 click 이벤트를 마저
   // 쏘는데, 그 click이 배경까지 전파되면 넘기자마자 뷰어가 닫혀 버린다.
@@ -52,6 +57,26 @@ export default function FileViewer({ session, items, initialIndex, onClose }) {
     };
   }, [session.token, item]);
 
+  // 팔레트 추출은 표시용 presigned URL이 아니라 캔버스로 픽셀을 읽어야 하므로
+  // (CORS로 오염되지 않게) 별도로 blob을 받아 계산한다. 뷰어 자체는 그대로
+  // 위 url로 <img>를 그린다.
+  useEffect(() => {
+    if (!paletteMode || !item) return;
+    let cancelled = false;
+    setPaletteColors(null);
+    fetchFileBlob(session.token, item.r2_key)
+      .then((blob) => extractPalette(blob, 5))
+      .then((colors) => {
+        if (!cancelled) setPaletteColors(colors);
+      })
+      .catch(() => {
+        if (!cancelled) setPaletteColors([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [paletteMode, session.token, item]);
+
   if (!item) return null;
 
   const goPrev = () => setIndex((i) => Math.max(0, i - 1));
@@ -87,6 +112,16 @@ export default function FileViewer({ session, items, initialIndex, onClose }) {
       <button className="viewer-close" type="button" aria-label="닫기" onClick={onClose}>
         <CloseIcon />
       </button>
+      {paletteMode && paletteColors && paletteColors.length > 0 && (
+        <ul className="viewer-palette" onClick={(e) => e.stopPropagation()}>
+          {paletteColors.map((hex) => (
+            <li key={hex} className="palette-row">
+              <span className="palette-swatch" style={{ background: hex }} aria-hidden="true" />
+              <span className="palette-hex">{hex}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       {/* .viewer-content 자체는 화면 전체를 채우는 정렬용 박스라, 클릭 전파 막기는
           실제 보이는 미디어 요소에만 걸어야 한다 — 그래야 미디어 바깥(패딩 여백)을
           눌렀을 때는 배경까지 전파되어 뷰어가 닫힌다. 스와이프 감지는 이 박스

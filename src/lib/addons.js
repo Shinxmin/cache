@@ -6,8 +6,14 @@ export const ADDONS = [
   {
     id: "palette",
     name: "팔레트 추출",
-    version: "1.0.0",
+    version: "1.1.0",
     description: "이미지에서 지배적인 상위 5가지 주요 색상을 팔레트 자동 생성합니다",
+  },
+  {
+    id: "split",
+    name: "스플릿 비교",
+    version: "1.0.0",
+    description: "두 이미지를 나란히 두고 슬라이더로 드래그해 차이를 비교합니다",
   },
 ];
 

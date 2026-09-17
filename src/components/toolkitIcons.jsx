@@ -53,6 +53,17 @@ export function PaletteIcon({ size = 18 }) {
   );
 }
 
+// 스플릿 비교 애드온: 가운데 세로선이 있는 좌우 대비 창.
+export function SplitIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <line x1="12" y1="4" x2="12" y2="20" />
+      <circle cx="12" cy="12" r="2.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 // 스튜디오 툴킷 도구 레지스트리. 툴킷 바(StudioToolkitBar)와 설정의 사용자
 // 정렬 미리보기(ToolkitArranger)가 같은 정의를 공유한다. ctx: { viewMode }.
 export const TOOL_META = {
@@ -72,6 +83,7 @@ export const TOOL_META = {
   rename: { label: "이름 바꾸기", needsSelection: true, icon: () => <PencilIcon /> },
   // 애드온
   palette: { label: "팔레트 추출", needsSelection: true, icon: () => <PaletteIcon /> },
+  split: { label: "스플릿 비교", needsSelection: true, icon: () => <SplitIcon /> },
 };
 
 export function toolLabel(id, ctx) {
