@@ -30,6 +30,7 @@ import {
   downloadFile,
   downloadFolderAsZip,
   downloadSelectionAsZip,
+  duplicateFileAsPreset,
   moveFiles,
   optimizeFiles,
   renameFiles,
@@ -580,6 +581,42 @@ export default function App() {
     setSplitCompareTargets(targets);
   };
 
+  // 스플릿 비교 화면의 프리셋 저장: 지금 보고 있는 A/B 두 파일을 그대로
+  // 복제해 최근 연 폴더(지금 parentId)에 저장한다. 복제본은 새 파일이라
+  // 원본을 나중에 지워도 영향받지 않는다. 이름은 "프리셋_1", "프리셋_2"…
+  // 순으로 붙이며, 그 폴더에 이미 프리셋이 있으면 이어서 번호를 매긴다.
+  const handleSaveSplitPreset = async (itemA, itemB) => {
+    const used = visibleItems
+      .map((it) => /^프리셋_(\d+)/.exec(it.name))
+      .filter(Boolean)
+      .map((m) => parseInt(m[1], 10));
+    const start = used.length ? Math.max(...used) + 1 : 1;
+    const extOf = (name) => {
+      const dot = name.lastIndexOf(".");
+      return dot > 0 ? name.slice(dot) : "";
+    };
+    try {
+      await duplicateFileAsPreset({
+        token: session.token,
+        userId: session.userId,
+        item: itemA,
+        parentId,
+        name: `프리셋_${start}${extOf(itemA.name)}`,
+      });
+      await duplicateFileAsPreset({
+        token: session.token,
+        userId: session.userId,
+        item: itemB,
+        parentId,
+        name: `프리셋_${start + 1}${extOf(itemB.name)}`,
+      });
+      setRefreshKey((k) => k + 1);
+      showToast("프리셋으로 저장했습니다");
+    } catch {
+      window.alert("프리셋을 저장하지 못했습니다");
+    }
+  };
+
   // 스튜디오 툴킷의 아이콘은 도구 id로 눌리고, 여기서 실제 동작에 연결한다.
   const handleTool = (id) => {
     switch (id) {
@@ -824,6 +861,7 @@ export default function App() {
           session={session}
           items={splitCompareTargets}
           onClose={() => setSplitCompareTargets(null)}
+          onSavePreset={handleSaveSplitPreset}
         />
       )}
       <Toast message={toast} />
