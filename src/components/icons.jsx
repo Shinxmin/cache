@@ -121,6 +121,16 @@ export function ChevronRightIcon({ size = 18 }) {
   );
 }
 
+// 복제(프리셋 저장) — 겹쳐진 두 사각형.
+export function DuplicateIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <rect x="8" y="8" width="12" height="12" rx="2" />
+      <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+    </svg>
+  );
+}
+
 // 선택된 항목 배지에 쓰는 체크마크. 체크박스(Checkbox.jsx)와 같은 획 스타일이다.
 export function CheckIcon({ size = 13 }) {
   return (

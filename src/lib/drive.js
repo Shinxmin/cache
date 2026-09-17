@@ -235,6 +235,16 @@ export async function uploadFile({ token, userId, file, parentId = null, onProgr
   );
 }
 
+// 스플릿 비교 애드온의 프리셋 저장: 지금 보고 있는 파일을 그대로 복제해
+// 새 이름으로 폴더에 저장한다. 원본 blob을 받아 새 File처럼 만들어 업로드와
+// 같은 경로(새 r2_key·썸네일까지)를 그대로 타므로, 나중에 원본을 지워도
+// 이 복제본은 독립된 파일이라 영향받지 않는다.
+export async function duplicateFileAsPreset({ token, userId, item, parentId, name }) {
+  const blob = await fetchFileBlob(token, item.r2_key);
+  const file = new File([blob], name, { type: item.mime || blob.type });
+  return uploadFile({ token, userId, file, parentId });
+}
+
 function loadImage(blob) {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(blob);
