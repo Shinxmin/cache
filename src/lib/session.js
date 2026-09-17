@@ -36,7 +36,20 @@ export function clearSession() {
 export async function verifySession(token) {
   const { data, error } = await supabase.rpc("resolve_session", { p_token: token });
   if (error || !data?.ok) return null;
-  return { token, username: data.username, userId: data.user_id, toolkitAlwaysOn: data.toolkit_always_on };
+  return {
+    token,
+    username: data.username,
+    userId: data.user_id,
+    toolkitAlwaysOn: data.toolkit_always_on,
+    toolkitLayout: data.toolkit_layout ?? null,
+  };
+}
+
+// 스튜디오 툴킷 도구 순서(애드온 포함). 추가·삭제·정렬 모두 이걸로 저장되며
+// 서버가 toolkit_events에 행동을 기록한다. action: add_addon | remove_addon | reorder
+export async function setToolkitLayout(token, layout, action, addon = null) {
+  const { error } = await supabase.rpc("set_toolkit_layout", { p_token: token, p_layout: layout, p_action: action, p_addon: addon });
+  if (error) throw new Error(error.message);
 }
 
 // 설정의 "스튜디오 툴킷 항상 활성화" 체크박스는 계정에 저장되어, 다른 기기에서
