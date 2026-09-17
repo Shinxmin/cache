@@ -13,7 +13,18 @@ import MoveModal from "./components/MoveModal";
 import TagModal from "./components/TagModal";
 import OptimizeModal from "./components/OptimizeModal";
 import NewFolderModal from "./components/NewFolderModal";
-import { clearSession, loadSession, saveSession, setToolkitAlwaysOn as persistToolkitAlwaysOn, verifySession } from "./lib/session";
+import PaletteModal from "./components/PaletteModal";
+import Toast from "./components/Toast";
+import HomePage from "./pages/HomePage";
+import AddonStorePage from "./pages/AddonStorePage";
+import {
+  clearSession,
+  loadSession,
+  saveSession,
+  setToolkitAlwaysOn as persistToolkitAlwaysOn,
+  setToolkitLayout as persistToolkitLayout,
+  verifySession,
+} from "./lib/session";
 import {
   createFolder,
   downloadFile,
@@ -23,6 +34,7 @@ import {
   optimizeFiles,
   renameFiles,
   setBlur,
+  setFavorite,
   setInfoRevealed,
   setTag,
   trashFiles,
@@ -31,6 +43,10 @@ import {
 import { isImage, isVideo } from "./lib/thumbnail";
 import { isSearchActive } from "./lib/search";
 import { loadTheme, saveTheme } from "./lib/theme";
+import { BASE_TOOL_IDS, installedAddonIds, normalizeLayout } from "./lib/toolkit";
+import { isOptimizableFile } from "./lib/optimize";
+
+const TOAST_MS = 2000;
 
 // 검색바는 홈·파일 탭에서만 뜬다(설정에는 없음). 제목과 한 fixed 박스로 묶여
 // PageHeader 안에서 렌더링된다(PageHeader.jsx 참고).
@@ -66,6 +82,17 @@ export default function App() {
   // 아래 toolkitVisible이 결정한다(이 설정이 꺼져 있어도 선택 중이면 뜬다).
   const [toolkitAlwaysOn, setToolkitAlwaysOn] = useState(false);
   const [searchAlwaysOn, setSearchAlwaysOn] = useState(true);
+  // 스튜디오 툴킷 도구 순서(애드온 포함). 계정(app_users.toolkit_layout)에
+  // 저장되며 애드온 스토어의 추가, 설정의 사용자 정렬·휴지통 삭제가 바꾼다.
+  const [toolkitLayout, setToolkitLayoutState] = useState(() => normalizeLayout(BASE_TOOL_IDS));
+  // 홈 → 즐겨찾기 화면. true면 홈 탭 자리에 즐겨찾기 목록(FilesPage)이 뜨고
+  // 검색·스튜디오 툴킷이 파일 탭과 똑같이 동작한다.
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [showAddonStore, setShowAddonStore] = useState(false);
+  // 팔레트 추출 애드온 모달의 대상 파일. null이면 닫힌 상태.
+  const [paletteTarget, setPaletteTarget] = useState(null);
+  const [toast, setToast] = useState(null);
+  const toastTimerRef = useRef(0);
 
   // 파일 탭(웹드라이브) 상태
   const [viewMode, setViewMode] = useState("gallery");
@@ -139,7 +166,10 @@ export default function App() {
   // "스튜디오 툴킷 항상 활성화" 값을 그대로 불러온다 — 다른 기기에서
   // 로그인해도 이 설정이 유지되게 하기 위함이다.
   useEffect(() => {
-    if (session) setToolkitAlwaysOn(Boolean(session.toolkitAlwaysOn));
+    if (session) {
+      setToolkitAlwaysOn(Boolean(session.toolkitAlwaysOn));
+      setToolkitLayoutState(normalizeLayout(session.toolkitLayout ?? BASE_TOOL_IDS));
+    }
   }, [session]);
 
   // 체크박스를 바꾸면 화면에 바로 반영하는 동시에 계정에도 저장한다.
@@ -148,6 +178,27 @@ export default function App() {
     persistToolkitAlwaysOn(session.token, value).catch(() => {});
   };
 
+  // 툴킷 레이아웃 변경(애드온 추가·삭제, 정렬)은 전부 여기로 모여 화면에 바로
+  // 반영하고 서버에 저장·기록한다. 저장이 실패하면 이전 순서로 되돌린다.
+  const changeToolkitLayout = async (nextLayout, action, addon = null) => {
+    const prev = toolkitLayout;
+    const next = normalizeLayout(nextLayout);
+    setToolkitLayoutState(next);
+    try {
+      await persistToolkitLayout(session.token, next, action, addon);
+    } catch {
+      setToolkitLayoutState(prev);
+      window.alert("툴킷 설정을 저장하지 못했습니다");
+    }
+  };
+
+  const showToast = (message) => {
+    clearTimeout(toastTimerRef.current);
+    setToast(message);
+    toastTimerRef.current = setTimeout(() => setToast(null), TOAST_MS);
+  };
+  useEffect(() => () => clearTimeout(toastTimerRef.current), []);
+
   const parentId = folderPath.length ? folderPath[folderPath.length - 1].id : null;
   const activeTransfer = useMemo(() => transfers.find((t) => t.status === "active"), [transfers]);
 
@@ -155,7 +206,7 @@ export default function App() {
   // 이전에 보이던 항목 기준의 선택은 의미가 없다.
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [parentId, searchQuery]);
+  }, [parentId, searchQuery, showFavorites]);
 
   // 탭을 바꾸면 검색어를 비운다 — SearchBar도 key={tab}으로 새로 마운트돼
   // 입력창 자체가 비워지므로, 여기 상태도 같이 맞춰 다음에 파일 탭으로
@@ -176,17 +227,21 @@ export default function App() {
   // 그대로 이어받게 한다(위 tab 변경 시 검색어 초기화 effect를 한 번 건너뜀).
   const handleSearch = (value) => {
     setSearchQuery(value);
-    if (isSearchActive(value) && tab !== "files") {
+    // 즐겨찾기 화면은 그 자리에서 검색이 되므로 파일 탭으로 넘기지 않는다.
+    if (isSearchActive(value) && tab !== "files" && !showFavorites) {
       suppressSearchClearRef.current = true;
       setTab("files");
     }
   };
 
-  // 스튜디오 툴킷 "바"는 파일 탭에서만 뜬다. 설정이 항상 켜 두었거나 선택된
-  // 파일이 하나라도 있으면 뜨지만(선택은 애초에 파일 탭에서만 생기니 사실상
-  // "항상 활성화" 설정만 문제인데), 홈 탭에는 선택할 파일 목록 자체가 없으므로
-  // "항상 활성화"가 켜져 있어도 홈 탭에서는 뜨지 않아야 한다.
-  const toolkitVisible = tab === "files" && (toolkitAlwaysOn || selectedIds.size > 0);
+  // 파일 목록이 실제로 떠 있는 화면 — 파일 탭이거나 홈 → 즐겨찾기 화면.
+  const listVisible = tab === "files" || (tab === "home" && showFavorites);
+
+  // 스튜디오 툴킷 "바"는 파일 목록이 있는 화면(파일 탭·즐겨찾기)에서만 뜬다.
+  // 설정이 항상 켜 두었거나 선택된 파일이 하나라도 있으면 뜨지만, 홈 탭
+  // 본문(대시보드)에는 선택할 파일 목록 자체가 없으므로 "항상 활성화"가 켜져
+  // 있어도 거기서는 뜨지 않아야 한다.
+  const toolkitVisible = listVisible && (toolkitAlwaysOn || selectedIds.size > 0);
   const allSelected = visibleItems.length > 0 && visibleItems.every((it) => selectedIds.has(it.id));
 
   const toggleSelect = (item) => {
@@ -455,6 +510,73 @@ export default function App() {
     }
   };
 
+  // 선택된 파일·폴더의 즐겨찾기를 토글한다. 블러와 같은 "일부면 켜는 쪽으로"
+  // 방식이다 — 전부 즐겨찾기면 풀고, 아니면 전부 즐겨찾기한다.
+  const handleFavoriteSelected = async () => {
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    if (!targets.length) return;
+    const next = !targets.every((it) => it.favorite);
+    try {
+      await setFavorite(session.token, targets.map((it) => it.id), next);
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("즐겨찾기를 저장하지 못했습니다");
+    }
+  };
+
+  // 팔레트 추출 애드온: 한 번에 파일 하나에만 실행된다. 이미지 파일 딱 하나가
+  // 선택돼 있을 때만 모달을 열고, 그 외(아무것도 없거나 둘 이상, 또는 폴더·
+  // 이미지가 아닌 파일)에는 토스트로 안내한다.
+  const handlePaletteSelected = () => {
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    if (targets.length !== 1 || targets[0].is_folder) {
+      showToast("한 개의 파일만 선택할 수 있습니다");
+      return;
+    }
+    const target = targets[0];
+    if (!(isImage(target.mime) || isOptimizableFile(target.name) || /\.(gif|webp)$/i.test(target.name))) {
+      showToast("이미지 파일만 선택할 수 있습니다");
+      return;
+    }
+    setPaletteTarget(target);
+  };
+
+  // 스튜디오 툴킷의 아이콘은 도구 id로 눌리고, 여기서 실제 동작에 연결한다.
+  const handleTool = (id) => {
+    switch (id) {
+      case "info":
+        return handleToggleInfo();
+      case "trash":
+        return handleTrashSelected();
+      case "download":
+        return handleDownloadSelected();
+      case "move":
+        return handleMoveSelected();
+      case "view":
+        return setViewMode((v) => (v === "gallery" ? "list" : "gallery"));
+      case "blur":
+        return handleBlurSelected();
+      case "optimize":
+        return handleOptimizeSelected();
+      case "favorite":
+        return handleFavoriteSelected();
+      case "tag":
+        return handleTagSelected();
+      case "rename":
+        return handleEditSelected();
+      case "palette":
+        return handlePaletteSelected();
+      default:
+        return undefined;
+    }
+  };
+
+  // 애드온 스토어의 추가(+): 레이아웃 끝에 붙인다(이미 있으면 무시).
+  const handleAddAddon = async (addonId) => {
+    if (toolkitLayout.includes(addonId)) return;
+    await changeToolkitLayout([...toolkitLayout, addonId], "add_addon", addonId);
+  };
+
   const handleRenameSubmit = async (renames) => {
     try {
       await renameFiles(session.token, renames);
@@ -490,8 +612,37 @@ export default function App() {
     return <TagsPage session={session} onBack={() => setShowTags(false)} />;
   }
 
+  if (showAddonStore) {
+    return (
+      <AddonStorePage
+        installedIds={new Set(installedAddonIds(toolkitLayout))}
+        onAdd={handleAddAddon}
+        onBack={() => setShowAddonStore(false)}
+      />
+    );
+  }
+
   const isFiles = tab === "files";
-  const title = isFiles && folderPath.length ? folderPath[folderPath.length - 1].name : TABS.find((t) => t.id === tab).label;
+  const favoritesView = tab === "home" && showFavorites;
+  const title = favoritesView
+    ? "즐겨찾기"
+    : isFiles && folderPath.length
+      ? folderPath[folderPath.length - 1].name
+      : TABS.find((t) => t.id === tab).label;
+
+  // 검색 결과·즐겨찾기에서 연 폴더는 지금 폴더 경로의 하위가 아니라 드라이브
+  // 어디에나 있을 수 있으므로, 기존 경로에 이어 붙이지 않고 검색·즐겨찾기를
+  // 끝낸 뒤 파일 탭에서 그 폴더를 새 최상위처럼 연다.
+  const openFolder = (item) => {
+    if (isSearchActive(searchQuery) || favoritesView) {
+      setSearchQuery("");
+      setShowFavorites(false);
+      setFolderPath([{ id: item.id, name: item.name }]);
+      if (tab !== "files") setTab("files");
+    } else {
+      setFolderPath((p) => [...p, { id: item.id, name: item.name }]);
+    }
+  };
 
   return (
     <>
@@ -509,11 +660,18 @@ export default function App() {
               searchQuery={searchQuery}
               onSearch={handleSearch}
               viewMode={viewMode}
-              onToggleView={() => setViewMode((v) => (v === "gallery" ? "list" : "gallery"))}
               onUpload={handleUpload}
               onNewFolder={handleNewFolder}
-              canGoBack={isFiles && folderPath.length > 0}
-              onBack={() => setFolderPath((p) => p.slice(0, -1))}
+              canGoBack={(isFiles && folderPath.length > 0) || favoritesView}
+              onBack={() => {
+                if (favoritesView) {
+                  setShowFavorites(false);
+                  setSearchQuery("");
+                  setSelectedIds(new Set());
+                } else {
+                  setFolderPath((p) => p.slice(0, -1));
+                }
+              }}
               transferVisible={transfers.length > 0}
               transferInProgress={Boolean(activeTransfer)}
               transferDirection={(activeTransfer ?? transfers[0])?.direction}
@@ -522,36 +680,29 @@ export default function App() {
               allSelected={allSelected}
               onToggleSelectAll={handleToggleSelectAll}
               hasSelection={selectedIds.size > 0}
-              onDownloadSelected={handleDownloadSelected}
-              onTrashSelected={handleTrashSelected}
-              onBlurSelected={handleBlurSelected}
               infoVisible={(() => {
                 const targets = visibleItems.filter((it) => selectedIds.has(it.id));
                 return targets.length > 0 && targets.every((it) => it.info_revealed);
               })()}
-              onToggleInfo={handleToggleInfo}
-              onEditSelected={handleEditSelected}
-              onMoveSelected={handleMoveSelected}
-              onTagSelected={handleTagSelected}
-              onOptimizeSelected={handleOptimizeSelected}
+              toolkitLayout={toolkitLayout}
+              onTool={handleTool}
             />
-            {isFiles && (
+            {tab === "home" && !showFavorites && (
+              <HomePage
+                session={session}
+                refreshKey={refreshKey}
+                onOpenFavorites={() => setShowFavorites(true)}
+                onOpenAddonStore={() => setShowAddonStore(true)}
+              />
+            )}
+            {(isFiles || favoritesView) && (
               <FilesPage
                 session={session}
                 viewMode={viewMode}
                 parentId={parentId}
+                favorites={favoritesView}
                 searchQuery={searchQuery}
-                onOpenFolder={(item) => {
-                  // 검색 결과에서 연 폴더는 지금 폴더 경로의 하위가 아니라
-                  // 드라이브 어디에나 있을 수 있으므로, 기존 경로에 이어
-                  // 붙이지 않고 검색을 끝낸 뒤 그 폴더를 새 최상위처럼 연다.
-                  if (isSearchActive(searchQuery)) {
-                    setSearchQuery("");
-                    setFolderPath([{ id: item.id, name: item.name }]);
-                  } else {
-                    setFolderPath((p) => [...p, { id: item.id, name: item.name }]);
-                  }
-                }}
+                onOpenFolder={openFolder}
                 onOpenFile={handleOpenFile}
                 refreshKey={refreshKey}
                 selectionMode={selectedIds.size > 0}
@@ -567,6 +718,9 @@ export default function App() {
                 onToggleTheme={handleToggleTheme}
                 toolkitActive={toolkitAlwaysOn}
                 onToggleToolkit={handleToggleToolkitAlwaysOn}
+                toolkitLayout={toolkitLayout}
+                viewMode={viewMode}
+                onChangeToolkitLayout={changeToolkitLayout}
                 searchAlwaysOn={searchAlwaysOn}
                 onToggleSearchAlwaysOn={setSearchAlwaysOn}
                 onOpenTrash={() => setShowTrash(true)}
@@ -611,6 +765,8 @@ export default function App() {
         <OptimizeModal items={optimizeTargets} onClose={() => setOptimizeTargets(null)} onSubmit={handleOptimizeSubmit} />
       )}
       {newFolderOpen && <NewFolderModal onClose={() => setNewFolderOpen(false)} onSubmit={handleNewFolderSubmit} />}
+      {paletteTarget && <PaletteModal session={session} item={paletteTarget} onClose={() => setPaletteTarget(null)} />}
+      <Toast message={toast} />
     </>
   );
 }

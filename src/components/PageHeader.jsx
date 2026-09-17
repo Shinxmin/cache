@@ -33,7 +33,6 @@ export default function PageHeader({
   searchQuery,
   onSearch,
   viewMode,
-  onToggleView,
   onUpload,
   onNewFolder,
   canGoBack,
@@ -46,15 +45,9 @@ export default function PageHeader({
   allSelected,
   onToggleSelectAll,
   hasSelection,
-  onDownloadSelected,
-  onTrashSelected,
-  onBlurSelected,
   infoVisible,
-  onToggleInfo,
-  onEditSelected,
-  onMoveSelected,
-  onTagSelected,
-  onOptimizeSelected,
+  toolkitLayout,
+  onTool,
 }) {
   const ref = useRef(null);
   const [collapsed, setCollapsed] = useState(!searchAlwaysOn);
@@ -216,20 +209,13 @@ export default function PageHeader({
           끄면(항상 활성화 때문에 떠 있었다면) 사라진다. */}
       {showSearch && toolkitActive && (
         <StudioToolkitBar
+          layout={toolkitLayout}
           viewMode={viewMode}
-          onToggleView={onToggleView}
           allSelected={allSelected}
           onToggleSelectAll={onToggleSelectAll}
           hasSelection={hasSelection}
-          onDownloadSelected={onDownloadSelected}
-          onTrashSelected={onTrashSelected}
-          onBlurSelected={onBlurSelected}
           infoVisible={infoVisible}
-          onToggleInfo={onToggleInfo}
-          onEditSelected={onEditSelected}
-          onMoveSelected={onMoveSelected}
-          onTagSelected={onTagSelected}
-          onOptimizeSelected={onOptimizeSelected}
+          onTool={onTool}
           style={{ transform: collapsed ? `translateY(-${toolkitLift}px)` : "none" }}
         />
       )}

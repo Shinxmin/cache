@@ -1,10 +1,25 @@
 import { useEffect, useRef, useState } from "react";
-import { folderSizes, listFiles, searchFiles, thumbnailUrls } from "../lib/drive";
+import { folderSizes, listFavorites, listFiles, searchFiles, thumbnailUrls } from "../lib/drive";
 import { formatBytes } from "../lib/format";
 import { isSearchActive, parseSearchQuery } from "../lib/search";
 import { CheckIcon, FileIcon, FolderIcon } from "../components/icons";
+import { StarIcon } from "../components/toolkitIcons";
 import Spinner from "../components/Spinner";
 import useLongPress from "../hooks/useLongPress";
+
+// 즐겨찾기된 항목은 제목 바로 오른쪽에 작은 별로 표시한다.
+function NameWithStar({ name, favorite, className }) {
+  return (
+    <span className={className}>
+      {name}
+      {favorite && (
+        <span className="drive-fav-star" aria-label="즐겨찾기">
+          <StarIcon size={11} />
+        </span>
+      )}
+    </span>
+  );
+}
 
 // 정보(i) 아이콘으로 그 항목의 용량 표기를 켰을 때만(item.info_revealed가
 // true일 때만) 밑에 보여줄 용량 문구. 블러와 마찬가지로 서버에 저장돼 있어
@@ -38,7 +53,7 @@ function GalleryTile({ item, thumb, selected, size, onTap, onLongPress }) {
             draggable={false}
           />
           <span className="drive-tile-overlay-name">
-            <span className="drive-tile-overlay-title">{item.name}</span>
+            <NameWithStar className="drive-tile-overlay-title" name={item.name} favorite={item.favorite} />
             {size && <span className="drive-tile-overlay-size">{size}</span>}
           </span>
           {selected && (
@@ -64,7 +79,7 @@ function GalleryTile({ item, thumb, selected, size, onTap, onLongPress }) {
             </span>
           )}
           <span className="drive-tile-caption">
-            <span className="drive-tile-name">{item.name}</span>
+            <NameWithStar className="drive-tile-name" name={item.name} favorite={item.favorite} />
             {size && <span className="drive-tile-size">{size}</span>}
           </span>
         </span>
@@ -79,7 +94,7 @@ function ListRow({ item, selected, size, onTap, onLongPress }) {
     <button className={`drive-row${selected ? " selected" : ""}`} type="button" {...press}>
       <span className="drive-row-icon">{item.is_folder ? <FolderIcon size={20} /> : <FileIcon size={20} />}</span>
       <span className="drive-row-text">
-        <span className="drive-row-name">{item.name}</span>
+        <NameWithStar className="drive-row-name" name={item.name} favorite={item.favorite} />
         {size && <span className="drive-row-size">{size}</span>}
       </span>
       {selected && (
@@ -104,6 +119,7 @@ export default function FilesPage({
   session,
   viewMode,
   parentId,
+  favorites = false,
   searchQuery,
   onOpenFolder,
   onOpenFile,
@@ -132,9 +148,12 @@ export default function FilesPage({
     // 같은 폴더에서 태그·정보표시 등 사소한 변경으로 refreshKey만 바뀌었을
     // 땐 이미 떠 있는 화면을 그대로 둔 채 조용히 데이터만 바꿔치기한다 —
     // 안 그러면 실시간 검색인데도 매 타이핑마다 화면이 깜빡이게 된다.
-    const changedFolder = !searching && (prevSearchActiveRef.current || prevParentIdRef.current !== parentId);
+    // favorites(즐겨찾기 화면)는 폴더 대신 즐겨찾기 목록을 보여주는 또 하나의
+    // "폴더"처럼 취급한다 — 들어가고 나갈 때 폴더를 옮긴 것과 같이 갈아치운다.
+    const sourceKey = favorites ? "favorites" : parentId;
+    const changedFolder = !searching && (prevSearchActiveRef.current || prevParentIdRef.current !== sourceKey);
     const enteredSearch = searching && !prevSearchActiveRef.current;
-    prevParentIdRef.current = parentId;
+    prevParentIdRef.current = sourceKey;
     prevSearchActiveRef.current = searching;
     if (changedFolder || enteredSearch) {
       setState("loading");
@@ -146,7 +165,11 @@ export default function FilesPage({
 
     (async () => {
       try {
-        const rows = searching ? await searchFiles(session.token, { name, tag }) : await listFiles(session.token, parentId);
+        const rows = searching
+          ? await searchFiles(session.token, { name, tag })
+          : favorites
+            ? await listFavorites(session.token)
+            : await listFiles(session.token, parentId);
         if (cancelled) return;
         setItems(rows);
         setState("ready");
@@ -171,7 +194,7 @@ export default function FilesPage({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session.token, parentId, refreshKey, searchQuery]);
+  }, [session.token, parentId, favorites, refreshKey, searchQuery]);
 
   // 용량 표기가 켜진 폴더들의 용량을 받아 온다. 폴더는 자체 용량이 없어
   // 하위 파일을 재귀 합산해야 하므로 서버에 따로 물어본다.
@@ -192,7 +215,13 @@ export default function FilesPage({
 
   if (state === "loading") return <p className="drive-note"><Spinner /></p>;
   if (state === "error") return <p className="drive-note">파일을 불러오지 못했습니다</p>;
-  if (!items.length) return <p className="drive-note">{searching ? "검색 결과가 없습니다" : "아직 파일이 없습니다"}</p>;
+  if (!items.length) {
+    return (
+      <p className="drive-note">
+        {searching ? "검색 결과가 없습니다" : favorites ? "즐겨찾기한 항목이 없습니다" : "아직 파일이 없습니다"}
+      </p>
+    );
+  }
 
   if (viewMode === "list") {
     return (

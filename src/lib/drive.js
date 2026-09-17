@@ -80,6 +80,25 @@ export async function setInfoRevealed(token, ids, revealed) {
   return rpcResult(await supabase.rpc("set_info_revealed", { p_token: token, p_ids: ids, p_revealed: revealed }));
 }
 
+// ── 즐겨찾기 ───────────────────────────────────────────────────────────
+// 스튜디오 툴킷의 별 아이콘. 파일·폴더 모두 대상이며 홈 → 즐겨찾기 화면에
+// 폴더 우선으로 모아 보여준다.
+export async function setFavorite(token, ids, favorite) {
+  return rpcResult(await supabase.rpc("set_favorite", { p_token: token, p_ids: ids, p_favorite: favorite }));
+}
+
+export async function listFavorites(token) {
+  const rows = rpcResult(await supabase.rpc("list_favorites", { p_token: token }));
+  return sortFileList(rows);
+}
+
+// ── 홈 탭 스토리지 사용량 대시보드 ─────────────────────────────────────
+// { total, by_folder, by_extension, by_tag } — 각 배열은 [{ key, size, count }]로
+// 용량이 큰 순서다.
+export async function storageBreakdown(token) {
+  return rpcResult(await supabase.rpc("storage_breakdown", { p_token: token }));
+}
+
 // ── 태그 관리(설정 → 태그) ──────────────────────────────────────────────
 // 지금 쓰이고 있는(휴지통에 있지 않은 파일에 붙어 있는) 태그를 중복 없이
 // 나열한다. 각 항목은 { tag, count }(그 태그가 붙은 파일·폴더 개수) 형태다.
@@ -127,6 +146,13 @@ export async function thumbnailUrls(token, keys) {
   if (!keys.length) return {};
   const { urls } = await presign(token, { action: "get-batch", keys });
   return urls ?? {};
+}
+
+// 캔버스에서 읽어야 하는 경우(팔레트 추출 등)에 쓴다 — presigned URL을 <img>에
+// 직접 넣으면 CORS 때문에 캔버스가 오염되므로, blob으로 받아 object URL로 연다.
+export async function fetchFileBlob(token, key) {
+  const { url } = await presign(token, { action: "get", key });
+  return xhrGetBlob(url);
 }
 
 // 뷰어에서 이미지·영상을 그 자리에서 보여줄 때 쓴다(download 플래그를 안 붙여서
