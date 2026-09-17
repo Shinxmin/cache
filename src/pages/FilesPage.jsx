@@ -165,11 +165,14 @@ export default function FilesPage({
 
     (async () => {
       try {
-        const rows = searching
+        let rows = searching
           ? await searchFiles(session.token, { name, tag })
           : favorites
             ? await listFavorites(session.token)
             : await listFiles(session.token, parentId);
+        // 즐겨찾기 화면 안에서 검색하면 전체 드라이브가 아니라 즐겨찾기된
+        // 파일·폴더로만 한정한다(search_files 자체는 전체를 뒤지므로 여기서 거른다).
+        if (searching && favorites) rows = rows.filter((r) => r.favorite);
         if (cancelled) return;
         setItems(rows);
         setState("ready");

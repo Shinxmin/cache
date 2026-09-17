@@ -66,10 +66,13 @@ export default function ToolkitArranger({ layout, viewMode, onChange }) {
     }
     e.preventDefault();
     const hit = hitTest(e.clientX, e.clientY);
-    const overTrash = Boolean(hit?.trash);
+    // 기본 도구는 휴지통에 놓아도 삭제되지 않으므로, 휴지통 위에 있어도
+    // "이 위에 놓으면 지워진다"는 빨간 강조를 아예 보여주지 않는다 —
+    // 애드온일 때만 정말로 놓을 수 있는 자리로 반응한다.
+    const overTrash = Boolean(hit?.trash) && isAddonId(p.id);
     p.overTrash = overTrash;
     setDrag((d) => (d && d.overTrash !== overTrash ? { ...d, overTrash } : d));
-    if (!overTrash && hit?.id && hit.id !== p.id) {
+    if (!hit?.trash && hit?.id && hit.id !== p.id) {
       const cur = orderRef.current;
       const from = cur.indexOf(p.id);
       const to = cur.indexOf(hit.id);
