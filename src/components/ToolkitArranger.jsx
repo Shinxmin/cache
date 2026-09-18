@@ -124,6 +124,22 @@ export default function ToolkitArranger({ layout, viewMode, onChange }) {
   // 언마운트되면(설정 행을 접거나 탭을 옮기면) 걸어 둔 리스너를 정리한다.
   useEffect(() => stopListening, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 아이콘을 꾹 눌러 끄는 동안에는(drag가 있을 때만) 배경 스크롤을 완전히
+  // 잠근다 — 안 그러면 손가락이 아이콘 밖(예: 휴지통 쪽)으로 나갔을 때
+  // 일부 환경에서 설정 화면 자체가 스크롤되며 스크롤바가 잠깐 나타난다.
+  useEffect(() => {
+    if (!drag) return undefined;
+    const { body } = document;
+    const prevOverflow = body.style.overflow;
+    body.style.overflow = "hidden";
+    const onTouchMove = (e) => e.preventDefault();
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => {
+      body.style.overflow = prevOverflow;
+      document.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [Boolean(drag)]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className="toolkit-arranger">
       <div className="studio-toolkit toolkit-arranger-bar">

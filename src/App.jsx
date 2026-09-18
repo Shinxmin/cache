@@ -690,6 +690,16 @@ export default function App() {
     await changeToolkitLayout([...toolkitLayout, addonId], "add_addon", addonId);
   };
 
+  // 애드온 스토어의 삭제(휴지통) 버튼: 설정의 사용자 정렬에서 휴지통으로
+  // 드래그해 지우는 것과 같은 동작이다.
+  const handleRemoveAddon = async (addonId) => {
+    await changeToolkitLayout(
+      toolkitLayout.filter((id) => id !== addonId),
+      "remove_addon",
+      addonId
+    );
+  };
+
   const handleRenameSubmit = async (renames) => {
     try {
       await renameFiles(session.token, renames);
@@ -730,6 +740,7 @@ export default function App() {
       <AddonStorePage
         installedIds={new Set(installedAddonIds(toolkitLayout))}
         onAdd={handleAddAddon}
+        onRemove={handleRemoveAddon}
         onBack={() => setShowAddonStore(false)}
       />
     );
@@ -804,12 +815,7 @@ export default function App() {
               onTool={handleTool}
             />
             {tab === "home" && !showFavorites && (
-              <HomePage
-                session={session}
-                refreshKey={refreshKey}
-                onOpenFavorites={() => setShowFavorites(true)}
-                onOpenAddonStore={() => setShowAddonStore(true)}
-              />
+              <HomePage onOpenFavorites={() => setShowFavorites(true)} onOpenAddonStore={() => setShowAddonStore(true)} />
             )}
             {(isFiles || favoritesView) && (
               <FilesPage

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ADDONS } from "../lib/addons";
-import { BackIcon, CheckIcon } from "../components/icons";
+import { BackIcon, CheckIcon, TrashIcon } from "../components/icons";
+import ConfirmModal from "../components/ConfirmModal";
 
 function PlusIcon({ size = 18 }) {
   return (
@@ -14,8 +15,11 @@ function PlusIcon({ size = 18 }) {
 // 목록이다. 행마다 제목, 그 바로 오른쪽에 버전, 밑에 설명(없으면 공란), 오른쪽
 // 끝(세로 가운데)에 추가(+) 버튼이 있다. 추가하면 툴킷 레이아웃 끝에 붙어
 // 서버에 기록되고, 이미 추가된 애드온은 체크 표시로 바뀌어 다시 누를 수 없다.
-export default function AddonStorePage({ installedIds, onAdd, onBack }) {
+// 추가된 애드온만 그 바로 왼쪽에 작은 삭제(휴지통) 버튼이 나타난다 —
+// 추가돼 있지 않으면 아예 보이지 않는다. 누르면 확인 모달을 거쳐 삭제한다.
+export default function AddonStorePage({ installedIds, onAdd, onRemove, onBack }) {
   const [busyId, setBusyId] = useState(null);
+  const [removeTarget, setRemoveTarget] = useState(null);
 
   const add = async (id) => {
     if (busyId) return;
@@ -25,6 +29,11 @@ export default function AddonStorePage({ installedIds, onAdd, onBack }) {
     } finally {
       setBusyId(null);
     }
+  };
+
+  const confirmRemove = async () => {
+    await onRemove(removeTarget.id);
+    setRemoveTarget(null);
   };
 
   return (
@@ -48,8 +57,18 @@ export default function AddonStorePage({ installedIds, onAdd, onBack }) {
                     <span className="addon-title">{addon.name}</span>
                     <span className="addon-version">v{addon.version}</span>
                   </div>
-                  <p className="addon-desc">{addon.description || " "}</p>
+                  <p className="addon-desc">{addon.description || " "}</p>
                 </div>
+                {installed && (
+                  <button
+                    className="addon-remove"
+                    type="button"
+                    aria-label={`${addon.name} 삭제`}
+                    onClick={() => setRemoveTarget(addon)}
+                  >
+                    <TrashIcon size={15} />
+                  </button>
+                )}
                 <button
                   className={`addon-add${installed ? " is-installed" : ""}`}
                   type="button"
@@ -64,6 +83,14 @@ export default function AddonStorePage({ installedIds, onAdd, onBack }) {
           })}
         </ul>
       </div>
+      {removeTarget && (
+        <ConfirmModal
+          title="애드온 삭제"
+          message="애드온을 삭제하시겠습니까?"
+          onClose={() => setRemoveTarget(null)}
+          onSubmit={confirmRemove}
+        />
+      )}
     </>
   );
 }
