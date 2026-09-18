@@ -12,17 +12,21 @@ function EyeIcon() {
   );
 }
 
-// 6:4로 나뉜 원형 그래프(용량 압축). 두 구간 모두 실선이고 끝을 각지게 처리해
-// 정확히 맞물려 이어진다.
-function CapacityIcon() {
-  const r = 9;
-  const c = 2 * Math.PI * r;
-  const filled = c * 0.6;
-  const empty = c * 0.4;
+// 용량 압축: 머티리얼 디자인의 "폴더 + zip" 아이콘처럼, 폴더 모양 가운데를
+// 지퍼 이빨(작은 정사각형을 세로로 뚫은 구멍)로 관통시켜 압축 폴더임을 나타낸다.
+function ZipFolderIcon() {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-      <circle cx="12" cy="12" r={r} fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="3" strokeDasharray={`${empty} ${c}`} strokeDashoffset={-filled} transform="rotate(-90 12 12)" />
-      <circle cx="12" cy="12" r={r} fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${filled} ${c}`} transform="rotate(-90 12 12)" />
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        fill="currentColor"
+        d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z
+           M11.1 9h1.8v1.8h-1.8z
+           M11.1 11.7h1.8v1.8h-1.8z
+           M11.1 14.4h1.8v1.8h-1.8z
+           M11.1 17.1h1.8v1.8h-1.8z"
+      />
     </svg>
   );
 }
@@ -44,14 +48,11 @@ export function StarIcon({ size = 18 }) {
   );
 }
 
-// 팔레트 추출 애드온: 원 안에 색점 3개만 남긴 단순한 팔레트.
+// 팔레트 추출 애드온: 머티리얼 디자인의 물방울(잉크 한 방울) 모양.
 export function PaletteIcon({ size = 18 }) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-      <circle cx="12" cy="12" r="8.5" />
-      <circle cx="9" cy="10" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="15" cy="10" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none" />
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M12 2C12 2 5 10.75 5 15.25 5 18.87 8.13 22 12 22s7-3.13 7-6.75C19 10.75 12 2 12 2z" />
     </svg>
   );
 }
@@ -80,7 +81,7 @@ export const TOOL_META = {
     icon: (ctx) => (ctx?.viewMode === "gallery" ? <ListIcon /> : <GalleryIcon />),
   },
   blur: { label: "선택한 썸네일 블러", needsSelection: true, icon: () => <EyeIcon /> },
-  optimize: { label: "용량 압축", needsSelection: true, icon: () => <CapacityIcon /> },
+  optimize: { label: "용량 압축", needsSelection: true, icon: () => <ZipFolderIcon /> },
   favorite: { label: "즐겨찾기", needsSelection: true, icon: () => <StarIcon /> },
   tag: { label: "태그", needsSelection: true, icon: () => <HashIcon /> },
   rename: { label: "이름 바꾸기", needsSelection: true, icon: () => <PencilIcon /> },
