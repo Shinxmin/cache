@@ -468,55 +468,50 @@ button {
 
 /* ── 테마 스위치: 체크박스와 같은 "투명 네이티브 input + 형제 요소가 시각
    표현" 구조지만, 좌우로 오가는 손잡이가 있는 진짜 스위치 모양이다.
-   왼쪽 끝이 라이트, 오른쪽 끝이 다크 — 손잡이가 그 쪽으로 움직이고, 트랙
-   양 끝에는 해·달 아이콘이 항상 보인다. ── */
+   맨 왼쪽이 시스템 설정, 가운데가 라이트, 오른쪽이 다크 — 손잡이가 고른
+   자리로 미끄러지고, 손잡이가 있는 자리의 아이콘만 배경색과 대비되는
+   색으로 바뀐다. ── */
 .theme-switch {
   position: relative;
   display: inline-flex;
   flex: none;
 }
-.theme-switch input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  margin: 0;
-  cursor: pointer;
-}
 .theme-switch-track {
   position: relative;
-  width: 50px;
+  display: flex;
+  width: 78px;
   height: 28px;
+  padding: 3px;
   border-radius: 999px;
   background: var(--glass);
   box-shadow: inset 0 0 0 1.5px var(--glass-border);
-}
-.theme-switch-icon {
-  position: absolute;
-  top: 50%;
-  display: flex;
-  color: var(--text-2);
-  transform: translateY(-50%);
-}
-.theme-switch-icon--sun {
-  left: 7px;
-}
-.theme-switch-icon--moon {
-  right: 7px;
 }
 .theme-switch-thumb {
   position: absolute;
   top: 3px;
   left: 3px;
-  width: 22px;
+  width: calc((100% - 6px) / 3);
   height: 22px;
   border-radius: 50%;
   background: var(--text);
   box-shadow: var(--glass-shadow);
   transition: transform 0.35s var(--spring);
 }
-/* 트랙 폭(50) - 손잡이 폭(22) - 양쪽 여백(3+3) = 22px 이동 */
-.theme-switch input:checked ~ .theme-switch-track .theme-switch-thumb {
-  transform: translateX(22px);
+.theme-switch-option {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--text-2);
+  transition: color 0.25s var(--ease);
+}
+.theme-switch-option.is-active {
+  color: var(--bg);
 }
 
 /* ── 스튜디오 툴킷: 홈·파일 탭에서 검색바 밑에, 제목·검색바와 같은 fixed 헤더

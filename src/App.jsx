@@ -27,10 +27,11 @@ import {
 } from "./lib/session";
 import {
   createFolder,
+  createSplitPreset,
   downloadFile,
   downloadFolderAsZip,
   downloadSelectionAsZip,
-  duplicateFileAsPreset,
+  downloadSplitPresetFiles,
   moveFiles,
   optimizeFiles,
   renameFiles,
@@ -38,6 +39,7 @@ import {
   setFavorite,
   setInfoRevealed,
   setTag,
+  splitPresetParts,
   trashFiles,
   uploadFile,
 } from "./lib/drive";
@@ -56,21 +58,30 @@ const SEARCH_TABS = new Set(["home", "files"]);
 const THEME_COLORS = { dark: "#1B1B1B", light: "#F5F5F7" };
 
 export default function App() {
-  // 설정의 테마 스위치가 고른 값. 기기에 저장된 값이 있으면 그걸 따르고,
-  // 처음 접속이라 저장된 값이 없을 때만 시스템 설정을 기본값으로 삼는다 —
-  // 이후로는 시스템이 바뀌어도(라이브 추적하지 않음) 사용자가 고른 값이
-  // 그대로 유지된다.
-  const [theme, setTheme] = useState(() => loadTheme() ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+  // 설정의 테마 스위치가 고른 값 — "system"(기기 설정을 그대로 따름) |
+  // "light" | "dark". 기기에 저장된 값이 있으면 그걸 따르고, 처음
+  // 접속이라 저장된 값이 없으면 "system"이 기본값이다.
+  const [themeMode, setThemeMode] = useState(() => loadTheme() ?? "system");
+  // themeMode가 "system"일 때 실제로 적용할 밝기는 OS 설정을 실시간으로
+  // 따라간다 — 다른 모드와 달리 여기서만 앱을 열어 둔 채로 기기 설정이
+  // 바뀌어도 즉시 반영된다.
+  const [systemDark, setSystemDark] = useState(() => matchMedia("(prefers-color-scheme: dark)").matches);
+  useEffect(() => {
+    const mq = matchMedia("(prefers-color-scheme: dark)");
+    const onChange = (e) => setSystemDark(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  const theme = themeMode === "system" ? (systemDark ? "dark" : "light") : themeMode;
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLORS[theme]);
   }, [theme]);
 
-  const handleToggleTheme = (dark) => {
-    const next = dark ? "dark" : "light";
-    setTheme(next);
-    saveTheme(next);
+  const handleChangeThemeMode = (mode) => {
+    setThemeMode(mode);
+    saveTheme(mode);
   };
 
   // 저장된 토큰이 서버에서도 유효한지 확인될 때까지는 아무것도 그리지 않는다
@@ -139,8 +150,11 @@ export default function App() {
   // 뷰어 안에서 스와이프로 이전/다음으로 넘기려면 지금 폴더의 미디어 목록과
   // 그 안에서 몇 번째를 열었는지가 필요하다.
   const [viewerIndex, setViewerIndex] = useState(null);
+  // 스플릿 프리셋 항목(split_pair가 있는 항목)은 일반 뷰어로 스와이프해
+  // 넘어가는 목록에서 뺀다 — 그 항목은 항상 직접 탭해서 스플릿 비교 화면
+  // 으로만 열려야 하기 때문이다(handleOpenFile 참고).
   const mediaItems = useMemo(
-    () => visibleItems.filter((it) => isImage(it.mime) || isVideo(it.mime)),
+    () => visibleItems.filter((it) => (isImage(it.mime) || isVideo(it.mime)) && !it.split_pair),
     [visibleItems]
   );
 
@@ -336,8 +350,13 @@ export default function App() {
   };
 
   // 이미지·영상은 누르기만 해서 다운로드되면 안 되므로 뷰어를 띄운다.
-  // 그 외 파일만 눌렀을 때 바로 내려받는다.
+  // 스플릿 프리셋 항목(split_pair가 있는 항목)은 일반 뷰어 대신 그 자리에서
+  // 다시 A/B 스플릿 비교 화면을 띄운다. 그 외 파일만 눌렀을 때 바로 내려받는다.
   const handleOpenFile = (item) => {
+    if (item.split_pair) {
+      setSplitCompareTargets(splitPresetParts(item));
+      return;
+    }
     if (isImage(item.mime) || isVideo(item.mime)) {
       const idx = mediaItems.findIndex((it) => it.id === item.id);
       setViewerIndex(idx >= 0 ? idx : 0);
@@ -372,6 +391,18 @@ export default function App() {
           downloadFolderAsZip({
             token: session.token,
             folder: item,
+            onProgress: (p) => {
+              progress(p);
+              onProgress(p);
+            },
+          })
+        );
+      } else if (item.split_pair) {
+        // 스플릿 프리셋 항목은 하나로 합쳐 받지 않고 A·B를 각자 따로 받는다.
+        await track(item.name, "down", (progress) =>
+          downloadSplitPresetFiles({
+            token: session.token,
+            item,
             onProgress: (p) => {
               progress(p);
               onProgress(p);
@@ -585,30 +616,26 @@ export default function App() {
   // 복제해 최근 연 폴더(지금 parentId)에 저장한다. 복제본은 새 파일이라
   // 원본을 나중에 지워도 영향받지 않는다. 이름은 "프리셋_1", "프리셋_2"…
   // 순으로 붙이며, 그 폴더에 이미 프리셋이 있으면 이어서 번호를 매긴다.
+  // 스플릿 비교 화면의 프리셋 저장: 지금 보고 있는 A/B 두 파일을 그대로
+  // 복제해 최근 연 폴더(지금 parentId)에 항목 하나로 저장한다. 그 항목을
+  // 열면 다시 A/B 스플릿 비교 화면이 뜨고, 다운로드하면 A·B가 각자 파일로
+  // 나뉘어 저장된다(createSplitPreset/downloadSplitPresetFiles 참고).
+  // 이름은 "프리셋_1", "프리셋_2"… 순으로 붙이며, 그 폴더에 이미 프리셋이
+  // 있으면 이어서 번호를 매긴다.
   const handleSaveSplitPreset = async (itemA, itemB) => {
     const used = visibleItems
       .map((it) => /^프리셋_(\d+)/.exec(it.name))
       .filter(Boolean)
       .map((m) => parseInt(m[1], 10));
-    const start = used.length ? Math.max(...used) + 1 : 1;
-    const extOf = (name) => {
-      const dot = name.lastIndexOf(".");
-      return dot > 0 ? name.slice(dot) : "";
-    };
+    const next = used.length ? Math.max(...used) + 1 : 1;
     try {
-      await duplicateFileAsPreset({
+      await createSplitPreset({
         token: session.token,
         userId: session.userId,
-        item: itemA,
+        itemA,
+        itemB,
         parentId,
-        name: `프리셋_${start}${extOf(itemA.name)}`,
-      });
-      await duplicateFileAsPreset({
-        token: session.token,
-        userId: session.userId,
-        item: itemB,
-        parentId,
-        name: `프리셋_${start + 1}${extOf(itemB.name)}`,
+        name: `프리셋_${next}`,
       });
       setRefreshKey((k) => k + 1);
       showToast("프리셋으로 저장했습니다");
@@ -795,8 +822,8 @@ export default function App() {
             )}
             {tab === "settings" && (
               <SettingsPage
-                dark={theme === "dark"}
-                onToggleTheme={handleToggleTheme}
+                themeMode={themeMode}
+                onChangeThemeMode={handleChangeThemeMode}
                 toolkitActive={toolkitAlwaysOn}
                 onToggleToolkit={handleToggleToolkitAlwaysOn}
                 toolkitLayout={toolkitLayout}
