@@ -544,9 +544,12 @@ button {
   min-height: 44px;
   flex: none;
   display: flex;
-  flex-wrap: wrap;
-  row-gap: 10px;
-  align-items: center;
+  /* "전체 선택"은 무조건 기본 아이콘들과 같은 첫 줄에 있어야 하므로, 이
+     바깥 행 자체는 줄바꿈하지 않는다 — 아이콘이 넘치면(애드온을 많이
+     추가해서) .studio-toolkit-icons 안쪽 grid만 둘째 줄로 넘어가고,
+     "전체 선택"은 항상 그 첫 줄과 같은 높이에서 시작한다. */
+  flex-wrap: nowrap;
+  align-items: flex-start;
   border-top: 1px solid var(--glass-border);
   border-bottom: 1px solid var(--glass-border);
   transition: transform 0.45s var(--spring);
@@ -575,19 +578,20 @@ button {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* 도구 아이콘 그룹. 남는 폭을 전부 차지하는 flex 항목이면서, 안쪽은 CSS
-   grid(auto-fill)다 — 아이콘 수만큼의 같은 폭 칸으로 나뉘어 각 칸 가운데에
-   아이콘이 오므로 아이콘 사이 간격이 자동으로 고르고, 첫 칸·끝 칸의 남는
-   반쪽이 왼쪽 여백·오른쪽 여백이 되어 둘이 항상 같다. 칸 최소 폭이 --tool-min
-   이라, 한 줄에 그만큼도 확보 못 하면(애드온을 많이 추가했거나 좁은 화면)
-   남는 아이콘이 둘째 줄로 내려간다. min-width는 "전체 선택" 옆에 도구를
-   최소 폭으로라도 다 못 놓을 때 그룹 통째로 라벨 아래 줄로 내려가게(부모
-   .studio-toolkit의 flex-wrap) 하되, 100%를 넘지 않게 해 가로 넘침은 없다.
-   --tool-count는 StudioToolkitBar가 inline style로 넣어 준다. */
+/* 도구 아이콘 그룹. "전체 선택" 옆에서 남는 폭을 전부 차지하는 flex
+   항목이면서, 안쪽은 CSS grid(auto-fill)다 — 아이콘 수만큼의 같은 폭
+   칸으로 나뉘어 각 칸 가운데에 아이콘이 오므로 아이콘 사이 간격이
+   자동으로 고르고, 첫 칸·끝 칸의 남는 반쪽이 왼쪽 여백·오른쪽 여백이
+   되어 둘이 항상 같다. 칸 최소 폭이 --tool-min이라, 첫 줄에 그만큼도
+   확보 못 하면(애드온을 많이 추가했거나 좁은 화면) 남는 아이콘이 grid
+   자체의 둘째 줄로 내려간다 — "전체 선택"이 있는 바깥 줄(.studio-toolkit)은
+   결코 줄바꿈하지 않으므로, "전체 선택"은 항상 기본 아이콘들과 같은 첫
+   줄에 남는다. flex-basis를 0으로 둬야(min-width:0과 함께) 아이콘 개수가
+   많아져도 이 grid가 스스로 넓어지려 하지 않고 남는 폭만큼만 차지한다. */
 .studio-toolkit-icons {
   --tool-min: 30px;
-  flex: 1 1 auto;
-  min-width: min(calc(var(--tool-count, 10) * var(--tool-min)), 100%);
+  flex: 1 1 0%;
+  min-width: 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--tool-min), 1fr));
   justify-items: center;
