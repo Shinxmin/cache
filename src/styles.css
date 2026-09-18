@@ -1946,23 +1946,12 @@ button {
   box-shadow: none;
   color: var(--bg);
 }
-/* 추가돼 있는 애드온에만 나타나는 삭제 버튼 — 추가(+/체크) 버튼보다 한 단계
-   작게 그 바로 왼쪽에 붙는다. 추가돼 있지 않으면 아예 렌더링되지 않는다. */
+/* 추가돼 있는 애드온에만 나타나는 삭제 버튼 — 배경·테두리 없는 맨 아이콘
+   버튼이라는 점에서 휴지통 화면의 개별 삭제 버튼과 같은 디자인이다
+   (.studio-toolkit-icon-btn을 그대로 쓰고, 색만 여기서 지정한다). 추가(+/체크)
+   버튼 바로 왼쪽에 붙으며, 추가돼 있지 않으면 아예 렌더링되지 않는다. */
 .addon-remove {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  background: var(--glass);
-  box-shadow: inset 0 0 0 1.5px var(--glass-border);
-  color: var(--danger);
-  transition: transform 0.35s var(--spring);
-}
-.addon-remove:active {
-  transform: scale(0.88);
+  color: var(--text-2);
 }
 
 /* ── 홈 탭: 구분선으로 나뉜 섹션들 ── */
