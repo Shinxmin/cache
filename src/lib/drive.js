@@ -235,14 +235,72 @@ export async function uploadFile({ token, userId, file, parentId = null, onProgr
   );
 }
 
-// 스플릿 비교 애드온의 프리셋 저장: 지금 보고 있는 파일을 그대로 복제해
-// 새 이름으로 폴더에 저장한다. 원본 blob을 받아 새 File처럼 만들어 업로드와
-// 같은 경로(새 r2_key·썸네일까지)를 그대로 타므로, 나중에 원본을 지워도
-// 이 복제본은 독립된 파일이라 영향받지 않는다.
-export async function duplicateFileAsPreset({ token, userId, item, parentId, name }) {
-  const blob = await fetchFileBlob(token, item.r2_key);
-  const file = new File([blob], name, { type: item.mime || blob.type });
-  return uploadFile({ token, userId, file, parentId });
+// 스플릿 비교 프리셋 저장: A/B 두 파일의 실제 바이트를 각각 새 R2 객체로
+// 복제해 원본과 완전히 독립시킨 뒤, 파일 목록에는 항목 하나만 만든다 —
+// 이 항목 자신이 A를 담당하고(자기 r2_key/mime), B는 split_pair.b에 함께
+// 저장해 둔다. 항목의 표시 이름은 "프리셋_N"으로 바뀌므로, 다운로드할 때
+// A의 원래 파일명(확장자 포함)을 되살릴 수 있도록 split_pair.a.name에도
+// 따로 남겨 둔다. 이 항목을 열면 다시 A/B 스플릿 비교 화면이 뜨고,
+// 다운로드하면 A·B가 각자 원래 이름으로 저장된다(downloadSplitPresetFiles).
+// 원본 A/B를 나중에 지워도 여기 복제된 바이트는 별개 객체라 영향받지 않는다.
+export async function createSplitPreset({ token, userId, itemA, itemB, parentId, name }) {
+  const [blobA, blobB] = await Promise.all([fetchFileBlob(token, itemA.r2_key), fetchFileBlob(token, itemB.r2_key)]);
+
+  const baseKey = `${userId}/${crypto.randomUUID()}`;
+  const extA = extensionOf(itemA.name);
+  const keyA = extA ? `${baseKey}-a.${extA}` : `${baseKey}-a`;
+  const extB = extensionOf(itemB.name);
+  const keyB = extB ? `${baseKey}-b.${extB}` : `${baseKey}-b`;
+  const mimeA = itemA.mime || blobA.type || "application/octet-stream";
+  const mimeB = itemB.mime || blobB.type || "application/octet-stream";
+
+  const { url: putA } = await presign(token, { action: "put", key: keyA, contentType: mimeA });
+  await xhrPut(putA, blobA, mimeA);
+  const { url: putB } = await presign(token, { action: "put", key: keyB, contentType: mimeB });
+  await xhrPut(putB, blobB, mimeB);
+
+  const thumb = await makeThumbnail(new File([blobA], itemA.name, { type: mimeA }));
+  let thumbKey = null;
+  if (thumb) {
+    thumbKey = `${baseKey}.thumb.jpg`;
+    try {
+      const signed = await presign(token, { action: "put", key: thumbKey, contentType: "image/jpeg" });
+      await xhrPut(signed.url, thumb, "image/jpeg");
+    } catch {
+      thumbKey = null;
+    }
+  }
+
+  return rpcResult(
+    await supabase.rpc("create_file", {
+      p_token: token,
+      p_name: name,
+      p_r2_key: keyA,
+      p_mime: mimeA,
+      p_size: blobA.size + blobB.size,
+      p_parent_id: parentId,
+      p_thumb_key: thumbKey,
+      p_split_pair: { a: { name: itemA.name }, b: { r2_key: keyB, mime: mimeB, name: itemB.name, size: blobB.size } },
+    })
+  );
+}
+
+// 스플릿 프리셋 항목(item.split_pair가 있는 항목)을 스플릿 비교 화면에 다시
+// 띄우거나 다운로드할 때 필요한 A/B 각각의 {r2_key, mime, name}을 만든다.
+export function splitPresetParts(item) {
+  return [
+    { r2_key: item.r2_key, mime: item.mime, name: item.split_pair.a?.name || item.name },
+    { r2_key: item.split_pair.b.r2_key, mime: item.split_pair.b.mime, name: item.split_pair.b.name },
+  ];
+}
+
+// 스플릿 프리셋 항목의 다운로드: 실제로는 A/B 두 사진이므로 zip으로 묶지
+// 않고 각자 원래 이름으로 따로 받아 저장한다.
+export async function downloadSplitPresetFiles({ token, item, onProgress }) {
+  const parts = splitPresetParts(item);
+  for (let i = 0; i < parts.length; i++) {
+    await downloadFile({ token, item: parts[i], onProgress: (p) => onProgress?.((i + p) / parts.length) });
+  }
 }
 
 function loadImage(blob) {
@@ -376,6 +434,25 @@ export async function downloadFile({ token, item, onProgress }) {
   triggerBrowserDownload(blob, item.name);
 }
 
+const extOfKey = (key) => {
+  const dot = key?.lastIndexOf(".") ?? -1;
+  return dot > 0 ? key.slice(dot) : "";
+};
+
+// 스플릿 프리셋 항목(entry.split_pair)은 실제로는 A/B 두 사진이라, zip
+// 안에서는 한 항목이 아니라 "이름 A"/"이름 B" 두 파일로 나눠 담는다.
+function zipEntriesFor(entry, path) {
+  if (!entry.split_pair) return [{ r2_key: entry.r2_key, zipPath: path }];
+  const dot = path.lastIndexOf(".");
+  const base = dot > 0 ? path.slice(0, dot) : path;
+  const extA = dot > 0 ? path.slice(dot) : extOfKey(entry.r2_key);
+  const extB = extOfKey(entry.split_pair.b.r2_key);
+  return [
+    { r2_key: entry.r2_key, zipPath: `${base} A${extA}` },
+    { r2_key: entry.split_pair.b.r2_key, zipPath: `${base} B${extB}` },
+  ];
+}
+
 // 폴더 하나를 재귀적으로 순회해 그 안의 실제 파일들을(하위 폴더 포함) 상대
 // 경로와 함께 모은다. 빈 폴더는 zip 안에서 그냥 생략된다.
 async function collectFolderFiles(token, folderId, prefix = "") {
@@ -386,7 +463,7 @@ async function collectFolderFiles(token, folderId, prefix = "") {
     if (entry.is_folder) {
       files.push(...(await collectFolderFiles(token, entry.id, path)));
     } else if (entry.r2_key) {
-      files.push({ ...entry, zipPath: path });
+      files.push(...zipEntriesFor(entry, path).map((part) => ({ ...entry, ...part })));
     }
   }
   return files;
@@ -445,7 +522,9 @@ export async function downloadSelectionAsZip({ token, items, zipName, onProgress
       const nested = await collectFolderFiles(token, item.id, item.name);
       for (const f of nested) files.push({ ...f, zipPath: uniquePath(f.zipPath) });
     } else if (item.r2_key) {
-      files.push({ ...item, zipPath: uniquePath(item.name) });
+      for (const part of zipEntriesFor(item, item.name)) {
+        files.push({ ...item, ...part, zipPath: uniquePath(part.zipPath) });
+      }
     }
   }
   if (!files.length) throw new Error("내려받을 파일이 없습니다");

@@ -7,8 +7,8 @@ import { ChevronRightIcon } from "../components/icons";
 // 설정 탭 본문. "스튜디오 툴킷 사용자 정렬"은 누르면 그 자리에서 펼쳐져
 // 편집용 툴바(ToolkitArranger)가 나타난다 — 다른 화면으로 넘어가지 않는다.
 export default function SettingsPage({
-  dark,
-  onToggleTheme,
+  themeMode,
+  onChangeThemeMode,
   toolkitActive,
   onToggleToolkit,
   toolkitLayout,
@@ -24,10 +24,10 @@ export default function SettingsPage({
   const [arrangeOpen, setArrangeOpen] = useState(false);
   return (
     <div className="settings-list">
-      <label className="settings-row settings-row--toggle">
+      <div className="settings-row settings-row--toggle">
         <span className="settings-row-label">테마</span>
-        <ThemeSwitch dark={dark} onChange={onToggleTheme} />
-      </label>
+        <ThemeSwitch mode={themeMode} onChange={onChangeThemeMode} />
+      </div>
       <label className="settings-row settings-row--toggle">
         <span className="settings-row-label">스튜디오 툴킷 항상 활성화</span>
         <span className="checkbox">

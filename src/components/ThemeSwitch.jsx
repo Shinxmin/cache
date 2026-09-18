@@ -1,3 +1,12 @@
+function SystemIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="4.5" width="18" height="12" rx="1.5" />
+      <path d="M8.5 20h7M12 16.5V20" />
+    </svg>
+  );
+}
+
 function SunIcon() {
   return (
     <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
@@ -15,22 +24,35 @@ function MoonIcon() {
   );
 }
 
-// 설정의 테마 행에 쓰는 좌우 스위치. 체크박스(정사각 박스+체크)와는 다른
-// 형태로, 트랙 양 끝에 해·달 아이콘을 두고 그 사이를 손잡이가 오간다 —
-// 왼쪽이 라이트, 오른쪽이 다크. 구조는 체크박스와 같은 요령(투명 네이티브
-// input + 형제 요소가 시각 표현)을 쓴다.
-export default function ThemeSwitch({ dark, onChange }) {
+const OPTIONS = [
+  { value: "system", label: "시스템 설정", icon: SystemIcon },
+  { value: "light", label: "라이트 모드", icon: SunIcon },
+  { value: "dark", label: "다크 모드", icon: MoonIcon },
+];
+
+// 설정의 테마 행에 쓰는 3단 스위치 — 맨 왼쪽이 "시스템 설정"(기기 설정을
+// 그대로 따름), 가운데가 라이트, 오른쪽이 다크. 고른 자리로 손잡이가
+// 미끄러지듯 옮겨가고, 손잡이가 있는 자리의 아이콘만 배경색과 대비되는
+// 색으로 바뀐다.
+export default function ThemeSwitch({ mode, onChange }) {
+  const index = Math.max(0, OPTIONS.findIndex((o) => o.value === mode));
   return (
-    <span className="theme-switch">
-      <input type="checkbox" checked={dark} onChange={(e) => onChange(e.target.checked)} aria-label="다크 모드" />
-      <span className="theme-switch-track" aria-hidden="true">
-        <span className="theme-switch-icon theme-switch-icon--sun">
-          <SunIcon />
-        </span>
-        <span className="theme-switch-icon theme-switch-icon--moon">
-          <MoonIcon />
-        </span>
-        <span className="theme-switch-thumb" />
+    <span className="theme-switch" role="radiogroup" aria-label="테마">
+      <span className="theme-switch-track">
+        <span className="theme-switch-thumb" style={{ transform: `translateX(${index * 100}%)` }} aria-hidden="true" />
+        {OPTIONS.map(({ value, label, icon: Icon }) => (
+          <button
+            key={value}
+            type="button"
+            className={`theme-switch-option${value === mode ? " is-active" : ""}`}
+            role="radio"
+            aria-checked={value === mode}
+            aria-label={label}
+            onClick={() => onChange(value)}
+          >
+            <Icon />
+          </button>
+        ))}
       </span>
     </span>
   );
