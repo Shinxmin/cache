@@ -1,4 +1,13 @@
-import { ArrowRightIcon, DownloadIcon, GalleryIcon, HashIcon, InfoIcon, ListIcon, TrashIcon } from "./icons";
+import { ArrowRightIcon, DownloadIcon, GalleryIcon, InfoIcon, ListIcon, TrashIcon } from "./icons";
+
+// 태그: 머티리얼 디자인의 북마크 아이콘.
+function BookmarkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+      <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
+    </svg>
+  );
+}
 
 function EyeIcon() {
   return (
@@ -57,13 +66,16 @@ export function PaletteIcon({ size = 18 }) {
   );
 }
 
-// 스플릿 비교 애드온: 모서리가 약간 둥근 정사각형을 세로로 반 잘라, 오른쪽
-// 절반만 채운 대비 아이콘(채워진 쪽과 빈 쪽의 경계 자체가 가운데 분할선이다).
+// 스플릿 비교 애드온: 머티리얼 디자인의 "Width Wide" 아이콘 — 좌우 세로
+// 기둥 사이를 가로지르는 양쪽 화살표로, 폭을 좌우로 넓게 비교한다는 느낌을 준다.
 export function SplitIcon({ size = 18 }) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
-      <rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M12 4h6a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-6z" fill="currentColor" />
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="4" y1="4" x2="4" y2="20" />
+      <line x1="20" y1="4" x2="20" y2="20" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <path d="M7.5 8.5 4 12l3.5 3.5" />
+      <path d="M16.5 8.5 20 12l-3.5 3.5" />
     </svg>
   );
 }
@@ -83,7 +95,7 @@ export const TOOL_META = {
   blur: { label: "선택한 썸네일 블러", needsSelection: true, icon: () => <EyeIcon /> },
   optimize: { label: "용량 압축", needsSelection: true, icon: () => <ZipFolderIcon /> },
   favorite: { label: "즐겨찾기", needsSelection: true, icon: () => <StarIcon /> },
-  tag: { label: "태그", needsSelection: true, icon: () => <HashIcon /> },
+  tag: { label: "태그", needsSelection: true, icon: () => <BookmarkIcon /> },
   rename: { label: "이름 바꾸기", needsSelection: true, icon: () => <PencilIcon /> },
   // 애드온
   palette: { label: "팔레트 추출", needsSelection: true, icon: () => <PaletteIcon /> },
