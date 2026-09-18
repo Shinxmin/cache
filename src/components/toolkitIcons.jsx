@@ -44,22 +44,25 @@ export function StarIcon({ size = 18 }) {
   );
 }
 
-// 팔레트 추출 애드온: 물감 팔레트.
+// 팔레트 추출 애드온: 원 안에 색점 3개만 남긴 단순한 팔레트.
 export function PaletteIcon({ size = 18 }) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
-      <path d="M12 2.5a9.5 9.5 0 1 0 0 19c1.2 0 2-.9 2-1.9 0-.5-.2-.9-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1 .9-1.9 2-1.9h2.2A4.3 4.3 0 0 0 21.5 11C21.5 6.3 17.2 2.5 12 2.5zM6.6 12.5a1.6 1.6 0 1 1 0-3.2 1.6 1.6 0 0 1 0 3.2zm3-4.4a1.6 1.6 0 1 1 0-3.2 1.6 1.6 0 0 1 0 3.2zm4.8 0a1.6 1.6 0 1 1 0-3.2 1.6 1.6 0 0 1 0 3.2zm3 4.4a1.6 1.6 0 1 1 0-3.2 1.6 1.6 0 0 1 0 3.2z" />
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="9" cy="10" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="10" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none" />
     </svg>
   );
 }
 
-// 스플릿 비교 애드온: 가운데 세로선이 있는 좌우 대비 창.
+// 스플릿 비교 애드온: 모서리가 약간 둥근 정사각형을 세로로 반 잘라, 오른쪽
+// 절반만 채운 대비 아이콘(채워진 쪽과 빈 쪽의 경계 자체가 가운데 분할선이다).
 export function SplitIcon({ size = 18 }) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <rect x="3" y="4" width="18" height="16" rx="2" />
-      <line x1="12" y1="4" x2="12" y2="20" />
-      <circle cx="12" cy="12" r="2.6" fill="currentColor" stroke="none" />
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+      <rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M12 4h6a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-6z" fill="currentColor" />
     </svg>
   );
 }
