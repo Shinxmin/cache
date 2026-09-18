@@ -190,22 +190,30 @@ export default function App() {
     }
   }, [session]);
 
-  // 체크박스를 바꾸면 화면에 바로 반영하는 동시에 계정에도 저장한다.
-  const handleToggleToolkitAlwaysOn = (value) => {
-    setToolkitAlwaysOn(value);
-    persistToolkitAlwaysOn(session.token, value).catch(() => {});
+  // 체크박스를 바꾸면 서버에 먼저 저장하고, 저장이 확인된 뒤에야 화면에
+  // 반영한다 — 먼저 화면부터 바꿔 버리면(낙관적 갱신) 저장 요청이 끝나기도
+  // 전에 아이폰 PWA를 백그라운드로 보내거나 완전히 종료했을 때 요청이
+  // 중간에 끊겨 실제로는 저장되지 않았는데도 사용자는 저장된 줄 알고
+  // 넘어가 버리는 문제가 있었다(재접속하면 사라져 있는 것처럼 보임).
+  const handleToggleToolkitAlwaysOn = async (value) => {
+    try {
+      await persistToolkitAlwaysOn(session.token, value);
+      setToolkitAlwaysOn(value);
+    } catch {
+      window.alert("설정을 저장하지 못했습니다");
+    }
   };
 
-  // 툴킷 레이아웃 변경(애드온 추가·삭제, 정렬)은 전부 여기로 모여 화면에 바로
-  // 반영하고 서버에 저장·기록한다. 저장이 실패하면 이전 순서로 되돌린다.
+  // 툴킷 레이아웃 변경(애드온 추가·삭제, 정렬)도 마찬가지로 서버 저장이
+  // 성공한 뒤에만 화면(체크 표시·툴킷 바)에 반영한다 — 위와 같은 이유로,
+  // 추가한 순간 바로 체크 표시부터 뜨면 실제 저장 여부와 무관하게 성공한
+  // 것처럼 보여 왔다.
   const changeToolkitLayout = async (nextLayout, action, addon = null) => {
-    const prev = toolkitLayout;
     const next = normalizeLayout(nextLayout);
-    setToolkitLayoutState(next);
     try {
       await persistToolkitLayout(session.token, next, action, addon);
+      setToolkitLayoutState(next);
     } catch {
-      setToolkitLayoutState(prev);
       window.alert("툴킷 설정을 저장하지 못했습니다");
     }
   };

@@ -92,7 +92,9 @@ button {
 /* ── 상단 제목: 스크롤 범위 자체에 포함되지 않도록 position: fixed로 화면 상단에
    고정한다(sticky가 아니다 — 문서를 아무리 스크롤해도 이 박스는 절대 움직이거나
    사라지지 않는다). 뒤에 깔리는 유리 레이어(::before)만 스크롤 진행도(--hdr, 0~1)에
-   따라 블러가 옅게 나타나며, 배경색 없이 최대 불투명도 60%까지만 올라간다. */
+   따라 블러가 옅게 나타나며, 배경색 없이 최대 불투명도 60%까지만 올라간다. 다만
+   제목 글자 뒤는 마스크로 완전히 비워 둬서 블러가 제목까지 덮지 않는다(검색바가
+   시작하는 자리부터만 나타난다). */
 .page-header {
   position: fixed;
   top: 0;
@@ -162,8 +164,23 @@ button {
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   backdrop-filter: blur(20px) saturate(160%);
   opacity: calc(var(--hdr, 0) * 0.6);
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 10px), transparent);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 10px), transparent);
+  /* 제목 줄 뒤까지는 완전히 비워 둔다 — 안 그러면(아이폰 PWA에서 특히 눈에
+     띄게) 스크롤할 때 불투명한 블러가 큰 제목 글자까지 뿌옇게 덮어 버린다.
+     검색바가 시작하는 자리부터만 유리 느낌이 서서히 올라오게 한다. */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent calc(env(safe-area-inset-top, 0px) + 60px),
+    #000 calc(env(safe-area-inset-top, 0px) + 80px),
+    #000 calc(100% - 10px),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent calc(env(safe-area-inset-top, 0px) + 60px),
+    #000 calc(env(safe-area-inset-top, 0px) + 80px),
+    #000 calc(100% - 10px),
+    transparent
+  );
 }
 .page-title {
   margin: 0;
