@@ -67,15 +67,16 @@ export function PaletteIcon({ size = 18 }) {
 }
 
 // 스플릿 비교 애드온: 머티리얼 디자인의 "Width Wide" 아이콘 — 좌우 세로
-// 기둥 사이를 가로지르는 양쪽 화살표로, 폭을 좌우로 넓게 비교한다는 느낌을 준다.
+// 기둥 사이를 가로지르는 양쪽 화살표로, 폭을 좌우로 넓게 비교한다는 느낌을
+// 준다. 툴킷의 다른 아이콘들과 같은 방식(단색 채움, 선 없음)으로 맞췄다.
 export function SplitIcon({ size = 18 }) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <line x1="4" y1="4" x2="4" y2="20" />
-      <line x1="20" y1="4" x2="20" y2="20" />
-      <line x1="4" y1="12" x2="20" y2="12" />
-      <path d="M7.5 8.5 4 12l3.5 3.5" />
-      <path d="M16.5 8.5 20 12l-3.5 3.5" />
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <rect x="3" y="4" width="2" height="16" rx="1" />
+      <rect x="19" y="4" width="2" height="16" rx="1" />
+      <rect x="8" y="11" width="8" height="2" />
+      <path d="M8 8v8l-4-4z" />
+      <path d="M16 8v8l4-4z" />
     </svg>
   );
 }
