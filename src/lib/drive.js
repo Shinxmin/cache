@@ -92,13 +92,6 @@ export async function listFavorites(token) {
   return sortFileList(rows);
 }
 
-// ── 홈 탭 스토리지 사용량 대시보드 ─────────────────────────────────────
-// { total, by_folder, by_extension, by_tag } — 각 배열은 [{ key, size, count }]로
-// 용량이 큰 순서다.
-export async function storageBreakdown(token) {
-  return rpcResult(await supabase.rpc("storage_breakdown", { p_token: token }));
-}
-
 // ── 태그 관리(설정 → 태그) ──────────────────────────────────────────────
 // 지금 쓰이고 있는(휴지통에 있지 않은 파일에 붙어 있는) 태그를 중복 없이
 // 나열한다. 각 항목은 { tag, count }(그 태그가 붙은 파일·폴더 개수) 형태다.
