@@ -61,12 +61,12 @@ export default function AddonStorePage({ installedIds, onAdd, onRemove, onBack }
                 </div>
                 {installed && (
                   <button
-                    className="addon-remove"
+                    className="studio-toolkit-icon-btn addon-remove"
                     type="button"
                     aria-label={`${addon.name} 삭제`}
                     onClick={() => setRemoveTarget(addon)}
                   >
-                    <TrashIcon size={15} />
+                    <TrashIcon size={18} />
                   </button>
                 )}
                 <button
