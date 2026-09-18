@@ -31,7 +31,7 @@ export default function StudioToolkitBar({
         </span>
         <span className="studio-toolkit-label">전체 선택</span>
       </label>
-      <div className="studio-toolkit-icons" style={{ "--tool-count": layout.length }}>
+      <div className="studio-toolkit-icons">
         {layout.map((id) => {
           const meta = TOOL_META[id];
           if (!meta) return null;
