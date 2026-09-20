@@ -633,6 +633,12 @@ button {
   color: var(--text-2);
   cursor: grab;
   touch-action: pan-x;
+  /* 화면 폭이 아이콘 폭의 정확한 배수가 아니면 스크롤이 어중간한 자리에서
+     멈춰 마지막 아이콘이 반쯤 잘려 보일 수 있다. 아이콘마다
+     scroll-snap-align: start를 줘서, 스크롤(드래그·스와이프 모두)이 끝나면
+     항상 어느 한 아이콘의 왼쪽 끝이 보이는 영역 시작에 딱 맞게 자리를
+     잡는다 — 잘릴 것 같은 아이콘은 자연히 다음 자리로 넘어간다. */
+  scroll-snap-type: x proximity;
 }
 .studio-toolkit-icons:active {
   cursor: grabbing;
@@ -652,6 +658,7 @@ button {
   height: 22px;
   color: inherit;
   transition: transform 0.35s var(--spring);
+  scroll-snap-align: start;
 }
 .studio-toolkit-icon-btn:active {
   transform: scale(0.88);
@@ -901,7 +908,7 @@ button {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 0;
 }
 .drive-tile-name {
   font-size: 12px;
@@ -952,7 +959,7 @@ button {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 0;
 }
 .drive-row-name {
   min-width: 0;
