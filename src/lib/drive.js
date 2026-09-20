@@ -133,6 +133,11 @@ export async function renameClip(token, id, name) {
   return rpcResult(await supabase.rpc("rename_clip", { p_token: token, p_id: id, p_name: name }));
 }
 
+// 클립 목록의 삭제 아이콘.
+export async function deleteClip(token, id) {
+  return rpcResult(await supabase.rpc("delete_clip", { p_token: token, p_id: id }));
+}
+
 // ── 휴지통 ─────────────────────────────────────────────────────────────
 export async function listTrash(token) {
   return rpcResult(await supabase.rpc("list_trash", { p_token: token }));

@@ -19,7 +19,10 @@ const SWIPE_THRESHOLD = 50;
 // 위, 닫기(X) 버튼 쪽 좌측에 상위 5색을 바로 얹어 보여준다.
 //
 // clipMode(하이라이트 클립 애드온 v1.0)가 켜져 있으면 닫기(X) 버튼과 같은 줄
-// 왼쪽에 시작·끝 버튼이, 그 바로 밑에 저장된 클립 목록이 얹힌다.
+// 왼쪽에 시작·끝 버튼이, 그 바로 밑에 저장된 클립 목록이 얹힌다. 애드온을
+// 거치지 않고 그냥 연 영상이라도 클립이 이미 있으면(다른 기기·다른 시점에
+// 만들어 둔 것 포함) 시작·끝 버튼 없이 목록만 그대로 보여준다 — 그 판단은
+// VideoClipPanel이 스스로 서버에서 받아보고 결정한다.
 export default function FileViewer({ session, items, initialIndex, onClose, paletteMode = false, clipMode = false }) {
   const [index, setIndex] = useState(initialIndex);
   const [url, setUrl] = useState(null);
@@ -29,6 +32,9 @@ export default function FileViewer({ session, items, initialIndex, onClose, pale
   // state로 들고 있는다 — 영상은 presigned URL을 받은 뒤에야 마운트되므로,
   // 패널 쪽 effect가 그 시점에 맞춰 다시 돌아야 한다.
   const [videoEl, setVideoEl] = useState(null);
+  // 클립 패널이 실제로 뭔가(시작·끝 버튼이나 클립 목록) 그리고 있는지 —
+  // 그래야만 영상을 그만큼 아래로 밀어낸다(패널이 비어 있으면 평소 위치 그대로).
+  const [hasClipPanel, setHasClipPanel] = useState(false);
   const swipeStart = useRef(null);
   // 드래그(스와이프) 끝에는 브라우저가 mouseup 위치에서 click 이벤트를 마저
   // 쏘는데, 그 click이 배경까지 전파되면 넘기자마자 뷰어가 닫혀 버린다.
@@ -111,7 +117,15 @@ export default function FileViewer({ session, items, initialIndex, onClose, pale
       <button className="viewer-close" type="button" aria-label="닫기" onClick={onClose}>
         <CloseIcon />
       </button>
-      {clipMode && <VideoClipPanel session={session} item={item} video={videoEl} />}
+      {isVideo(item.mime) && (
+        <VideoClipPanel
+          session={session}
+          item={item}
+          video={videoEl}
+          canCreate={clipMode}
+          onHasContentChange={setHasClipPanel}
+        />
+      )}
       {paletteMode && paletteColors && paletteColors.length > 0 && (
         <ul className="viewer-palette" onClick={(e) => e.stopPropagation()}>
           {paletteColors.map((hex) => (
@@ -127,7 +141,7 @@ export default function FileViewer({ session, items, initialIndex, onClose, pale
           눌렀을 때는 배경까지 전파되어 뷰어가 닫힌다. 스와이프 감지는 이 박스
           전체(미디어+여백)에 걸어 둔다. */}
       <div
-        className={`viewer-content${clipMode ? " viewer-content--clip" : ""}`}
+        className={`viewer-content${hasClipPanel ? " viewer-content--clip" : ""}`}
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
       >
@@ -149,9 +163,9 @@ export default function FileViewer({ session, items, initialIndex, onClose, pale
             src={url}
             controls
             autoPlay
-            // 클립 모드에서는 반복 재생을 끈다 — 구간 끝에서 멈춰야 하는데
-            // 영상 끝에서 처음으로 되감기면 그 판정이 어긋난다.
-            loop={!clipMode}
+            // 클립 목록이 있는 동안은 반복 재생을 끈다(VideoClipPanel이 직접
+            // video.loop를 관리한다) — 구간 끝에서 멈춰야 하는데 반복 재생이
+            // 영상 끝에서 처음으로 되감아 버리면 그 판정이 어긋난다.
             playsInline
             onClick={(e) => e.stopPropagation()}
           />
