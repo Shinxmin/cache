@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 
 const GREETING = "반갑습니다";
-const INTRO_DELAY_MS = 1500;
+const INTRO_DELAY_MS = 500;
 const SLIDE_MS = 500;
 const TYPE_INTERVAL_MS = 90;
 
@@ -18,9 +18,10 @@ export default function AuthPage({ onLogin }) {
   const [busy, setBusy] = useState(false);
   const isSignup = mode === "signup";
 
-  // 처음엔 로고만 가운데 뜬다. 1.5초 뒤 로고 옆에 제목 자리를 넓히며(로고가
-  // 왼쪽으로 밀리는 것처럼 보인다) 그 슬라이드가 끝나면 "반갑습니다"를 한
-  // 글자씩 타이핑해 보여준다.
+  // 처음엔 로고만 가운데 뜬다. 0.5초 뒤 로고+제목 묶음이 가운데에서 카드
+  // 왼쪽 끝으로 자리를 옮기며(로고가 왼쪽으로 밀리는 것처럼 보인다) 동시에
+  // 제목 자리도 넓어지고, 그 슬라이드가 끝나면 "반갑습니다"를 한 글자씩
+  // 타이핑해 보여준다.
   const [revealed, setRevealed] = useState(false);
   const [typedCount, setTypedCount] = useState(0);
   useEffect(() => {
@@ -88,15 +89,17 @@ export default function AuthPage({ onLogin }) {
   return (
     <div className="auth-page">
       <form className="auth-card" onSubmit={submit}>
-        <div className={`auth-brand${revealed ? " is-revealed" : ""}`}>
-          <img className="auth-logo" src="/icons/icon-192.png" alt="" />
-          <h1 className="auth-title">
-            <span className="sr-only">{GREETING}</span>
-            <span aria-hidden="true">
-              {GREETING.slice(0, typedCount)}
-              {typedCount < GREETING.length && revealed && <span className="auth-title-cursor" />}
-            </span>
-          </h1>
+        <div className="auth-brand-wrap">
+          <div className={`auth-brand${revealed ? " is-revealed" : ""}`}>
+            <img className="auth-logo" src="/icons/icon-192.png" alt="" />
+            <h1 className="auth-title">
+              <span className="sr-only">{GREETING}</span>
+              <span aria-hidden="true">
+                {GREETING.slice(0, typedCount)}
+                {typedCount < GREETING.length && revealed && <span className="auth-title-cursor" />}
+              </span>
+            </h1>
+          </div>
         </div>
         <input
           className="auth-input"

@@ -1721,20 +1721,32 @@ button {
   flex-direction: column;
   gap: 14px;
 }
-/* 로고+제목 묶음. 콘텐츠 크기만큼만 차지하고(width: fit-content) 좌우
-   auto 마진으로 가운데 정렬되므로, 제목 글자 자리가 넓어질수록(오른쪽으로)
-   묶음 전체가 넓어지면서 왼쪽 끝의 로고가 자연히 왼쪽으로 밀려나 보인다.
-   처음엔 gap도 0이라 로고 하나만 있는 것처럼 정확히 가운데에 온다. */
+/* 로고+제목이 놓일 자리. 로고+제목 묶음(.auth-brand)이 절대 위치라 문서
+   흐름에서 빠지므로, 로고 높이만큼 자리를 미리 잡아 둔다. */
+.auth-brand-wrap {
+  position: relative;
+  height: 88px;
+  margin-bottom: 10px;
+}
+/* 로고+제목 묶음. 처음엔 이 줄 한가운데(left:50% + translateX(-50%) —
+   묶음 자신의 폭에 상관없이 항상 정확히 가운데로 오는 방식)에 로고 하나만
+   있다가, 공개되면 카드 왼쪽 끝(left:0)으로 위치 자체가 애니메이션되며
+   옮겨가 로고가 왼쪽으로 미끄러지는 것처럼 보인다. 동시에 제목 자리(gap·
+   max-width)도 넓어진다. */
 .auth-brand {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 0;
-  width: fit-content;
-  margin: 0 auto 10px;
-  transition: gap 0.5s var(--ease);
+  transition: left 0.5s var(--ease), transform 0.5s var(--ease), gap 0.5s var(--ease);
 }
 .auth-brand.is-revealed {
-  gap: 12px;
+  left: 0;
+  transform: translateX(0);
+  gap: 14px;
 }
 .auth-logo {
   display: block;
@@ -1751,14 +1763,14 @@ button {
   max-width: 0;
   overflow: hidden;
   white-space: nowrap;
-  font-size: 24px;
+  font-size: 28px;
   line-height: 1.2;
   font-weight: 700;
   letter-spacing: -0.02em;
   transition: max-width 0.5s var(--ease);
 }
 .auth-brand.is-revealed .auth-title {
-  max-width: 160px;
+  max-width: 180px;
 }
 .auth-title-cursor {
   display: inline-block;
