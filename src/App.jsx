@@ -845,7 +845,12 @@ export default function App() {
               onTool={handleTool}
             />
             {tab === "home" && !showFavorites && (
-              <HomePage onOpenFavorites={() => setShowFavorites(true)} onOpenAddonStore={() => setShowAddonStore(true)} />
+              <HomePage
+                session={session}
+                refreshKey={refreshKey}
+                onOpenFavorites={() => setShowFavorites(true)}
+                onOpenAddonStore={() => setShowAddonStore(true)}
+              />
             )}
             {(isFiles || favoritesView) && (
               <FilesPage
