@@ -1,5 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
+
+const GREETING = "반갑습니다";
+const INTRO_DELAY_MS = 1500;
+const SLIDE_MS = 500;
+const TYPE_INTERVAL_MS = 90;
 
 // 비로그인 상태에서 뜨는 로그인/회원가입 화면. 입력창은 검색바와 같은
 // 리퀴드글라스 알약 디자인을 그대로 쓴다. 로그인/회원가입 자격 증명은
@@ -12,6 +17,35 @@ export default function AuthPage({ onLogin }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const isSignup = mode === "signup";
+
+  // 처음엔 로고만 가운데 뜬다. 1.5초 뒤 로고 옆에 제목 자리를 넓히며(로고가
+  // 왼쪽으로 밀리는 것처럼 보인다) 그 슬라이드가 끝나면 "반갑습니다"를 한
+  // 글자씩 타이핑해 보여준다.
+  const [revealed, setRevealed] = useState(false);
+  const [typedCount, setTypedCount] = useState(0);
+  useEffect(() => {
+    const timeouts = [];
+    let typeInterval = null;
+    timeouts.push(
+      setTimeout(() => {
+        setRevealed(true);
+        timeouts.push(
+          setTimeout(() => {
+            let i = 0;
+            typeInterval = setInterval(() => {
+              i += 1;
+              setTypedCount(i);
+              if (i >= GREETING.length) clearInterval(typeInterval);
+            }, TYPE_INTERVAL_MS);
+          }, SLIDE_MS)
+        );
+      }, INTRO_DELAY_MS)
+    );
+    return () => {
+      timeouts.forEach((t) => clearTimeout(t));
+      clearInterval(typeInterval);
+    };
+  }, []);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -54,7 +88,16 @@ export default function AuthPage({ onLogin }) {
   return (
     <div className="auth-page">
       <form className="auth-card" onSubmit={submit}>
-        <img className="auth-logo" src="/icons/icon-192.png" alt="cache" />
+        <div className={`auth-brand${revealed ? " is-revealed" : ""}`}>
+          <img className="auth-logo" src="/icons/icon-192.png" alt="" />
+          <h1 className="auth-title">
+            <span className="sr-only">{GREETING}</span>
+            <span aria-hidden="true">
+              {GREETING.slice(0, typedCount)}
+              {typedCount < GREETING.length && revealed && <span className="auth-title-cursor" />}
+            </span>
+          </h1>
+        </div>
         <input
           className="auth-input"
           type="text"
