@@ -1706,7 +1706,9 @@ button {
 /* ── 로그인/회원가입 화면: 비로그인 상태에서 앱 전체를 대신해 뜬다. 입력창은
    검색바(.search-bar)와 같은 리퀴드글라스 알약 재질을 그대로 쓴다. ── */
 .auth-page {
-  min-height: var(--vh);
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1719,13 +1721,12 @@ button {
   flex-direction: column;
   gap: 14px;
 }
-.auth-title {
-  margin: 0 0 10px;
-  font-size: 34px;
-  line-height: 1.15;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  text-align: center;
+.auth-logo {
+  display: block;
+  width: 88px;
+  height: 88px;
+  margin: 0 auto 10px;
+  border-radius: 20px;
 }
 .auth-input {
   height: 44px;

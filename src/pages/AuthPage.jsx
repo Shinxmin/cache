@@ -54,7 +54,7 @@ export default function AuthPage({ onLogin }) {
   return (
     <div className="auth-page">
       <form className="auth-card" onSubmit={submit}>
-        <h1 className="auth-title">반갑습니다</h1>
+        <img className="auth-logo" src="/icons/icon-192.png" alt="cache" />
         <input
           className="auth-input"
           type="text"
