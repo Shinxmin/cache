@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { createClip, listClips, renameClip } from "../lib/drive";
+import { createClip, deleteClip, listClips, renameClip } from "../lib/drive";
 import { formatDuration } from "../lib/format";
+import { CloseIcon } from "./icons";
 import useLongPress from "../hooks/useLongPress";
 
 // 다른 기기에서 만들거나 이름을 바꾼 클립도 따라오도록 주기적으로 다시 받아온다
@@ -20,12 +21,13 @@ function nextClipName(clips) {
   return `클립_${used.length ? Math.max(...used) + 1 : 1}`;
 }
 
-// 클립 한 줄. 이름을 누르면 그 구간으로 이동해 재생하고, 꾹 누르면 그 자리에서
-// 제목을 고칠 수 있다. 목록 순서가 바뀌지 않으므로 행마다 훅을 써도 안전하다.
-function ClipRow({ clip, active, editing, onPlay, onEdit, onChangeName, onFinishEdit }) {
-  const press = useLongPress(onPlay, onEdit);
+// 클립 한 칸(제목 → 시간 → 삭제 순). 제목을 누르면 그 구간으로 이동해
+// 재생하고, 꾹 누르면 그 자리에서 제목을 고칠 수 있다. 목록 순서가 바뀌지
+// 않으므로 칸마다 훅을 써도 안전하다.
+function ClipChip({ clip, active, editing, canEdit, onPlay, onEdit, onChangeName, onFinishEdit, onDelete }) {
+  const press = useLongPress(onPlay, canEdit ? onEdit : onPlay);
   return (
-    <li className={`viewer-clip-row${active ? " is-active" : ""}`}>
+    <div className={`viewer-clip-chip${active ? " is-active" : ""}`}>
       {editing ? (
         <input
           className="viewer-clip-name-input"
@@ -44,17 +46,24 @@ function ClipRow({ clip, active, editing, onPlay, onEdit, onChangeName, onFinish
         </button>
       )}
       <span className="viewer-clip-range">
-        {formatDuration(clip.start_sec)} – {formatDuration(clip.end_sec)}
+        {formatDuration(clip.start_sec)}–{formatDuration(clip.end_sec)}
       </span>
-    </li>
+      <button className="viewer-clip-delete" type="button" aria-label={`${clip.name} 삭제`} onClick={onDelete}>
+        <CloseIcon size={10} />
+      </button>
+    </div>
   );
 }
 
 // 하이라이트 클립 애드온 v1.0: 동영상 뷰어 위에 얹히는 구간 기록 패널.
-// 닫기(X) 버튼과 같은 줄 왼쪽에 시작·끝 버튼이 있고, 바로 밑에 위아래 가로선
-// 으로 구분된 클립 목록이 생긴다. 클립은 계정에 저장되므로 다른 기기에서
-// 같은 영상을 열어도 그대로 보인다.
-export default function VideoClipPanel({ session, item, video }) {
+// canCreate(애드온을 직접 실행했을 때만 true)가 켜져 있으면 닫기(X) 버튼과
+// 같은 줄 왼쪽에 시작·끝 버튼이 뜨고, 그 바로 밑에 클립 목록이 이어진다.
+// canCreate가 꺼져 있어도(영상을 그냥 눌러서 열었을 때) 그 영상에 저장된
+// 클립이 하나라도 있으면 시작·끝 버튼 없이 목록만 그대로 보여준다 — 클립은
+// 계정에 저장되므로 다른 기기·다른 시점에 만든 것도 그대로 나타난다.
+// 클립이 3개를 넘어가면 한 줄에 3개까지만 두고(모든 화면 폭에서 고정
+// 3열이라 겹치지 않는다) 그다음 줄로 넘어간다.
+export default function VideoClipPanel({ session, item, video, canCreate, onHasContentChange }) {
   const [clips, setClips] = useState([]);
   // 시작 버튼을 눌러 찍어 둔 지점(초). null이면 아직 안 찍은 상태라 끝 버튼을
   // 누를 수 없다.
@@ -64,7 +73,7 @@ export default function VideoClipPanel({ session, item, video }) {
   // 지금 구간 재생 중인 클립. 끝 지점에 닿으면 멈추고 비운다 — 그 뒤에 직접
   // 재생 버튼을 누르면 평소처럼 이어서 볼 수 있다.
   const playingRef = useRef(null);
-  const listRef = useRef(null);
+  const panelRef = useRef(null);
   const saveTimerRef = useRef(0);
   // 제목을 고치는 동안에는 서버에서 받아온 목록으로 덮어쓰지 않는다.
   const editingRef = useRef(null);
@@ -93,11 +102,20 @@ export default function VideoClipPanel({ session, item, video }) {
     };
   }, [session.token, item.id]);
 
-  // 목록이 영상을 가리지 않도록 실제 높이를 재서 넘겨준다 — .viewer-content가
+  const hasContent = canCreate || clips.length > 0;
+
+  // 부모(FileViewer)에게 지금 뭔가 그리고 있는지 알려준다 — 그래야 영상을
+  // 패널 높이만큼 아래로 밀어낼지 결정할 수 있다.
+  useEffect(() => {
+    onHasContentChange(hasContent);
+    return () => onHasContentChange(false);
+  }, [hasContent, onHasContentChange]);
+
+  // 패널이 영상을 가리지 않도록 실제 높이를 재서 넘겨준다 — .viewer-content가
   // 이 값만큼 위쪽 여백을 더 준다(PageHeader의 --header-h와 같은 방식).
   useEffect(() => {
     const root = document.documentElement;
-    const el = listRef.current;
+    const el = panelRef.current;
     if (!el) {
       root.style.setProperty("--clip-panel-h", "0px");
       return undefined;
@@ -107,7 +125,7 @@ export default function VideoClipPanel({ session, item, video }) {
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [clips.length]);
+  }, [hasContent, clips.length]);
 
   useEffect(
     () => () => {
@@ -116,6 +134,20 @@ export default function VideoClipPanel({ session, item, video }) {
     },
     []
   );
+
+  // 클립 목록이 있는 동안은 반복 재생을 끈다 — 구간 끝에서 멈춰야 하는데
+  // 영상 자체가 끝나 처음으로 되감기면 그 판정이 어긋난다. 목록이 없어지면
+  // (다른 영상으로 넘어가는 등) 평소처럼 되돌린다.
+  useEffect(() => {
+    if (!video) return undefined;
+    if (hasContent) {
+      video.loop = false;
+      return () => {
+        video.loop = true;
+      };
+    }
+    return undefined;
+  }, [video, hasContent]);
 
   // 구간 재생 중 끝 지점에 닿으면 멈춘다.
   useEffect(() => {
@@ -130,6 +162,8 @@ export default function VideoClipPanel({ session, item, video }) {
     video.addEventListener("timeupdate", onTimeUpdate);
     return () => video.removeEventListener("timeupdate", onTimeUpdate);
   }, [video]);
+
+  if (!hasContent) return null;
 
   const markStart = () => {
     if (video) setPendingStart(video.currentTime);
@@ -193,36 +227,56 @@ export default function VideoClipPanel({ session, item, video }) {
     renameClip(session.token, id, clip.name).catch(() => {});
   };
 
+  const removeClip = async (id) => {
+    setClips((prev) => prev.filter((c) => c.id !== id));
+    if (playingRef.current?.id === id) playingRef.current = null;
+    if (activeId === id) setActiveId(null);
+    try {
+      await deleteClip(session.token, id);
+    } catch {
+      window.alert("클립을 삭제하지 못했습니다");
+    }
+  };
+
   return (
-    <>
-      <div className="viewer-clip-actions" onClick={(e) => e.stopPropagation()}>
-        <button
-          className={`viewer-clip-btn${pendingStart !== null ? " is-armed" : ""}`}
-          type="button"
-          onClick={markStart}
-        >
-          시작
-        </button>
-        <button className="viewer-clip-btn" type="button" disabled={pendingStart === null} onClick={markEnd}>
-          끝
-        </button>
+    <div className="viewer-clip-panel" ref={panelRef} onClick={(e) => e.stopPropagation()}>
+      {/* 시작·끝 버튼이 없어도(그냥 연 영상) 이 줄은 항상 같은 높이로 자리를
+          차지한다 — 닫기(X) 버튼과 같은 줄이라, 목록이 그 자리를 밀고 올라와
+          겹치는 것을 막는다. */}
+      <div className="viewer-clip-actions">
+        {canCreate && (
+          <>
+            <button
+              className={`viewer-clip-btn${pendingStart !== null ? " is-armed" : ""}`}
+              type="button"
+              onClick={markStart}
+            >
+              시작
+            </button>
+            <button className="viewer-clip-btn" type="button" disabled={pendingStart === null} onClick={markEnd}>
+              끝
+            </button>
+          </>
+        )}
       </div>
       {clips.length > 0 && (
-        <ul className="viewer-clip-list" ref={listRef} onClick={(e) => e.stopPropagation()}>
+        <div className="viewer-clip-grid">
           {clips.map((clip) => (
-            <ClipRow
+            <ClipChip
               key={clip.id}
               clip={clip}
               active={clip.id === activeId}
               editing={clip.id === editingId}
+              canEdit={canCreate}
               onPlay={() => playClip(clip)}
               onEdit={() => startEditing(clip)}
               onChangeName={(value) => changeName(clip.id, value)}
               onFinishEdit={() => finishEditing(clip.id)}
+              onDelete={() => removeClip(clip.id)}
             />
           ))}
-        </ul>
+        </div>
       )}
-    </>
+    </div>
   );
 }
