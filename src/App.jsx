@@ -614,14 +614,18 @@ export default function App() {
   // 스플릿 비교 애드온: 정확히 두 개의 이미지(움짤 포함)가 선택돼 있어야
   // 하며, 먼저 선택한 순서가 곧 A(왼쪽)·B(오른쪽)가 된다 — selectedIds는
   // Set이라 삽입 순서를 그대로 보존한다. 그 외에는 토스트로 안내한다.
+  // 이미지가 아닌 걸(동영상 등) 하나만 선택하고 눌러도 "두 개를 고르라"는
+  // 개수 안내부터 뜨면 뭐가 문제인지 알기 어려우므로, 개수와 무관하게
+  // 종류부터 먼저 확인한다 — 이미지가 아닌 게 섞여 있으면 몇 개를 골랐든
+  // 항상 "이미지 파일만" 쪽을 먼저 보여준다.
   const handleSplitCompareSelected = () => {
     const targets = [...selectedIds].map((id) => visibleItems.find((it) => it.id === id)).filter(Boolean);
-    if (targets.length !== 2) {
-      showToast("두 개의 파일만 선택할 수 있습니다");
-      return;
-    }
     if (targets.some((it) => it.is_folder || !looksLikeImageFile(it))) {
       showToast("이미지 파일만 선택할 수 있습니다");
+      return;
+    }
+    if (targets.length !== 2) {
+      showToast("두 개의 파일만 선택할 수 있습니다");
       return;
     }
     setSplitCompareTargets(targets);
