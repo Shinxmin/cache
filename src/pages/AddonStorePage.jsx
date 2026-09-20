@@ -15,8 +15,10 @@ function PlusIcon({ size = 18 }) {
 // 목록이다. 행마다 제목, 그 바로 오른쪽에 버전, 밑에 설명(없으면 공란), 오른쪽
 // 끝(세로 가운데)에 추가(+) 버튼이 있다. 추가하면 툴킷 레이아웃 끝에 붙어
 // 서버에 기록되고, 이미 추가된 애드온은 체크 표시로 바뀌어 다시 누를 수 없다.
-// 추가된 애드온만 그 바로 왼쪽에 작은 삭제(휴지통) 버튼이 나타난다 —
-// 추가돼 있지 않으면 아예 보이지 않는다. 누르면 확인 모달을 거쳐 삭제한다.
+// 추가된 애드온만 그 바로 왼쪽에 작은 삭제(휴지통) 버튼이 보인다 —
+// 추가돼 있지 않으면 안 보이고 눌리지도 않지만, 자리는 항상 차지한다
+// (그래야 설명 문단의 줄바꿈 위치가 설치 여부와 무관하게 항상 같다).
+// 누르면 확인 모달을 거쳐 삭제한다.
 export default function AddonStorePage({ installedIds, onAdd, onRemove, onBack }) {
   const [busyId, setBusyId] = useState(null);
   const [removeTarget, setRemoveTarget] = useState(null);
@@ -59,16 +61,20 @@ export default function AddonStorePage({ installedIds, onAdd, onRemove, onBack }
                   </div>
                   <p className="addon-desc">{addon.description || " "}</p>
                 </div>
-                {installed && (
-                  <button
-                    className="studio-toolkit-icon-btn addon-remove"
-                    type="button"
-                    aria-label={`${addon.name} 삭제`}
-                    onClick={() => setRemoveTarget(addon)}
-                  >
-                    <TrashIcon size={18} />
-                  </button>
-                )}
+                {/* 설치 여부와 무관하게 항상 자리를 차지한다(visibility:hidden) —
+                    안 그러면 이 버튼이 없어질 때 설명 문단이 그만큼 넓어져
+                    줄바꿈 위치가 설치 상태에 따라 달라져 버린다. */}
+                <button
+                  className={`studio-toolkit-icon-btn addon-remove${installed ? "" : " addon-remove--hidden"}`}
+                  type="button"
+                  aria-hidden={!installed}
+                  tabIndex={installed ? 0 : -1}
+                  disabled={!installed}
+                  aria-label={`${addon.name} 삭제`}
+                  onClick={() => setRemoveTarget(addon)}
+                >
+                  <TrashIcon size={18} />
+                </button>
                 <button
                   className={`addon-add${installed ? " is-installed" : ""}`}
                   type="button"
