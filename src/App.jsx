@@ -106,6 +106,9 @@ export default function App() {
   const [paletteViewerItem, setPaletteViewerItem] = useState(null);
   // 스플릿 비교 애드온의 대상 두 파일 [A, B]. null이면 닫힌 상태.
   const [splitCompareTargets, setSplitCompareTargets] = useState(null);
+  // 하이라이트 클립 애드온의 대상 동영상. null이면 닫힌 상태 — 열리면
+  // FileViewer가 clipMode로 떠서 구간을 찍고 목록을 보여준다.
+  const [clipViewerItem, setClipViewerItem] = useState(null);
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(0);
 
@@ -586,6 +589,10 @@ export default function App() {
   const looksLikeImageFile = (it) =>
     isImage(it.mime) || isOptimizableFile(it.name) || /\.(gif|webp)$/i.test(it.name);
 
+  // 기기에 따라 mime을 빈 문자열로 주는 경우가 있어 확장자도 같이 본다
+  // (이미지 쪽 looksLikeImageFile과 같은 이유).
+  const looksLikeVideoFile = (it) => isVideo(it.mime) || /\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(it.name);
+
   // 팔레트 추출 애드온(v1.1): 한 번에 파일 하나에만 실행된다. 이미지 파일 딱
   // 하나가 선택돼 있을 때만 파일 클릭 시 뜨는 기본 뷰어를 palette 모드로
   // 열고, 그 외(아무것도 없거나 둘 이상, 또는 폴더·이미지가 아닌 파일)에는
@@ -652,6 +659,23 @@ export default function App() {
     }
   };
 
+  // 하이라이트 클립 애드온: 동영상 딱 하나가 선택돼 있을 때만 그 영상을
+  // clipMode 뷰어로 연다. 구간 기록은 영상 하나를 기준으로만 뜻이 있으므로
+  // 여러 개나 동영상이 아닌 파일은 토스트로 안내한다.
+  const handleClipSelected = () => {
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    if (targets.length !== 1 || targets[0].is_folder) {
+      showToast("한 개의 파일만 선택할 수 있습니다");
+      return;
+    }
+    const target = targets[0];
+    if (!looksLikeVideoFile(target)) {
+      showToast("동영상 파일만 선택할 수 있습니다");
+      return;
+    }
+    setClipViewerItem(target);
+  };
+
   // 스튜디오 툴킷의 아이콘은 도구 id로 눌리고, 여기서 실제 동작에 연결한다.
   const handleTool = (id) => {
     switch (id) {
@@ -679,6 +703,8 @@ export default function App() {
         return handlePaletteSelected();
       case "split":
         return handleSplitCompareSelected();
+      case "clip":
+        return handleClipSelected();
       default:
         return undefined;
     }
@@ -895,6 +921,15 @@ export default function App() {
           initialIndex={0}
           paletteMode
           onClose={() => setPaletteViewerItem(null)}
+        />
+      )}
+      {clipViewerItem && (
+        <FileViewer
+          session={session}
+          items={[clipViewerItem]}
+          initialIndex={0}
+          clipMode
+          onClose={() => setClipViewerItem(null)}
         />
       )}
       {splitCompareTargets && (

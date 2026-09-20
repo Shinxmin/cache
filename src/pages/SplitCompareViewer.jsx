@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { fileUrl } from "../lib/drive";
 import { CloseIcon, DuplicateIcon } from "../components/icons";
 import Spinner from "../components/Spinner";
+import useDarkOverlay from "../hooks/useDarkOverlay";
 
 // 스플릿 비교 애드온: 먼저 선택한 A파일을 왼쪽, 나중에 선택한 B파일을 오른쪽에
 // 두고 가운데 슬라이더를 드래그해 두 이미지(움짤 포함)를 비교한다. 파일을
@@ -22,14 +23,7 @@ export default function SplitCompareViewer({ session, items, onClose, onSavePres
 
   const [itemA, itemB] = items;
 
-  useEffect(() => {
-    const meta = document.querySelector('meta[name="theme-color"]');
-    const prev = meta?.getAttribute("content");
-    meta?.setAttribute("content", "#000000");
-    return () => {
-      if (prev != null) meta?.setAttribute("content", prev);
-    };
-  }, []);
+  useDarkOverlay();
 
   useEffect(() => {
     let cancelled = false;

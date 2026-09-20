@@ -15,6 +15,12 @@ export const ADDONS = [
     version: "1.0.0",
     description: "두 이미지를 나란히 두고 슬라이더로 드래그해 차이를 비교합니다",
   },
+  {
+    id: "clip",
+    name: "하이라이트 클립",
+    version: "1.0.0",
+    description: "동영상에서 원하는 구간의 시작과 끝을 찍어 하이라이트 클립으로 모아 둡니다",
+  },
 ];
 
 export const ADDON_IDS = new Set(ADDONS.map((a) => a.id));
