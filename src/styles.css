@@ -168,6 +168,13 @@ button {
      무시하고 형제 요소 위로 올라와 버리는 경우가 있어, 제목 글자·삼점 버튼
      윗부분이 블러에 덮여 보이는 문제가 있었다. */
   z-index: 0;
+  /* 순수 장식용 레이어라 절대 클릭을 가로채면 안 된다 — .page-header--static
+     화면(애드온 스토어·휴지통 등)에서는 부모가 position:static이라 이 절대
+     위치 레이어가 자기 위치를 잃고 뷰포트 전체를 뒤덮어 버리는데, 그 상태에서
+     z-index:0으로 다른 콘텐츠 위에 그려지면 화면 전체의 클릭을 먹어 버린다
+     (애드온 추가 버튼이 눌리지 않던 원인). pointer-events:none이면 그런
+     상황에서도 안전하다. */
+  pointer-events: none;
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   backdrop-filter: blur(20px) saturate(160%);
   opacity: calc(var(--hdr, 0) * 0.6);
@@ -205,7 +212,10 @@ button {
 /* 전송 현황처럼 스크롤 고정이 필요 없는 단독 화면은 헤더를 문서 흐름에 그대로
    둔다(고정 헤더용 --header-h 여백도 쓰지 않는다). */
 .page-header--static {
-  position: static;
+  /* static이라도 자식인 ::before(블러 레이어, position:absolute)가 이 박스
+     기준으로만 자리를 잡도록 positioning context는 유지한다 — 안 그러면
+     뷰포트 전체 크기로 퍼져 버린다(위 .page-header::before 주석 참고). */
+  position: relative;
 }
 .page--flush {
   padding-top: 0;
