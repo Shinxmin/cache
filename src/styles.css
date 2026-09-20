@@ -1808,7 +1808,7 @@ button {
   height: 44px;
   padding: 0 16px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 16px;
   background: var(--glass);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
   backdrop-filter: blur(28px) saturate(200%);
@@ -1838,7 +1838,7 @@ button {
 }
 .auth-submit {
   height: 48px;
-  border-radius: 999px;
+  border-radius: 16px;
   background: var(--glass-strong);
   box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border), 0 4px 14px rgba(0, 0, 0, 0.18);
   font-size: 16px;
@@ -1853,8 +1853,18 @@ button {
 .auth-submit:disabled {
   opacity: 0.6;
 }
-.auth-toggle {
+.auth-toggle-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
   margin: 2px auto 0;
+}
+.auth-toggle-hint {
+  font-size: 13px;
+  color: var(--text-2);
+}
+.auth-toggle {
   font-size: 13px;
   color: var(--text-2);
   text-decoration: underline;

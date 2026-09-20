@@ -124,16 +124,21 @@ export default function AuthPage({ onLogin }) {
         <button className="auth-submit" type="submit" disabled={busy}>
           {isSignup ? "회원가입" : "로그인"}
         </button>
-        <button
-          className="auth-toggle"
-          type="button"
-          onClick={() => {
-            setMode(isSignup ? "login" : "signup");
-            setError("");
-          }}
-        >
-          {isSignup ? "로그인" : "회원가입"}
-        </button>
+        <div className="auth-toggle-row">
+          <span className="auth-toggle-hint">
+            {isSignup ? "이미 계정이 있으십니까?" : "아직 계정이 없으십니까?"}
+          </span>
+          <button
+            className="auth-toggle"
+            type="button"
+            onClick={() => {
+              setMode(isSignup ? "login" : "signup");
+              setError("");
+            }}
+          >
+            {isSignup ? "로그인" : "회원가입"}
+          </button>
+        </div>
       </form>
     </div>
   );
