@@ -2320,7 +2320,7 @@ button {
   color: var(--text-2);
 }
 .storage-legend-size {
-  font-weight: 600;
+  font-weight: 400;
 }
 
 /* ── 홈 탭: 구분선으로 나뉜 섹션들 ── */
