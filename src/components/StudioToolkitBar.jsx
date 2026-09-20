@@ -1,5 +1,6 @@
 import CheckboxVisual from "./Checkbox";
 import { TOOL_META, toolLabel } from "./toolkitIcons";
+import useDragScroll from "../hooks/useDragScroll";
 
 // 홈·파일 탭 전용 "스튜디오 툴킷" 선택 도구줄. 제목·검색바와 같은 fixed 헤더
 // 안에 있어 스크롤해도 함께 고정된다(PageHeader.jsx가 마운트를 조건부로 제어,
@@ -22,6 +23,7 @@ export default function StudioToolkitBar({
   style,
 }) {
   const ctx = { viewMode };
+  const dragScroll = useDragScroll();
   return (
     <div className="studio-toolkit" style={style}>
       <label className="studio-toolkit-select">
@@ -31,7 +33,7 @@ export default function StudioToolkitBar({
         </span>
         <span className="studio-toolkit-label">전체 선택</span>
       </label>
-      <div className="studio-toolkit-icons">
+      <div className="studio-toolkit-icons" {...dragScroll}>
         {layout.map((id) => {
           const meta = TOOL_META[id];
           if (!meta) return null;
