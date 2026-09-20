@@ -110,6 +110,8 @@ button {
   gap: 11.5px;
 }
 .page-header-row {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -160,7 +162,12 @@ button {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: -1;
+  /* 음수 z-index 대신 이 레이어를 0으로 두고 실제 내용(.page-header-row,
+     .search-bar-wrap, .studio-toolkit)을 z-index:1로 그 위에 올린다 —
+     backdrop-filter가 걸린 요소를 음수 z-index로 깔면 사파리에서 스택 순서를
+     무시하고 형제 요소 위로 올라와 버리는 경우가 있어, 제목 글자·삼점 버튼
+     윗부분이 블러에 덮여 보이는 문제가 있었다. */
+  z-index: 0;
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   backdrop-filter: blur(20px) saturate(160%);
   opacity: calc(var(--hdr, 0) * 0.6);
@@ -290,6 +297,8 @@ button {
    그대로 유지한다(--header-h/.page의 padding-top이 스크롤 중에 흔들리면 스크롤
    위치 자체가 덜컹거리므로, 실제 공간 차지는 항상 "펼쳐진 상태" 그대로 둔다). */
 .search-bar-wrap {
+  position: relative;
+  z-index: 1;
   transform-origin: left center;
   transition: opacity 0.3s var(--ease), transform 0.45s var(--spring);
 }
@@ -543,6 +552,8 @@ button {
      하나의 값으로 통일한다 — 화면 폭이 얼마든(모든 환경에서) 같은 값이라
      계산이 어긋나거나 열끼리 부딪힐 일이 없다. */
   --toolkit-gap: 10px;
+  position: relative;
+  z-index: 1;
   margin: 0 -20px;
   padding: 10px 20px;
   min-height: 44px;
