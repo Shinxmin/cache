@@ -109,6 +109,30 @@ export async function deleteAllTags(token) {
   return rpcResult(await supabase.rpc("delete_all_tags", { p_token: token }));
 }
 
+// ── 하이라이트 클립(애드온) ─────────────────────────────────────────────
+// 동영상 하나에 저장해 둔 구간(클립) 목록. 클립은 계정에 저장되므로 다른
+// 기기에서 열어도 같은 목록이 뜬다.
+export async function listClips(token, fileId) {
+  return rpcResult(await supabase.rpc("list_clips", { p_token: token, p_file_id: fileId }));
+}
+
+export async function createClip(token, { fileId, name, start, end }) {
+  return rpcResult(
+    await supabase.rpc("create_clip", {
+      p_token: token,
+      p_file_id: fileId,
+      p_name: name,
+      p_start: start,
+      p_end: end,
+    })
+  );
+}
+
+// 클립 제목은 입력하는 대로 실시간 저장된다(확인 버튼 없음).
+export async function renameClip(token, id, name) {
+  return rpcResult(await supabase.rpc("rename_clip", { p_token: token, p_id: id, p_name: name }));
+}
+
 // ── 휴지통 ─────────────────────────────────────────────────────────────
 export async function listTrash(token) {
   return rpcResult(await supabase.rpc("list_trash", { p_token: token }));

@@ -4,6 +4,8 @@ import { extractPalette } from "../lib/palette";
 import { isImage, isVideo } from "../lib/thumbnail";
 import { CloseIcon } from "../components/icons";
 import Spinner from "../components/Spinner";
+import VideoClipPanel from "../components/VideoClipPanel";
+import useDarkOverlay from "../hooks/useDarkOverlay";
 
 const SWIPE_THRESHOLD = 50;
 
@@ -15,11 +17,18 @@ const SWIPE_THRESHOLD = 50;
 //
 // paletteMode(팔레트 추출 애드온 v1.1)가 켜져 있으면 별도 모달 없이 이 화면
 // 위, 닫기(X) 버튼 쪽 좌측에 상위 5색을 바로 얹어 보여준다.
-export default function FileViewer({ session, items, initialIndex, onClose, paletteMode = false }) {
+//
+// clipMode(하이라이트 클립 애드온 v1.0)가 켜져 있으면 닫기(X) 버튼과 같은 줄
+// 왼쪽에 시작·끝 버튼이, 그 바로 밑에 저장된 클립 목록이 얹힌다.
+export default function FileViewer({ session, items, initialIndex, onClose, paletteMode = false, clipMode = false }) {
   const [index, setIndex] = useState(initialIndex);
   const [url, setUrl] = useState(null);
   const [failed, setFailed] = useState(false);
   const [paletteColors, setPaletteColors] = useState(null);
+  // 클립 패널이 <video>를 직접 제어해야 해서(구간 이동·재생·정지) ref 대신
+  // state로 들고 있는다 — 영상은 presigned URL을 받은 뒤에야 마운트되므로,
+  // 패널 쪽 effect가 그 시점에 맞춰 다시 돌아야 한다.
+  const [videoEl, setVideoEl] = useState(null);
   const swipeStart = useRef(null);
   // 드래그(스와이프) 끝에는 브라우저가 mouseup 위치에서 click 이벤트를 마저
   // 쏘는데, 그 click이 배경까지 전파되면 넘기자마자 뷰어가 닫혀 버린다.
@@ -28,17 +37,7 @@ export default function FileViewer({ session, items, initialIndex, onClose, pale
 
   const item = items[index];
 
-  // 뷰어는 화면 전체를 검정으로 덮는데, 상단 상태바(브라우저 주소창·PWA
-  // 상태바 색)는 별개로 meta theme-color를 따르므로 열려 있는 동안만
-  // 검정으로 바꿔 두고, 닫히면 useSystemTheme이 정해 둔 원래 값으로 되돌린다.
-  useEffect(() => {
-    const meta = document.querySelector('meta[name="theme-color"]');
-    const prev = meta?.getAttribute("content");
-    meta?.setAttribute("content", "#000000");
-    return () => {
-      if (prev != null) meta?.setAttribute("content", prev);
-    };
-  }, []);
+  useDarkOverlay();
 
   useEffect(() => {
     if (!item) return;
@@ -112,6 +111,7 @@ export default function FileViewer({ session, items, initialIndex, onClose, pale
       <button className="viewer-close" type="button" aria-label="닫기" onClick={onClose}>
         <CloseIcon />
       </button>
+      {clipMode && <VideoClipPanel session={session} item={item} video={videoEl} />}
       {paletteMode && paletteColors && paletteColors.length > 0 && (
         <ul className="viewer-palette" onClick={(e) => e.stopPropagation()}>
           {paletteColors.map((hex) => (
@@ -126,7 +126,11 @@ export default function FileViewer({ session, items, initialIndex, onClose, pale
           실제 보이는 미디어 요소에만 걸어야 한다 — 그래야 미디어 바깥(패딩 여백)을
           눌렀을 때는 배경까지 전파되어 뷰어가 닫힌다. 스와이프 감지는 이 박스
           전체(미디어+여백)에 걸어 둔다. */}
-      <div className="viewer-content" onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
+      <div
+        className={`viewer-content${clipMode ? " viewer-content--clip" : ""}`}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+      >
         {failed && <p className="viewer-note">불러오지 못했습니다</p>}
         {!failed && !url && <p className="viewer-note"><Spinner /></p>}
         {url && isImage(item.mime) && (
@@ -141,10 +145,13 @@ export default function FileViewer({ session, items, initialIndex, onClose, pale
         {url && isVideo(item.mime) && (
           <video
             className="viewer-media"
+            ref={setVideoEl}
             src={url}
             controls
             autoPlay
-            loop
+            // 클립 모드에서는 반복 재생을 끈다 — 구간 끝에서 멈춰야 하는데
+            // 영상 끝에서 처음으로 되감기면 그 판정이 어긋난다.
+            loop={!clipMode}
             playsInline
             onClick={(e) => e.stopPropagation()}
           />

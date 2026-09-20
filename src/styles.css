@@ -1023,6 +1023,18 @@ button {
 }
 
 /* ── 파일 뷰어: 이미지·영상을 누르면 다운로드 대신 뜨는 전체화면 오버레이. ── */
+/* 전체화면 검정 뷰어가 떠 있는 동안(useDarkOverlay가 html에 붙인다):
+   페이지 배경이 상단 안전 영역 위로 비쳐 흐린 띠처럼 보이지 않도록 문서
+   배경 자체를 검정으로 바꾸고, 고정 헤더의 블러 레이어도 아예 끈다
+   (backdrop-filter가 걸려 있어 사파리에서 뷰어보다 위로 합성될 수 있다). */
+:root[data-overlay="dark"],
+:root[data-overlay="dark"] body,
+:root[data-overlay="dark"] #root {
+  background: #000;
+}
+:root[data-overlay="dark"] .page-header::before {
+  display: none;
+}
 .viewer-overlay {
   position: fixed;
   inset: 0;
@@ -1087,6 +1099,11 @@ button {
      가로채지 않도록, 터치 동작을 전부 이 컴포넌트가 직접 처리한다. */
   touch-action: none;
 }
+/* 클립 모드에서는 시작·끝 버튼 줄 밑에 클립 목록까지 얹히므로, 실측한 목록
+   높이(--clip-panel-h, VideoClipPanel이 넣는다)만큼 영상을 더 내려 준다. */
+.viewer-content--clip {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 64px + var(--clip-panel-h, 0px) + 10px);
+}
 .viewer-media {
   max-width: 100%;
   max-height: 100%;
@@ -1116,6 +1133,94 @@ button {
 }
 .viewer-palette .palette-hex {
   color: rgba(255, 255, 255, 0.92);
+}
+/* ── 하이라이트 클립 애드온 v1.0 ─────────────────────────────────────────
+   닫기(X) 버튼과 같은 줄 왼쪽에 시작·끝 버튼을 두고, 그 바로 밑에 위아래
+   가로선으로 구분된 클립 목록을 얹는다(스튜디오 툴킷 바와 같은 구분선 방식).
+   뷰어 배경이 항상 검정이라 색은 테마를 따르지 않고 밝은 쪽으로 고정한다. */
+.viewer-clip-actions {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 14px);
+  left: 20px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.viewer-clip-btn {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  transition: transform 0.35s var(--spring), background 0.3s var(--ease), opacity 0.3s var(--ease);
+}
+.viewer-clip-btn:active {
+  transform: scale(0.92);
+}
+/* 시작 지점을 찍어 둔 상태 — 이제 끝 버튼을 누르면 구간이 완성된다. */
+.viewer-clip-btn.is-armed {
+  background: rgba(255, 255, 255, 0.32);
+}
+.viewer-clip-btn:disabled {
+  opacity: 0.4;
+}
+.viewer-clip-list {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 64px);
+  left: 0;
+  right: 0;
+  z-index: 1;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 34vh;
+  overflow-y: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+.viewer-clip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px;
+}
+.viewer-clip-row.is-active .viewer-clip-name {
+  color: #fff;
+  font-weight: 600;
+}
+/* 모바일에서 꾹 눌러 제목을 고칠 때 "복사" 같은 기본 메뉴가 뜨지 않게 한다
+   (useLongPress가 contextmenu도 함께 막는다). */
+.viewer-clip-name {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.viewer-clip-name-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+.viewer-clip-range {
+  flex: none;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.5);
 }
 /* 스플릿 비교 애드온: 두 이미지를 같은 박스에 겹쳐 두고, B 이미지 쪽을
    clip-path로 슬라이더 위치까지만 드러내는 전형적인 비포/애프터 슬라이더. */
