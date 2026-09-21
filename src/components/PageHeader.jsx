@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import SearchBar, { SearchIcon } from "./SearchBar";
 import HeaderMoreButton from "./HeaderMoreButton";
 import StudioToolkitBar from "./StudioToolkitBar";
-import { BackIcon, DownloadIcon, UploadIcon } from "./icons";
+import { BackIcon, DownloadIcon, SettingsIcon, UploadIcon } from "./icons";
 
 // 전송 버튼(45px 원) 테두리에 그리는 진행도 게이지. 버튼 지름보다 살짝 안쪽에
 // 그려서 원형 버튼 테두리를 따라 도는 것처럼 보이게 한다.
@@ -48,6 +48,7 @@ export default function PageHeader({
   infoVisible,
   toolkitLayout,
   onTool,
+  onOpenSettings,
 }) {
   const ref = useRef(null);
   const [collapsed, setCollapsed] = useState(!searchAlwaysOn);
@@ -193,6 +194,16 @@ export default function PageHeader({
             </button>
             {/* key={resetKey}: 탭이 바뀌면 새로 마운트되어 열려 있던 상태가 닫힌 채로 초기화된다 */}
             <HeaderMoreButton key={resetKey} onOpen={expandSearch} onUpload={onUpload} onNewFolder={onNewFolder} />
+            {/* 더 보기(삼점) 바로 오른쪽의 설정 버튼. 더 보기처럼 옆으로 늘어나지
+                않는 고정 45px 원이며, 누르면 바로 설정 화면이 열린다. 파일 탭
+                (홈 탭이 사라진 뒤로는 이 화면이 유일한 기본 화면이다)에서만
+                뜨고, 그 안에서 연 즐겨찾기 화면에서는 뜨지 않는다(onOpenSettings
+                를 안 넘기면 아예 렌더링되지 않는다). */}
+            {onOpenSettings && (
+              <button className="header-settings" type="button" aria-label="설정" onClick={onOpenSettings}>
+                <SettingsIcon size={19} />
+              </button>
+            )}
           </div>
         )}
       </div>

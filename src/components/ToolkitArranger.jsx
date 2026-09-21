@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import CheckboxVisual from "./Checkbox";
 import { TrashIcon } from "./icons";
 import { TOOL_META, toolLabel } from "./toolkitIcons";
 import { isAddonId } from "../lib/addons";
@@ -8,8 +7,8 @@ const HOLD_MS = 250;
 const MOVE_SLOP = 8;
 
 // 설정 → "스튜디오 툴킷 사용자 정렬"을 펼치면 나오는 편집용 툴바. 실제
-// 툴킷과 똑같은 모양(.studio-toolkit)이지만 기능은 전부 비활성이고, 전체
-// 선택 체크박스·글자를 뺀 아이콘들만 꾹 눌러(250ms) 끌어 순서를 바꿀 수 있다.
+// 툴킷과 똑같은 모양(.studio-toolkit)이지만 전체 선택 체크박스·글자 없이
+// 아이콘들만 있고, 그 아이콘들을 꾹 눌러(250ms) 끌어 순서를 바꿀 수 있다.
 // 끄는 동안 다른 아이콘 위를 지나가면 그 자리로 실시간으로 옮겨지고, 손을
 // 떼면 부모에 새 순서를 알린다(서버 저장·기록은 부모 몫). 툴바 밑에는
 // 약간의 여백을 두고 휴지통 아이콘이 있는 보이지 않는 드롭 존이 있어,
@@ -143,13 +142,6 @@ export default function ToolkitArranger({ layout, viewMode, onChange }) {
   return (
     <div className="toolkit-arranger">
       <div className="studio-toolkit toolkit-arranger-bar">
-        <label className="studio-toolkit-select" aria-disabled="true">
-          <span className="checkbox">
-            <input type="checkbox" checked={false} readOnly disabled />
-            <CheckboxVisual />
-          </span>
-          <span className="studio-toolkit-label">전체 선택</span>
-        </label>
         <div className="studio-toolkit-icons">
           {order.map((id) => {
             const meta = TOOL_META[id];

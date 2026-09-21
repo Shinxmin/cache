@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import TabBar, { TABS } from "./components/TabBar";
 import PageHeader from "./components/PageHeader";
 import AuthPage from "./pages/AuthPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -15,7 +14,6 @@ import TagModal from "./components/TagModal";
 import OptimizeModal from "./components/OptimizeModal";
 import NewFolderModal from "./components/NewFolderModal";
 import Toast from "./components/Toast";
-import HomePage from "./pages/HomePage";
 import AddonStorePage from "./pages/AddonStorePage";
 import {
   clearSession,
@@ -50,10 +48,6 @@ import { BASE_TOOL_IDS, installedAddonIds, normalizeLayout } from "./lib/toolkit
 import { isOptimizableFile } from "./lib/optimize";
 
 const TOAST_MS = 2000;
-
-// 검색바는 홈·파일 탭에서만 뜬다(설정에는 없음). 제목과 한 fixed 박스로 묶여
-// PageHeader 안에서 렌더링된다(PageHeader.jsx 참고).
-const SEARCH_TABS = new Set(["home", "files"]);
 
 const THEME_COLORS = { dark: "#1B1B1B", light: "#F5F5F7" };
 
@@ -93,7 +87,6 @@ export default function App() {
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLORS[effectiveTheme]);
   }, [theme, session]);
 
-  const [tab, setTab] = useState(TABS[0].id);
   // 설정의 "스튜디오 툴킷 항상 활성화" 체크박스 값. 실제로 툴킷이 보이는지는
   // 아래 toolkitVisible이 결정한다(이 설정이 꺼져 있어도 선택 중이면 뜬다).
   const [toolkitAlwaysOn, setToolkitAlwaysOn] = useState(false);
@@ -101,8 +94,14 @@ export default function App() {
   // 스튜디오 툴킷 도구 순서(애드온 포함). 계정(app_users.toolkit_layout)에
   // 저장되며 애드온 스토어의 추가, 설정의 사용자 정렬·휴지통 삭제가 바꾼다.
   const [toolkitLayout, setToolkitLayoutState] = useState(() => normalizeLayout(BASE_TOOL_IDS));
-  // 홈 → 즐겨찾기 화면. true면 홈 탭 자리에 즐겨찾기 목록(FilesPage)이 뜨고
-  // 검색·스튜디오 툴킷이 파일 탭과 똑같이 동작한다.
+  // 파일 탭 헤더의 톱니바퀴 버튼으로 여는 설정 화면. 그 안의 즐겨찾기·
+  // 애드온 스토어 행이 각각 showFavorites·showAddonStore를 켜는 동안에도
+  // showSettings 자신은 꺼지지 않은 채로 남아 있어서, 즐겨찾기·애드온
+  // 스토어에서 뒤로가기하면 파일 화면이 아니라 설정 화면으로 돌아간다
+  // (휴지통·태그도 같은 방식).
+  const [showSettings, setShowSettings] = useState(false);
+  // 설정 → 즐겨찾기. true면 파일 화면 자리에 즐겨찾기 목록(FilesPage)이
+  // 뜨고 검색·스튜디오 툴킷이 파일 화면과 똑같이 동작한다.
   const [showFavorites, setShowFavorites] = useState(false);
   const [showAddonStore, setShowAddonStore] = useState(false);
   // 팔레트 추출 애드온(v1.1)의 대상 파일. null이면 닫힌 상태 — 열리면 별도
@@ -121,9 +120,7 @@ export default function App() {
   const [folderPath, setFolderPath] = useState([]); // [{id, name}] — 루트는 빈 배열
   const [refreshKey, setRefreshKey] = useState(0);
   // 검색바에 입력된 원문. 비어 있지 않으면 FilesPage가 지금 폴더 대신 전체
-  // 드라이브 검색 결과를 보여준다(파싱은 src/lib/search.js). 탭을 바꾸면
-  // 초기화한다 — SearchBar 자신도 key={tab}으로 새로 마운트돼 입력창 값이
-  // 비워지므로, 여기 상태도 같이 맞춰 줘야 한다.
+  // 드라이브 검색 결과를 보여준다(파싱은 src/lib/search.js).
   const [searchQuery, setSearchQuery] = useState("");
   // 지금 폴더에서 FilesPage가 실제로 보여주고 있는 항목들. "전체 선택"과
   // 선택 항목 다운로드/삭제가 파일의 r2_key 등 전체 정보를 봐야 해서 필요하다.
@@ -241,56 +238,14 @@ export default function App() {
     setSelectedIds(new Set());
   }, [parentId, searchQuery, showFavorites]);
 
-  // 탭을 바꾸면 검색어를 비운다 — SearchBar도 key={tab}으로 새로 마운트돼
-  // 입력창 자체가 비워지므로, 여기 상태도 같이 맞춰 다음에 파일 탭으로
-  // 돌아왔을 때 지난 검색 결과가 아니라 지금 폴더가 보이게 한다. 다만 홈
-  // 탭에서 타이핑을 시작해 handleSearch가 스스로 파일 탭으로 넘겼을 때는
-  // (아래) 이 초기화를 건너뛴다 — 방금 친 글자가 그대로 이어져야 하므로.
-  const suppressSearchClearRef = useRef(false);
-  useEffect(() => {
-    if (suppressSearchClearRef.current) {
-      suppressSearchClearRef.current = false;
-      return;
-    }
-    setSearchQuery("");
-  }, [tab]);
-
-  // 탭을 바꾸면 그 탭의 기본 화면이 뜨게 한다 — 파일 탭에서 폴더를 열어 둔
-  // 채로 다른 탭에 갔다 돌아와도 항상 최상위(루트)부터 다시 보여주고, 홈
-  // 탭에서 즐겨찾기 화면을 보던 중 다른 탭에 갔다 돌아오면 즐겨찾기가 아니라
-  // 홈 기본 화면(대시보드)이 뜬다. 다만 검색·즐겨찾기 결과에서 폴더를 열어
-  // 파일 탭으로 넘어갈 때(openFolder)는 그 폴더 경로를 그대로 유지해야
-  // 하므로, 그 경우엔 suppressFolderResetRef로 이 초기화를 한 번 건너뛴다.
-  const suppressFolderResetRef = useRef(false);
-  useEffect(() => {
-    if (suppressFolderResetRef.current) {
-      suppressFolderResetRef.current = false;
-    } else if (tab === "files") {
-      setFolderPath([]);
-    }
-    setShowFavorites(false);
-  }, [tab]);
-
-  // 홈 탭은 파일 목록 화면(FilesPage) 자체가 없어 검색해도 결과를 보여줄 곳이
-  // 없다. 그래서 한 글자라도 치는 순간 파일 탭으로 넘기면서 방금 친 검색어를
-  // 그대로 이어받게 한다(위 tab 변경 시 검색어 초기화 effect를 한 번 건너뜀).
   const handleSearch = (value) => {
     setSearchQuery(value);
-    // 즐겨찾기 화면은 그 자리에서 검색이 되므로 파일 탭으로 넘기지 않는다.
-    if (isSearchActive(value) && tab !== "files" && !showFavorites) {
-      suppressSearchClearRef.current = true;
-      setTab("files");
-    }
   };
 
-  // 파일 목록이 실제로 떠 있는 화면 — 파일 탭이거나 홈 → 즐겨찾기 화면.
-  const listVisible = tab === "files" || (tab === "home" && showFavorites);
-
-  // 스튜디오 툴킷 "바"는 파일 목록이 있는 화면(파일 탭·즐겨찾기)에서만 뜬다.
-  // 설정이 항상 켜 두었거나 선택된 파일이 하나라도 있으면 뜨지만, 홈 탭
-  // 본문(대시보드)에는 선택할 파일 목록 자체가 없으므로 "항상 활성화"가 켜져
-  // 있어도 거기서는 뜨지 않아야 한다.
-  const toolkitVisible = listVisible && (toolkitAlwaysOn || selectedIds.size > 0);
+  // 스튜디오 툴킷 "바"는 파일 화면(과 그 안에서 연 즐겨찾기 화면)에서만
+  // 뜬다 — 이 두 화면만 PageHeader의 toolkitActive를 실제로 넘겨받는다.
+  // 설정이 항상 켜 두었거나 선택된 파일이 하나라도 있으면 뜬다.
+  const toolkitVisible = toolkitAlwaysOn || selectedIds.size > 0;
   const allSelected = visibleItems.length > 0 && visibleItems.every((it) => selectedIds.has(it.id));
 
   const toggleSelect = (item) => {
@@ -322,10 +277,10 @@ export default function App() {
 
   // 확장자 제한 없이 고른 파일을 순서대로 R2에 올린다. 헤더의 원형 게이지는
   // 지금 올리는 파일 하나가 아니라 이번에 고른 파일 전체 기준 진행도를 보여준다.
-  // 홈 탭에는 업로드 결과를 보여줄 목록 자체가 없으므로, 홈 탭에서 눌렀다면
-  // 먼저 파일 탭으로 넘긴다.
+  // 즐겨찾기 화면에서 눌렀다면 업로드 결과(방금 올린 파일)를 볼 수 있도록
+  // 먼저 즐겨찾기를 닫아 파일 화면으로 나온다.
   const handleUpload = async (fileList) => {
-    if (tab !== "files") setTab("files");
+    if (showFavorites) setShowFavorites(false);
     const files = Array.from(fileList ?? []);
     const target = parentId;
     setTransferRing(0);
@@ -347,10 +302,10 @@ export default function App() {
     }
   };
 
-  // 새 폴더도 업로드와 같은 이유로, 홈 탭에서 눌렀다면 먼저 파일 탭으로
-  // 넘긴 뒤 모달을 연다.
+  // 새 폴더도 업로드와 같은 이유로, 즐겨찾기 화면에서 눌렀다면 먼저
+  // 즐겨찾기를 닫은 뒤 모달을 연다.
   const handleNewFolder = () => {
-    if (tab !== "files") setTab("files");
+    if (showFavorites) setShowFavorites(false);
     setNewFolderOpen(true);
   };
 
@@ -780,26 +735,52 @@ export default function App() {
     );
   }
 
-  const isFiles = tab === "files";
-  const favoritesView = tab === "home" && showFavorites;
+  // 즐겨찾기가 열려 있는 동안엔(설정 → 즐겨찾기) 설정 화면이 그 뒤에 남아
+  // 있어도 그리지 않는다 — 즐겨찾기를 닫으면(showFavorites=false) 이 조건이
+  // 다시 참이 되어 설정 화면으로 자연스럽게 돌아간다.
+  if (showSettings && !showFavorites) {
+    return (
+      <SettingsPage
+        themeMode={themeMode}
+        onChangeThemeMode={handleChangeThemeMode}
+        toolkitActive={toolkitAlwaysOn}
+        onToggleToolkit={handleToggleToolkitAlwaysOn}
+        toolkitLayout={toolkitLayout}
+        viewMode={viewMode}
+        onChangeToolkitLayout={changeToolkitLayout}
+        onResetToolkitLayout={() => changeToolkitLayout(BASE_TOOL_IDS, "reset")}
+        searchAlwaysOn={searchAlwaysOn}
+        onToggleSearchAlwaysOn={setSearchAlwaysOn}
+        onOpenTrash={() => setShowTrash(true)}
+        onOpenTags={() => setShowTags(true)}
+        onOpenFavorites={() => setShowFavorites(true)}
+        onOpenAddonStore={() => setShowAddonStore(true)}
+        onBack={() => setShowSettings(false)}
+        onLogout={() => {
+          clearSession();
+          setSession(null);
+        }}
+      />
+    );
+  }
+
+  // 이 아래로는 showTrash/showTags/showAddonStore도 아니고, 설정도(즐겨찾기가
+  // 열려 있지 않은 한) 아니므로 남은 화면은 파일 화면 아니면 즐겨찾기뿐이다.
+  const favoritesView = showFavorites;
   const title = favoritesView
     ? "즐겨찾기"
-    : isFiles && folderPath.length
+    : folderPath.length
       ? folderPath[folderPath.length - 1].name
-      : TABS.find((t) => t.id === tab).label;
+      : "파일";
 
   // 검색 결과·즐겨찾기에서 연 폴더는 지금 폴더 경로의 하위가 아니라 드라이브
-  // 어디에나 있을 수 있으므로, 기존 경로에 이어 붙이지 않고 검색·즐겨찾기를
-  // 끝낸 뒤 파일 탭에서 그 폴더를 새 최상위처럼 연다.
+  // 어디에나 있을 수 있으므로, 기존 경로에 이어 붙이지 않고 즐겨찾기를
+  // 닫은 뒤 그 폴더를 새 최상위처럼 연다.
   const openFolder = (item) => {
     if (isSearchActive(searchQuery) || favoritesView) {
       setSearchQuery("");
       setShowFavorites(false);
       setFolderPath([{ id: item.id, name: item.name }]);
-      if (tab !== "files") {
-        suppressFolderResetRef.current = true;
-        setTab("files");
-      }
     } else {
       setFolderPath((p) => [...p, { id: item.id, name: item.name }]);
     }
@@ -810,98 +791,60 @@ export default function App() {
       {showTransfers ? (
         <TransfersPage transfers={transfers} onBack={() => setShowTransfers(false)} onClearAll={() => setTransfers([])} />
       ) : (
-        <>
-          <main className="page">
-            <PageHeader
-              title={title}
-              showSearch={SEARCH_TABS.has(tab)}
-              resetKey={tab}
-              toolkitActive={toolkitVisible}
-              searchAlwaysOn={searchAlwaysOn}
-              searchQuery={searchQuery}
-              onSearch={handleSearch}
-              viewMode={viewMode}
-              onUpload={handleUpload}
-              onNewFolder={handleNewFolder}
-              canGoBack={(isFiles && folderPath.length > 0) || favoritesView}
-              onBack={() => {
-                if (favoritesView) {
-                  setShowFavorites(false);
-                  setSearchQuery("");
-                  setSelectedIds(new Set());
-                } else {
-                  setFolderPath((p) => p.slice(0, -1));
-                }
-              }}
-              transferVisible={transfers.length > 0}
-              transferInProgress={Boolean(activeTransfer)}
-              transferDirection={(activeTransfer ?? transfers[0])?.direction}
-              transferProgress={transferRing}
-              onOpenTransfers={() => setShowTransfers(true)}
-              allSelected={allSelected}
-              onToggleSelectAll={handleToggleSelectAll}
-              hasSelection={selectedIds.size > 0}
-              infoVisible={(() => {
-                const targets = visibleItems.filter((it) => selectedIds.has(it.id));
-                return targets.length > 0 && targets.every((it) => it.info_revealed);
-              })()}
-              toolkitLayout={toolkitLayout}
-              onTool={handleTool}
-            />
-            {tab === "home" && !showFavorites && (
-              <HomePage
-                session={session}
-                refreshKey={refreshKey}
-                onOpenFavorites={() => setShowFavorites(true)}
-                onOpenAddonStore={() => setShowAddonStore(true)}
-              />
-            )}
-            {(isFiles || favoritesView) && (
-              <FilesPage
-                session={session}
-                viewMode={viewMode}
-                parentId={parentId}
-                favorites={favoritesView}
-                searchQuery={searchQuery}
-                onOpenFolder={openFolder}
-                onOpenFile={handleOpenFile}
-                refreshKey={refreshKey}
-                selectionMode={selectedIds.size > 0}
-                selectedIds={selectedIds}
-                onToggleSelect={toggleSelect}
-                onLongPressItem={toggleSelect}
-                onItemsChange={setVisibleItems}
-              />
-            )}
-            {tab === "settings" && (
-              <SettingsPage
-                themeMode={themeMode}
-                onChangeThemeMode={handleChangeThemeMode}
-                toolkitActive={toolkitAlwaysOn}
-                onToggleToolkit={handleToggleToolkitAlwaysOn}
-                toolkitLayout={toolkitLayout}
-                viewMode={viewMode}
-                onChangeToolkitLayout={changeToolkitLayout}
-                onResetToolkitLayout={() => changeToolkitLayout(BASE_TOOL_IDS, "reset")}
-                searchAlwaysOn={searchAlwaysOn}
-                onToggleSearchAlwaysOn={setSearchAlwaysOn}
-                onOpenTrash={() => setShowTrash(true)}
-                onOpenTags={() => setShowTags(true)}
-                onLogout={() => {
-                  clearSession();
-                  setSession(null);
-                }}
-              />
-            )}
-          </main>
-          <TabBar
-            active={tab}
-            onChange={(id) => {
-              setTab(id);
-              window.scrollTo({ top: 0 });
+        <main className="page">
+          <PageHeader
+            title={title}
+            showSearch
+            resetKey={favoritesView ? "favorites" : "files"}
+            toolkitActive={toolkitVisible}
+            searchAlwaysOn={searchAlwaysOn}
+            searchQuery={searchQuery}
+            onSearch={handleSearch}
+            viewMode={viewMode}
+            onUpload={handleUpload}
+            onNewFolder={handleNewFolder}
+            canGoBack={folderPath.length > 0 || favoritesView}
+            onBack={() => {
+              if (favoritesView) {
+                setShowFavorites(false);
+                setSearchQuery("");
+                setSelectedIds(new Set());
+              } else {
+                setFolderPath((p) => p.slice(0, -1));
+              }
             }}
+            transferVisible={transfers.length > 0}
+            transferInProgress={Boolean(activeTransfer)}
+            transferDirection={(activeTransfer ?? transfers[0])?.direction}
+            transferProgress={transferRing}
+            onOpenTransfers={() => setShowTransfers(true)}
+            allSelected={allSelected}
+            onToggleSelectAll={handleToggleSelectAll}
+            hasSelection={selectedIds.size > 0}
+            infoVisible={(() => {
+              const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+              return targets.length > 0 && targets.every((it) => it.info_revealed);
+            })()}
+            toolkitLayout={toolkitLayout}
+            onTool={handleTool}
+            onOpenSettings={favoritesView ? undefined : () => setShowSettings(true)}
           />
-        </>
+          <FilesPage
+            session={session}
+            viewMode={viewMode}
+            parentId={parentId}
+            favorites={favoritesView}
+            searchQuery={searchQuery}
+            onOpenFolder={openFolder}
+            onOpenFile={handleOpenFile}
+            refreshKey={refreshKey}
+            selectionMode={selectedIds.size > 0}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            onLongPressItem={toggleSelect}
+            onItemsChange={setVisibleItems}
+          />
+        </main>
       )}
       {viewerIndex !== null && (
         <FileViewer
