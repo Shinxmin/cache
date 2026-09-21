@@ -28,8 +28,12 @@ function SearchIcon({ size = 18 }) {
 // 툴킷의 삭제(휴지통) 아이콘을 눌러 확인 패널이 열려도 틈이나 이중 테두리
 // 없이 하나로 이어진 알약 모양 그대로 위아래로 늘어난다(border-radius를
 // 큰 값 하나로 고정해 두면, 늘어난 높이에 맞춰 둥근 정도가 자동으로
-// 다시 계산된다). 딱 이 동작 하나에만 적용되는 처리이고, 다른 삭제·복원
-// 확인(휴지통 화면 등)은 전부 그대로 ConfirmModal을 쓴다.
+// 다시 계산된다). 헤더 삼점 버튼의 "새 폴더"도 별도 모달 대신 같은 패널을
+// 쓴다 — 확인 문구 대신 이름 입력창 하나가 들어가는 것만 다르고, 패널
+// 자체(여백·간격·버튼 디자인)는 완전히 동일하다. 둘 다 동시에 열릴 수는
+// 없으므로(App.jsx가 한쪽을 열 때 다른 쪽을 닫는다) 패널 내용물은 그때그때
+// 하나만 그린다. 다른 삭제·복원 확인(휴지통 화면 등)은 전부 그대로
+// ConfirmModal을 쓴다.
 export default function BottomSearchBar({
   searchQuery,
   onSearch,
@@ -38,8 +42,15 @@ export default function BottomSearchBar({
   confirmOtherCount = 0,
   onConfirmDelete,
   onCancelDelete,
+  newFolderOpen,
+  newFolderName,
+  onChangeNewFolderName,
+  onConfirmNewFolder,
+  onCancelNewFolder,
 }) {
   const [busy, setBusy] = useState(false);
+  const [folderBusy, setFolderBusy] = useState(false);
+  const panelOpen = confirmOpen || newFolderOpen;
 
   const confirm = async () => {
     if (busy) return;
@@ -51,38 +62,86 @@ export default function BottomSearchBar({
     }
   };
 
+  const canSubmitFolder = Boolean(newFolderName?.trim()) && !folderBusy;
+  const submitFolder = async () => {
+    if (!canSubmitFolder) return;
+    setFolderBusy(true);
+    try {
+      await onConfirmNewFolder();
+    } finally {
+      setFolderBusy(false);
+    }
+  };
+
   return (
     <div className="bottom-search-wrap">
-      <div className={`search-dock${confirmOpen ? " has-confirm" : ""}`}>
-        <div className={`search-bar-confirm-panel${confirmOpen ? " is-open" : ""}`} aria-hidden={!confirmOpen}>
-          <p className="search-bar-confirm-title">선택한 파일을 삭제하시겠습니까?</p>
-          {confirmRepName && (
-            <p className="search-bar-confirm-desc">
-              {confirmOtherCount > 0
-                ? `${confirmRepName} 외 ${confirmOtherCount}개 파일을 휴지통으로 이동합니다`
-                : `${confirmRepName} 파일을 휴지통으로 이동합니다`}
-            </p>
+      <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
+        <div className={`search-bar-confirm-panel${panelOpen ? " is-open" : ""}`} aria-hidden={!panelOpen}>
+          {newFolderOpen ? (
+            <>
+              <p className="search-bar-confirm-title">새 폴더</p>
+              <input
+                className="search-bar-confirm-input"
+                type="text"
+                placeholder="폴더 이름"
+                value={newFolderName}
+                onChange={(e) => onChangeNewFolderName?.(e.target.value)}
+                tabIndex={newFolderOpen ? 0 : -1}
+                autoFocus
+              />
+              <div className="search-bar-confirm-actions">
+                <button
+                  type="button"
+                  className="search-bar-confirm-btn"
+                  tabIndex={newFolderOpen ? 0 : -1}
+                  onClick={onCancelNewFolder}
+                  disabled={folderBusy}
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  className="search-bar-confirm-btn search-bar-confirm-btn--primary"
+                  tabIndex={newFolderOpen ? 0 : -1}
+                  onClick={submitFolder}
+                  disabled={!canSubmitFolder}
+                >
+                  확인
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="search-bar-confirm-title">선택한 파일을 삭제하시겠습니까?</p>
+              {confirmRepName && (
+                <p className="search-bar-confirm-desc">
+                  {confirmOtherCount > 0
+                    ? `${confirmRepName} 외 ${confirmOtherCount}개 파일을 휴지통으로 이동합니다`
+                    : `${confirmRepName} 파일을 휴지통으로 이동합니다`}
+                </p>
+              )}
+              <div className="search-bar-confirm-actions">
+                <button
+                  type="button"
+                  className="search-bar-confirm-btn"
+                  tabIndex={confirmOpen ? 0 : -1}
+                  onClick={onCancelDelete}
+                  disabled={busy}
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  className="search-bar-confirm-btn search-bar-confirm-btn--primary"
+                  tabIndex={confirmOpen ? 0 : -1}
+                  onClick={confirm}
+                  disabled={busy}
+                >
+                  확인
+                </button>
+              </div>
+            </>
           )}
-          <div className="search-bar-confirm-actions">
-            <button
-              type="button"
-              className="search-bar-confirm-btn"
-              tabIndex={confirmOpen ? 0 : -1}
-              onClick={onCancelDelete}
-              disabled={busy}
-            >
-              취소
-            </button>
-            <button
-              type="button"
-              className="search-bar-confirm-btn search-bar-confirm-btn--primary"
-              tabIndex={confirmOpen ? 0 : -1}
-              onClick={confirm}
-              disabled={busy}
-            >
-              확인
-            </button>
-          </div>
         </div>
         <div className="search-bar">
           <span className="search-bar-icon">
