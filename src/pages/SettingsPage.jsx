@@ -20,8 +20,6 @@ export default function SettingsPage({
   viewMode,
   onChangeToolkitLayout,
   onResetToolkitLayout,
-  searchAlwaysOn,
-  onToggleSearchAlwaysOn,
   onOpenTrash,
   onOpenTags,
   onOpenFavorites,
@@ -82,17 +80,6 @@ export default function SettingsPage({
               <ToolkitArranger layout={toolkitLayout} viewMode={viewMode} onChange={onChangeToolkitLayout} />
             </div>
           )}
-          <label className="settings-row settings-row--toggle">
-            <span className="settings-row-label">검색바 항상 활성화</span>
-            <span className="checkbox">
-              <input
-                type="checkbox"
-                checked={searchAlwaysOn}
-                onChange={(e) => onToggleSearchAlwaysOn(e.target.checked)}
-              />
-              <CheckboxVisual />
-            </span>
-          </label>
           <button className="settings-row settings-row--link" type="button" onClick={onOpenTrash}>
             <span className="settings-row-label">휴지통</span>
             <ChevronRightIcon size={18} />

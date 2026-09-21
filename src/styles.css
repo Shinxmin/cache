@@ -88,6 +88,13 @@ button {
   margin: 0 auto;
   padding: var(--header-h, 73px) 20px calc(env(safe-area-inset-bottom, 0px) + 32px);
 }
+/* 파일 화면(과 그 안에서 연 즐겨찾기)만 하단에 고정된 검색바(.bottom-search-wrap)
+   가 떠 있으므로, 그 바 높이(44px)+여백만큼 아래 여백을 더 확보한다. 휴지통·
+   태그·설정·애드온 스토어처럼 <div className="page">를 쓰는 다른 화면은 하단
+   검색바가 없으니 그대로 기본 32px 여백을 쓴다. */
+main.page {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 44px + 16.1px + 16px);
+}
 
 /* ── 상단 제목: 스크롤 범위 자체에 포함되지 않도록 position: fixed로 화면 상단에
    고정한다(sticky가 아니다 — 문서를 아무리 스크롤해도 이 박스는 절대 움직이거나
@@ -125,48 +132,15 @@ button {
   display: flex;
   align-items: center;
 }
-/* 스크롤 중 축소된 검색 아이콘: 평소엔 폭 0으로 숨겨져 있다가, 스크롤하면
-   삼점 버튼(.header-more)과 똑같은 45px 원으로 나타나 그 왼쪽에 붙는다.
-   삼점 버튼과 같은 리퀴드글라스 재질, 같은 트랜지션 타이밍(0.45s var(--spring))을
-   써서 "동일한 애니메이션"으로 느껴지게 한다. */
-.header-collapsed-search {
-  position: relative;
-  isolation: isolate;
-  flex: none;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 0;
-  height: 45px;
-  margin-right: 0;
-  border-radius: 999px;
-  color: var(--text-2);
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(28px) saturate(200%);
-  backdrop-filter: blur(28px) saturate(200%);
-  box-shadow: none;
-  opacity: 0;
-  transition: width 0.45s var(--spring), margin-right 0.45s var(--spring), opacity 0.3s var(--ease), box-shadow 0.3s var(--ease);
-}
-.header-collapsed-search.visible {
-  width: 45px;
-  margin-right: 8px;
-  opacity: 1;
-  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
-}
-.header-collapsed-search svg {
-  flex: none;
-}
 .page-header::before {
   content: "";
   position: absolute;
   inset: 0;
   /* 음수 z-index 대신 이 레이어를 0으로 두고 실제 내용(.page-header-row,
-     .search-bar-wrap, .studio-toolkit)을 z-index:1로 그 위에 올린다 —
-     backdrop-filter가 걸린 요소를 음수 z-index로 깔면 사파리에서 스택 순서를
-     무시하고 형제 요소 위로 올라와 버리는 경우가 있어, 제목 글자·삼점 버튼
-     윗부분이 블러에 덮여 보이는 문제가 있었다. */
+     .studio-toolkit)을 z-index:1로 그 위에 올린다 — backdrop-filter가 걸린
+     요소를 음수 z-index로 깔면 사파리에서 스택 순서를 무시하고 형제 요소
+     위로 올라와 버리는 경우가 있어, 제목 글자·삼점 버튼 윗부분이 블러에
+     덮여 보이는 문제가 있었다. */
   z-index: 0;
   /* 순수 장식용 레이어라 절대 클릭을 가로채면 안 된다 — .page-header--static
      화면(애드온 스토어·휴지통 등)에서는 부모가 position:static이라 이 절대
@@ -341,26 +315,30 @@ button {
   white-space: nowrap;
 }
 
-/* 스크롤 중 검색바가 사라지는 래퍼. opacity+transform만 바꾸고 레이아웃 높이는
-   그대로 유지한다(--header-h/.page의 padding-top이 스크롤 중에 흔들리면 스크롤
-   위치 자체가 덜컹거리므로, 실제 공간 차지는 항상 "펼쳐진 상태" 그대로 둔다). */
-.search-bar-wrap {
-  position: relative;
-  z-index: 1;
-  transform-origin: left center;
-  transition: opacity 0.3s var(--ease), transform 0.45s var(--spring);
+/* ── 하단 검색바: 예전 하단 내비바가 있던 자리에 고정된다(같은 위치·같은
+   여백 계산). 파일 화면(과 그 안에서 연 즐겨찾기 화면)에서 항상 떠 있다 —
+   "검색바 항상 활성화" 설정은 없어졌고 이제 이게 유일한 동작이다. ── */
+.bottom-search-wrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  /* 하단 내비바 때와 같은 여백 계산 */
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 16.1px);
+  z-index: 40;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
-.search-bar-wrap.hidden {
-  opacity: 0;
-  transform: scale(0.97);
-  pointer-events: none;
+@media (display-mode: standalone) {
+  .bottom-search-wrap {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 4.6px);
+  }
 }
-
-/* ── 검색바: 파일 탭(과 그 안에서 연 즐겨찾기 화면)에서, 제목과 한 fixed
-   박스 안에 있어 스크롤해도 함께 고정된다(PageHeader.jsx). 다른 원형 글래스
-   버튼들과 같은 리퀴드글라스 표면(같은 블러·하이라이트·그림자)이다. 가로
-   길이는 .page-header 콘텐츠 너비(화면 좌우 20px 여백 기준)에 꽉 차게
-   맞춘다(flex-column인 .page-header의 기본 stretch로 자동으로 채워진다). ── */
+/* ── 검색바: 다른 원형 글래스 버튼들과 같은 리퀴드글라스 표면(같은 블러·
+   하이라이트·그림자)이다. 가로 길이는 .bottom-search-wrap 안쪽 폭(화면
+   좌우 20px 여백 기준)에 꽉 차게 맞춘다. 스튜디오 툴킷의 삭제 아이콘을
+   누르면(.is-confirm) 검색창 대신 삭제 확인 문구·버튼을 보여주며 높이가
+   위로 늘어난다 — 아래쪽(화면 하단) 끝은 고정된 채 위쪽 끝만 자란다. ── */
 .search-bar {
   position: relative;
   isolation: isolate;
@@ -376,14 +354,28 @@ button {
   backdrop-filter: blur(28px) saturate(200%);
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
   color: var(--text-2);
-  /* 이 헤더의 다른 원형 글래스 버튼들과 동일한 눌림 애니메이션 */
-  transition: transform 0.35s var(--spring);
+  /* 이 헤더의 다른 원형 글래스 버튼들과 동일한 눌림 애니메이션 + 삭제 확인
+     전환 높이 애니메이션 */
+  transition: transform 0.35s var(--spring), height 0.35s var(--spring);
 }
 .search-bar:active {
   transform: scale(0.94);
 }
+.search-bar.is-confirm {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+  height: 96px;
+  padding: 16px;
+}
+/* 삭제 확인 중엔 안에 눌리는 버튼이 둘 있으므로, 바 전체가 눌림 애니메이션을
+   먹지 않게 한다(버튼 각자가 자기 몫의 눌림 애니메이션을 낸다). */
+.search-bar.is-confirm:active {
+  transform: none;
+}
 .search-bar::before {
-  /* 하단바와 같은, 유리 윗면에 비치는 얇은 하이라이트 */
+  /* 유리 윗면에 비치는 얇은 하이라이트 */
   content: "";
   position: absolute;
   inset: 0;
@@ -418,6 +410,40 @@ button {
 .search-bar-input::-webkit-search-decoration {
   -webkit-appearance: none;
   appearance: none;
+}
+/* ── 스튜디오 툴킷 삭제 확인: 검색바 자리에서 바로 받는다(별도 모달 없음).
+   제목은 좌측정렬 볼드, 그 밑 취소·확인 버튼도 좌측정렬이며 검색바와
+   똑같은 R값(16px)을 쓴다. 취소는 보통 굵기, 확인만 볼드로 구분한다. ── */
+.search-bar-confirm-title {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: left;
+}
+.search-bar-confirm-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 8px;
+}
+.search-bar-confirm-btn {
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 16px;
+  background: var(--glass-strong);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 400;
+  transition: transform 0.35s var(--spring);
+}
+.search-bar-confirm-btn:active {
+  transform: scale(0.94);
+}
+.search-bar-confirm-btn--primary {
+  font-weight: 700;
 }
 
 /* ── 체크박스: 네이티브 input은 투명 처리해 접근성/토글 동작만 맡기고, 시각
