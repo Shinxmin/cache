@@ -17,15 +17,18 @@ function SearchIcon({ size = 18 }) {
   );
 }
 
-// 예전 하단 내비바가 있던 자리에 고정된 검색바. 파일 화면(과 그 안에서 연
-// 즐겨찾기 화면)에서 항상 떠 있다 — "검색바 항상 활성화" 설정은 없어졌고
-// 이제 이게 유일한 동작이다.
+// 예전 하단 내비바가 있던 자리에 고정된 검색바. position:fixed라 스크롤을
+// 아무리 올리고 내려도 그 자리에서 전혀 움직이지 않는다. 파일 화면(과 그
+// 안에서 연 즐겨찾기 화면)에서 항상 떠 있다 — "검색바 항상 활성화" 설정은
+// 없어졌고 이제 이게 유일한 동작이다.
 //
 // 스튜디오 툴킷의 삭제(휴지통) 아이콘을 누르면(confirmOpen) 별도 모달을
-// 띄우지 않고 이 바 자체가 위로 커지면서(애니메이션) 검색창이 있던 자리에
-// "삭제하시겠습니까?" 확인 문구와 취소·확인 버튼이 나타난다 — 딱 이 동작
-// 하나에만 적용되는 처리이고, 다른 삭제·복원 확인(휴지통 화면 등)은 전부
-// 그대로 ConfirmModal을 쓴다.
+// 띄우지 않는다. 대신 검색바는 그대로 둔 채, 그 바로 위에 새 패널이 아래에서
+// 위로 커지듯 나타나(항상 DOM에 있고 max-height/opacity만 트랜지션한다) 그
+// 안에서 "삭제하시겠습니까?" 확인 문구와 취소·확인 버튼을 보여준다 — 검색바
+// 자신의 모양이나 내용은 전혀 바뀌지 않는다. 딱 이 동작 하나에만 적용되는
+// 처리이고, 다른 삭제·복원 확인(휴지통 화면 등)은 전부 그대로 ConfirmModal을
+// 쓴다.
 export default function BottomSearchBar({ searchQuery, onSearch, confirmOpen, onConfirmDelete, onCancelDelete }) {
   const [busy, setBusy] = useState(false);
 
@@ -41,44 +44,46 @@ export default function BottomSearchBar({ searchQuery, onSearch, confirmOpen, on
 
   return (
     <div className="bottom-search-wrap">
-      <div className={`search-bar${confirmOpen ? " is-confirm" : ""}`}>
-        {confirmOpen ? (
-          <>
-            <p className="search-bar-confirm-title">삭제하시겠습니까?</p>
-            <div className="search-bar-confirm-actions">
-              <button type="button" className="search-bar-confirm-btn" onClick={onCancelDelete} disabled={busy}>
-                취소
-              </button>
-              <button
-                type="button"
-                className="search-bar-confirm-btn search-bar-confirm-btn--primary"
-                onClick={confirm}
-                disabled={busy}
-              >
-                확인
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <span className="search-bar-icon">
-              <SearchIcon />
-            </span>
-            <input
-              className="search-bar-input"
-              type="search"
-              inputMode="search"
-              enterKeyHint="search"
-              placeholder="검색"
-              value={searchQuery}
-              onChange={(e) => onSearch?.(e.target.value)}
-              onKeyDown={(e) => {
-                // 모바일 키보드의 "검색" 확인 버튼도 엔터와 동일한 keydown을 발생시킨다.
-                if (e.key === "Enter") e.currentTarget.blur();
-              }}
-            />
-          </>
-        )}
+      <div className={`search-bar-confirm-panel${confirmOpen ? " is-open" : ""}`} aria-hidden={!confirmOpen}>
+        <p className="search-bar-confirm-title">삭제하시겠습니까?</p>
+        <div className="search-bar-confirm-actions">
+          <button
+            type="button"
+            className="search-bar-confirm-btn"
+            tabIndex={confirmOpen ? 0 : -1}
+            onClick={onCancelDelete}
+            disabled={busy}
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            className="search-bar-confirm-btn search-bar-confirm-btn--primary"
+            tabIndex={confirmOpen ? 0 : -1}
+            onClick={confirm}
+            disabled={busy}
+          >
+            확인
+          </button>
+        </div>
+      </div>
+      <div className="search-bar">
+        <span className="search-bar-icon">
+          <SearchIcon />
+        </span>
+        <input
+          className="search-bar-input"
+          type="search"
+          inputMode="search"
+          enterKeyHint="search"
+          placeholder="검색"
+          value={searchQuery}
+          onChange={(e) => onSearch?.(e.target.value)}
+          onKeyDown={(e) => {
+            // 모바일 키보드의 "검색" 확인 버튼도 엔터와 동일한 keydown을 발생시킨다.
+            if (e.key === "Enter") e.currentTarget.blur();
+          }}
+        />
       </div>
     </div>
   );
