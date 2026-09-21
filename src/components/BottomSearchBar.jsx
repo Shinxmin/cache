@@ -30,7 +30,15 @@ function SearchIcon({ size = 18 }) {
 // 큰 값 하나로 고정해 두면, 늘어난 높이에 맞춰 둥근 정도가 자동으로
 // 다시 계산된다). 딱 이 동작 하나에만 적용되는 처리이고, 다른 삭제·복원
 // 확인(휴지통 화면 등)은 전부 그대로 ConfirmModal을 쓴다.
-export default function BottomSearchBar({ searchQuery, onSearch, confirmOpen, onConfirmDelete, onCancelDelete }) {
+export default function BottomSearchBar({
+  searchQuery,
+  onSearch,
+  confirmOpen,
+  confirmRepName,
+  confirmOtherCount = 0,
+  onConfirmDelete,
+  onCancelDelete,
+}) {
   const [busy, setBusy] = useState(false);
 
   const confirm = async () => {
@@ -48,6 +56,13 @@ export default function BottomSearchBar({ searchQuery, onSearch, confirmOpen, on
       <div className={`search-dock${confirmOpen ? " has-confirm" : ""}`}>
         <div className={`search-bar-confirm-panel${confirmOpen ? " is-open" : ""}`} aria-hidden={!confirmOpen}>
           <p className="search-bar-confirm-title">선택된 파일을 삭제하시겠습니까?</p>
+          {confirmRepName && (
+            <p className="search-bar-confirm-desc">
+              {confirmOtherCount > 0
+                ? `${confirmRepName} 외 ${confirmOtherCount}개 파일이 휴지통으로 이동합니다`
+                : `${confirmRepName} 파일이 휴지통으로 이동합니다`}
+            </p>
+          )}
           <div className="search-bar-confirm-actions">
             <button
               type="button"
