@@ -335,43 +335,30 @@ main.page {
     bottom: calc(env(safe-area-inset-bottom, 0px) + 4.6px);
   }
 }
-/* ── 검색바: 다른 원형 글래스 버튼들과 같은 리퀴드글라스 표면(같은 블러·
-   하이라이트·그림자)이다. 가로 길이는 .bottom-search-wrap 안쪽 폭(화면
-   좌우 20px 여백 기준)에 꽉 차게 맞춘다. 스튜디오 툴킷의 삭제 아이콘을
-   눌러도 이 박스 자신의 내용은 바뀌지 않는다 — 확인 UI는 항상 바로 위
-   (.search-bar-confirm-panel)에서 별도로 나타난다. 다만 그 패널과 틈
-   없이 맞붙어 하나의 이어진 모양으로 보이도록(.is-attached) 위쪽 모서리만
-   각지고 위쪽에 얇은 경계선이 생긴다. ── */
-.search-bar {
+/* ── 검색 독(dock): 배경·블러·그림자·둥근 모서리를 전부 이 바깥 껍데기
+   하나가 맡는다. 안의 확인 패널(.search-bar-confirm-panel)과 검색창
+   (.search-bar)은 각자 유리 재질을 두르지 않는 내용물일 뿐이다 — 그래서
+   스튜디오 툴킷의 삭제 아이콘을 눌러 확인 패널이 열려도 이중 테두리·
+   그림자로 생기는 틈 없이 진짜 하나의 상자가 위아래로 늘어난다.
+   border-radius를 큰 값 하나로 고정해 두면(999px), 다 접힌 44px짜리
+   낮은 상자일 때는 예전과 같은 알약 모양이 되고, 확인 패널이 열려 상자가
+   커지면 그 늘어난 높이에 맞춰 둥근 정도가 자동으로 다시 계산돼(같은
+   99999px 반경이 매 순간 상자 크기 대비로 다시 잘리므로) 계속 자연스러운
+   알약/스타디움 모양을 유지한다. ── */
+.search-dock {
   position: relative;
   isolation: isolate;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 44px;
-  padding: 0 16px;
-  /* 로그인 화면 아이디 입력창(.auth-input)과 동일한 R값 */
-  border-radius: 16px;
-  border-top: 1px solid transparent;
+  border-radius: 999px;
   background: var(--glass);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
   backdrop-filter: blur(28px) saturate(200%);
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
-  color: var(--text-2);
-  /* 이 헤더의 다른 원형 글래스 버튼들과 동일한 눌림 애니메이션 + 삭제 확인
-     패널과 붙고 떨어질 때의 모서리 전환 */
-  transition: transform 0.35s var(--spring), border-radius 0.35s var(--spring), border-color 0.35s var(--ease);
+  overflow: hidden;
+  /* 이 헤더의 다른 원형 글래스 버튼들과 동일한 눌림 애니메이션 */
+  transition: transform 0.35s var(--spring);
 }
-.search-bar:active {
-  transform: scale(0.94);
-}
-.search-bar.is-attached {
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-  border-top-color: var(--glass-border);
-}
-.search-bar::before {
-  /* 유리 윗면에 비치는 얇은 하이라이트 */
+.search-dock::before {
+  /* 유리 윗면에 비치는 얇은 하이라이트 — 독 전체에 한 번만 그린다 */
   content: "";
   position: absolute;
   inset: 0;
@@ -379,16 +366,30 @@ main.page {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 45%);
   pointer-events: none;
 }
-.search-bar-icon {
+.search-dock:active {
+  transform: scale(0.94);
+}
+/* 확인 패널이 열려 있을 땐 버튼 두 개가 따로 눌리므로, 독 전체가 눌림
+   애니메이션을 먹지 않게 한다. */
+.search-dock.has-confirm:active {
+  transform: none;
+}
+.search-bar {
   position: relative;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 16px;
+  color: var(--text-2);
+}
+.search-bar-icon {
   display: flex;
   flex: none;
   line-height: 0;
 }
 .search-bar-input {
-  position: relative;
-  z-index: 1;
   flex: 1;
   min-width: 0;
   border: 0;
@@ -407,15 +408,15 @@ main.page {
   -webkit-appearance: none;
   appearance: none;
 }
-/* ── 스튜디오 툴킷 삭제 확인: 별도 모달 대신, 검색바는 그대로 둔 채 그
-   바로 위에 이 패널이 아래에서 위로 커지듯 나타난다. 항상 DOM에 있고
-   max-height·여백만 트랜지션하므로(조건부 마운트가 아니다) 부드럽게
-   커지고 줄어든다. 검색바와 같은 리퀴드글라스 재질·같은 R값(16px)을 쓴다.
-   제목은 좌측정렬 볼드, 그 밑 취소·확인 버튼도 좌측정렬이며 취소는 보통
-   굵기, 확인만 볼드로 구분한다. ── */
+/* ── 스튜디오 툴킷 삭제 확인: 별도 모달 대신, 검색 독 안에서 검색창 위에
+   이 패널이 아래에서 위로 커지듯 나타난다. 항상 DOM에 있고 max-height·
+   여백만 트랜지션하므로(조건부 마운트가 아니다) 부드럽게 커지고 줄어든다.
+   독과 한 상자라 자체 배경·테두리·둥근 모서리가 없고, 검색창과의 경계만
+   열렸을 때 얇은 선 하나로 표시한다. 제목은 좌측정렬 볼드, 그 밑 취소·
+   확인 버튼도 좌측정렬이며 취소는 보통 굵기, 확인만 볼드로 구분한다. ── */
 .search-bar-confirm-panel {
   position: relative;
-  isolation: isolate;
+  z-index: 1;
   max-height: 0;
   opacity: 0;
   overflow: hidden;
@@ -423,36 +424,21 @@ main.page {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  /* 제목-버튼 간격: 기존 10px 대비 25% 증가 */
-  gap: 12.5px;
+  /* 제목-버튼 간격: 10px → 12.5px(25% 증가) → 15.6px(그 위에 25% 더 증가) */
+  gap: 15.6px;
   padding: 0 16px;
-  /* 검색바와 틈 없이 맞붙어야 하므로 아래쪽 모서리는 늘 각지고, 위쪽만
-     둥글다(검색바와 합쳐 하나의 알약처럼 보인다). */
-  border-radius: 16px 16px 0 0;
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(28px) saturate(200%);
-  backdrop-filter: blur(28px) saturate(200%);
-  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
-  transition: max-height 0.35s var(--spring), opacity 0.25s var(--ease), padding 0.35s var(--spring);
+  border-bottom: 1px solid transparent;
+  transition: max-height 0.35s var(--spring), opacity 0.25s var(--ease), padding 0.35s var(--spring),
+    border-color 0.35s var(--ease);
 }
 .search-bar-confirm-panel.is-open {
   max-height: 130px;
   opacity: 1;
   pointer-events: auto;
   padding: 16px;
-}
-.search-bar-confirm-panel::before {
-  /* 검색바와 같은, 유리 윗면에 비치는 얇은 하이라이트 */
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 45%);
-  pointer-events: none;
+  border-bottom-color: var(--glass-border);
 }
 .search-bar-confirm-title {
-  position: relative;
-  z-index: 1;
   margin: 0;
   font-size: 15px;
   font-weight: 700;
@@ -460,19 +446,16 @@ main.page {
   text-align: left;
 }
 .search-bar-confirm-actions {
-  position: relative;
-  z-index: 1;
   display: flex;
   gap: 8px;
 }
-/* 취소·확인 배경색을 살짝 다르게 둬서(취소는 중립 유리, 확인은 삭제
-   동작을 나타내는 --danger를 옅게 섞은 톤) 구분되게 한다. 굵기 차이(취소
-   보통, 확인 볼드)와 함께 둘을 헷갈리지 않게 한다. */
+/* 취소·확인 둘 다 같은 옅은 회색 배경을 쓴다 — 굵기 차이(취소 보통,
+   확인 볼드)만으로 둘을 구분한다. 검색 독과 같은 알약 모양(R값)을 쓴다. */
 .search-bar-confirm-btn {
   height: 34px;
   padding: 0 16px;
-  border-radius: 16px;
-  background: var(--glass-strong);
+  border-radius: 999px;
+  background: rgba(128, 128, 128, 0.2);
   color: var(--text);
   font-size: 14px;
   font-weight: 400;
@@ -483,7 +466,6 @@ main.page {
 }
 .search-bar-confirm-btn--primary {
   font-weight: 700;
-  background: color-mix(in srgb, var(--danger) 25%, var(--glass-strong));
 }
 
 /* ── 체크박스: 네이티브 input은 투명 처리해 접근성/토글 동작만 맡기고, 시각
