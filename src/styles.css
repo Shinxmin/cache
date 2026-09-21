@@ -591,8 +591,12 @@ button {
      멈춰 마지막 아이콘이 반쯤 잘려 보일 수 있다. 아이콘마다
      scroll-snap-align: start를 줘서, 스크롤(드래그·스와이프 모두)이 끝나면
      항상 어느 한 아이콘의 왼쪽 끝이 보이는 영역 시작에 딱 맞게 자리를
-     잡는다 — 잘릴 것 같은 아이콘은 자연히 다음 자리로 넘어간다. */
-  scroll-snap-type: x proximity;
+     잡는다 — 잘릴 것 같은 아이콘은 자연히 다음 자리로 넘어간다.
+     proximity는 데스크탑 크로미움에서는 잘 맞지만, iOS 사파리는 관성
+     스크롤이 끝나는 지점이 스냅 지점과 조금만 멀어도 그냥 넘어가 버려
+     사실상 안 걸리는 경우가 많다(WebKit 알려진 동작) — mandatory로 바꿔
+     항상 걸리게 한다. */
+  scroll-snap-type: x mandatory;
 }
 .studio-toolkit-icons:active {
   cursor: grabbing;
