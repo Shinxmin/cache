@@ -35,23 +35,15 @@ function FolderIcon() {
 // 닫힌 상태(가로폭 = 삼점 항목 하나 너비)에서는 창 너머로 삼점만 보이고, 여는
 // 동안 나머지 두 항목이 왼쪽에서 자연스럽게 드러난다.
 //
-// 스크롤로는 닫히지 않는다(별도 처리 없음 = 기본 동작). 다른 탭으로 이동하면
-// 부모(PageHeader)가 key={resetKey}로 이 컴포넌트를 통째로 새로 마운트시켜
-// 자동으로 닫힌 상태가 된다. 업로드/새 폴더를 누르면 그 자리에서 닫는다.
-//
-// onOpen: 열릴 때(스크롤 중 검색바가 왼쪽에 축소돼 있으면 확장하면서 겹칠 수
-// 있으므로) 호출해 부모가 검색바를 먼저 정상 크기로 되돌리게 한다.
-export default function HeaderMoreButton({ onUpload, onNewFolder, onOpen }) {
+// 스크롤로는 닫히지 않는다(별도 처리 없음 = 기본 동작). 파일 화면↔즐겨찾기
+// 화면을 오가면 부모(PageHeader)가 key={resetKey}로 이 컴포넌트를 통째로
+// 새로 마운트시켜 자동으로 닫힌 상태가 된다. 업로드/새 폴더를 누르면 그
+// 자리에서 닫는다.
+export default function HeaderMoreButton({ onUpload, onNewFolder }) {
   const [open, setOpen] = useState(false);
   const fileInputRef = useRef(null);
 
-  const toggle = () => {
-    setOpen((v) => {
-      const next = !v;
-      if (next) onOpen?.();
-      return next;
-    });
-  };
+  const toggle = () => setOpen((v) => !v);
 
   return (
     <div className={`header-more${open ? " open" : ""}`}>

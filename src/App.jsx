@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import PageHeader from "./components/PageHeader";
+import BottomSearchBar from "./components/BottomSearchBar";
 import AuthPage from "./pages/AuthPage";
 import SettingsPage from "./pages/SettingsPage";
 import FilesPage from "./pages/FilesPage";
@@ -90,7 +91,6 @@ export default function App() {
   // 설정의 "스튜디오 툴킷 항상 활성화" 체크박스 값. 실제로 툴킷이 보이는지는
   // 아래 toolkitVisible이 결정한다(이 설정이 꺼져 있어도 선택 중이면 뜬다).
   const [toolkitAlwaysOn, setToolkitAlwaysOn] = useState(false);
-  const [searchAlwaysOn, setSearchAlwaysOn] = useState(true);
   // 스튜디오 툴킷 도구 순서(애드온 포함). 계정(app_users.toolkit_layout)에
   // 저장되며 애드온 스토어의 추가, 설정의 사용자 정렬·휴지통 삭제가 바꾼다.
   const [toolkitLayout, setToolkitLayoutState] = useState(() => normalizeLayout(BASE_TOOL_IDS));
@@ -129,6 +129,10 @@ export default function App() {
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [showTrash, setShowTrash] = useState(false);
   const [showTags, setShowTags] = useState(false);
+  // 스튜디오 툴킷의 삭제(휴지통) 아이콘을 누르면 켜진다. 이 동작만 별도
+  // 모달 대신 하단 검색바가 위로 확장되며 그 자리에서 확인을 받는다
+  // (BottomSearchBar 참고) — 다른 삭제·복원 확인은 전부 그대로 ConfirmModal.
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   // 스튜디오 툴킷의 편집(연필) 아이콘으로 연 이름 바꾸기 모달. null이면 닫힌
   // 상태고, 배열이면 그 항목들(1개=단일, 2개 이상=다중)을 대상으로 떠 있다.
   const [renameTargets, setRenameTargets] = useState(null);
@@ -453,6 +457,12 @@ export default function App() {
     }
   };
 
+  // 하단 검색바가 확장돼 보여주는 삭제 확인의 "확인" 버튼.
+  const confirmTrashSelected = async () => {
+    await handleTrashSelected();
+    setDeleteConfirmOpen(false);
+  };
+
   // 선택된 항목으로 이름 바꾸기 모달을 연다(1개=단일, 여러 개=다중 편집).
   const handleEditSelected = () => {
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
@@ -645,7 +655,8 @@ export default function App() {
       case "info":
         return handleToggleInfo();
       case "trash":
-        return handleTrashSelected();
+        if (selectedIds.size > 0) setDeleteConfirmOpen(true);
+        return;
       case "download":
         return handleDownloadSelected();
       case "move":
@@ -749,8 +760,6 @@ export default function App() {
         viewMode={viewMode}
         onChangeToolkitLayout={changeToolkitLayout}
         onResetToolkitLayout={() => changeToolkitLayout(BASE_TOOL_IDS, "reset")}
-        searchAlwaysOn={searchAlwaysOn}
-        onToggleSearchAlwaysOn={setSearchAlwaysOn}
         onOpenTrash={() => setShowTrash(true)}
         onOpenTags={() => setShowTags(true)}
         onOpenFavorites={() => setShowFavorites(true)}
@@ -791,60 +800,66 @@ export default function App() {
       {showTransfers ? (
         <TransfersPage transfers={transfers} onBack={() => setShowTransfers(false)} onClearAll={() => setTransfers([])} />
       ) : (
-        <main className="page">
-          <PageHeader
-            title={title}
-            showSearch
-            resetKey={favoritesView ? "favorites" : "files"}
-            toolkitActive={toolkitVisible}
-            searchAlwaysOn={searchAlwaysOn}
+        <>
+          <main className="page">
+            <PageHeader
+              title={title}
+              resetKey={favoritesView ? "favorites" : "files"}
+              toolkitActive={toolkitVisible}
+              viewMode={viewMode}
+              onUpload={handleUpload}
+              onNewFolder={handleNewFolder}
+              canGoBack={folderPath.length > 0 || favoritesView}
+              onBack={() => {
+                if (favoritesView) {
+                  setShowFavorites(false);
+                  setSearchQuery("");
+                  setSelectedIds(new Set());
+                } else {
+                  setFolderPath((p) => p.slice(0, -1));
+                }
+              }}
+              transferVisible={transfers.length > 0}
+              transferInProgress={Boolean(activeTransfer)}
+              transferDirection={(activeTransfer ?? transfers[0])?.direction}
+              transferProgress={transferRing}
+              onOpenTransfers={() => setShowTransfers(true)}
+              allSelected={allSelected}
+              onToggleSelectAll={handleToggleSelectAll}
+              hasSelection={selectedIds.size > 0}
+              infoVisible={(() => {
+                const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+                return targets.length > 0 && targets.every((it) => it.info_revealed);
+              })()}
+              toolkitLayout={toolkitLayout}
+              onTool={handleTool}
+              onOpenSettings={favoritesView ? undefined : () => setShowSettings(true)}
+            />
+            <FilesPage
+              session={session}
+              viewMode={viewMode}
+              parentId={parentId}
+              favorites={favoritesView}
+              searchQuery={searchQuery}
+              onOpenFolder={openFolder}
+              onOpenFile={handleOpenFile}
+              refreshKey={refreshKey}
+              selectionMode={selectedIds.size > 0}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelect}
+              onLongPressItem={toggleSelect}
+              onItemsChange={setVisibleItems}
+            />
+          </main>
+          <BottomSearchBar
+            key={favoritesView ? "favorites" : "files"}
             searchQuery={searchQuery}
             onSearch={handleSearch}
-            viewMode={viewMode}
-            onUpload={handleUpload}
-            onNewFolder={handleNewFolder}
-            canGoBack={folderPath.length > 0 || favoritesView}
-            onBack={() => {
-              if (favoritesView) {
-                setShowFavorites(false);
-                setSearchQuery("");
-                setSelectedIds(new Set());
-              } else {
-                setFolderPath((p) => p.slice(0, -1));
-              }
-            }}
-            transferVisible={transfers.length > 0}
-            transferInProgress={Boolean(activeTransfer)}
-            transferDirection={(activeTransfer ?? transfers[0])?.direction}
-            transferProgress={transferRing}
-            onOpenTransfers={() => setShowTransfers(true)}
-            allSelected={allSelected}
-            onToggleSelectAll={handleToggleSelectAll}
-            hasSelection={selectedIds.size > 0}
-            infoVisible={(() => {
-              const targets = visibleItems.filter((it) => selectedIds.has(it.id));
-              return targets.length > 0 && targets.every((it) => it.info_revealed);
-            })()}
-            toolkitLayout={toolkitLayout}
-            onTool={handleTool}
-            onOpenSettings={favoritesView ? undefined : () => setShowSettings(true)}
+            confirmOpen={deleteConfirmOpen}
+            onConfirmDelete={confirmTrashSelected}
+            onCancelDelete={() => setDeleteConfirmOpen(false)}
           />
-          <FilesPage
-            session={session}
-            viewMode={viewMode}
-            parentId={parentId}
-            favorites={favoritesView}
-            searchQuery={searchQuery}
-            onOpenFolder={openFolder}
-            onOpenFile={handleOpenFile}
-            refreshKey={refreshKey}
-            selectionMode={selectedIds.size > 0}
-            selectedIds={selectedIds}
-            onToggleSelect={toggleSelect}
-            onLongPressItem={toggleSelect}
-            onItemsChange={setVisibleItems}
-          />
-        </main>
+        </>
       )}
       {viewerIndex !== null && (
         <FileViewer
