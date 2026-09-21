@@ -338,8 +338,10 @@ main.page {
 /* ── 검색바: 다른 원형 글래스 버튼들과 같은 리퀴드글라스 표면(같은 블러·
    하이라이트·그림자)이다. 가로 길이는 .bottom-search-wrap 안쪽 폭(화면
    좌우 20px 여백 기준)에 꽉 차게 맞춘다. 스튜디오 툴킷의 삭제 아이콘을
-   눌러도 이 박스 자신은 모양·내용이 전혀 바뀌지 않는다 — 확인 UI는 항상
-   바로 위(.search-bar-confirm-panel)에서 별도로 나타난다. ── */
+   눌러도 이 박스 자신의 내용은 바뀌지 않는다 — 확인 UI는 항상 바로 위
+   (.search-bar-confirm-panel)에서 별도로 나타난다. 다만 그 패널과 틈
+   없이 맞붙어 하나의 이어진 모양으로 보이도록(.is-attached) 위쪽 모서리만
+   각지고 위쪽에 얇은 경계선이 생긴다. ── */
 .search-bar {
   position: relative;
   isolation: isolate;
@@ -350,16 +352,23 @@ main.page {
   padding: 0 16px;
   /* 로그인 화면 아이디 입력창(.auth-input)과 동일한 R값 */
   border-radius: 16px;
+  border-top: 1px solid transparent;
   background: var(--glass);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
   backdrop-filter: blur(28px) saturate(200%);
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
   color: var(--text-2);
-  /* 이 헤더의 다른 원형 글래스 버튼들과 동일한 눌림 애니메이션 */
-  transition: transform 0.35s var(--spring);
+  /* 이 헤더의 다른 원형 글래스 버튼들과 동일한 눌림 애니메이션 + 삭제 확인
+     패널과 붙고 떨어질 때의 모서리 전환 */
+  transition: transform 0.35s var(--spring), border-radius 0.35s var(--spring), border-color 0.35s var(--ease);
 }
 .search-bar:active {
   transform: scale(0.94);
+}
+.search-bar.is-attached {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-top-color: var(--glass-border);
 }
 .search-bar::before {
   /* 유리 윗면에 비치는 얇은 하이라이트 */
@@ -408,26 +417,26 @@ main.page {
   position: relative;
   isolation: isolate;
   max-height: 0;
-  margin-bottom: 0;
   opacity: 0;
   overflow: hidden;
   pointer-events: none;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 10px;
+  /* 제목-버튼 간격: 기존 10px 대비 25% 증가 */
+  gap: 12.5px;
   padding: 0 16px;
-  border-radius: 16px;
+  /* 검색바와 틈 없이 맞붙어야 하므로 아래쪽 모서리는 늘 각지고, 위쪽만
+     둥글다(검색바와 합쳐 하나의 알약처럼 보인다). */
+  border-radius: 16px 16px 0 0;
   background: var(--glass);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
   backdrop-filter: blur(28px) saturate(200%);
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
-  transition: max-height 0.35s var(--spring), margin-bottom 0.35s var(--spring), opacity 0.25s var(--ease),
-    padding 0.35s var(--spring);
+  transition: max-height 0.35s var(--spring), opacity 0.25s var(--ease), padding 0.35s var(--spring);
 }
 .search-bar-confirm-panel.is-open {
-  max-height: 100px;
-  margin-bottom: 8px;
+  max-height: 130px;
   opacity: 1;
   pointer-events: auto;
   padding: 16px;
@@ -449,7 +458,6 @@ main.page {
   font-weight: 700;
   color: var(--text);
   text-align: left;
-  white-space: nowrap;
 }
 .search-bar-confirm-actions {
   position: relative;
@@ -457,6 +465,9 @@ main.page {
   display: flex;
   gap: 8px;
 }
+/* 취소·확인 배경색을 살짝 다르게 둬서(취소는 중립 유리, 확인은 삭제
+   동작을 나타내는 --danger를 옅게 섞은 톤) 구분되게 한다. 굵기 차이(취소
+   보통, 확인 볼드)와 함께 둘을 헷갈리지 않게 한다. */
 .search-bar-confirm-btn {
   height: 34px;
   padding: 0 16px;
@@ -472,6 +483,7 @@ main.page {
 }
 .search-bar-confirm-btn--primary {
   font-weight: 700;
+  background: color-mix(in srgb, var(--danger) 25%, var(--glass-strong));
 }
 
 /* ── 체크박스: 네이티브 input은 투명 처리해 접근성/토글 동작만 맡기고, 시각

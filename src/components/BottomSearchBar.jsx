@@ -25,8 +25,9 @@ function SearchIcon({ size = 18 }) {
 // 스튜디오 툴킷의 삭제(휴지통) 아이콘을 누르면(confirmOpen) 별도 모달을
 // 띄우지 않는다. 대신 검색바는 그대로 둔 채, 그 바로 위에 새 패널이 아래에서
 // 위로 커지듯 나타나(항상 DOM에 있고 max-height/opacity만 트랜지션한다) 그
-// 안에서 "삭제하시겠습니까?" 확인 문구와 취소·확인 버튼을 보여준다 — 검색바
-// 자신의 모양이나 내용은 전혀 바뀌지 않는다. 딱 이 동작 하나에만 적용되는
+// 안에서 "선택된 파일을 삭제하시겠습니까?" 확인 문구와 취소·확인 버튼을
+// 보여준다 — 검색바 자신의 모양(간격 없이 패널과 맞붙도록 위쪽 모서리만
+// 각지는 것 말고는)이나 내용은 바뀌지 않는다. 딱 이 동작 하나에만 적용되는
 // 처리이고, 다른 삭제·복원 확인(휴지통 화면 등)은 전부 그대로 ConfirmModal을
 // 쓴다.
 export default function BottomSearchBar({ searchQuery, onSearch, confirmOpen, onConfirmDelete, onCancelDelete }) {
@@ -45,7 +46,7 @@ export default function BottomSearchBar({ searchQuery, onSearch, confirmOpen, on
   return (
     <div className="bottom-search-wrap">
       <div className={`search-bar-confirm-panel${confirmOpen ? " is-open" : ""}`} aria-hidden={!confirmOpen}>
-        <p className="search-bar-confirm-title">삭제하시겠습니까?</p>
+        <p className="search-bar-confirm-title">선택된 파일을 삭제하시겠습니까?</p>
         <div className="search-bar-confirm-actions">
           <button
             type="button"
@@ -67,7 +68,7 @@ export default function BottomSearchBar({ searchQuery, onSearch, confirmOpen, on
           </button>
         </div>
       </div>
-      <div className="search-bar">
+      <div className={`search-bar${confirmOpen ? " is-attached" : ""}`}>
         <span className="search-bar-icon">
           <SearchIcon />
         </span>
