@@ -530,11 +530,6 @@ button {
      "전체 선택"은 항상 그 첫 줄과 같은 높이에서 시작한다. */
   flex-wrap: nowrap;
   align-items: flex-start;
-  /* 헤더 자체의 블러 레이어(.page-header::before) 위에 겹치므로, 여기서
-     또 backdrop-filter를 걸면 블러가 두 겹으로 겹쳐 사파리에서 특히
-     탁하게 보인다. 그래서 blur 없이 불투명도만 있는 --glass-strong
-     색만 얹어 톤을 구분한다 — 블러는 뒤에서 한 번만 걸린다. */
-  background: var(--glass-strong);
   border-top: 1px solid var(--glass-border);
   border-bottom: 1px solid var(--glass-border);
   transition: transform 0.45s var(--spring);
