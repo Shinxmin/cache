@@ -428,8 +428,6 @@ main.page {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  /* 제목-버튼 간격: 10px → 12.5px(25% 증가) → 15.6px(그 위에 25% 더 증가) */
-  gap: 15.6px;
   padding: 0 16px;
   transition: max-height 0.35s var(--spring), opacity 0.25s var(--ease), padding 0.35s var(--spring);
 }
@@ -437,8 +435,9 @@ main.page {
   max-height: 200px;
   opacity: 1;
   pointer-events: auto;
-  /* 제목 위 여백은 기본 16px의 2배(32px), 버튼 아래 여백은 1.5배(24px) */
-  padding: 32px 16px 24px;
+  /* 패널 전체 높이(위+아래 여백 56px)는 그대로 두고, 위쪽을 조금 줄이고
+     그만큼 아래쪽을 늘려 내용 전체를 살짝 위로 올린다. */
+  padding: 26px 16px 30px;
 }
 .search-bar-confirm-title {
   margin: 0;
@@ -448,16 +447,19 @@ main.page {
   text-align: left;
 }
 /* 삭제 대상 파일 안내: 선택이 바뀌면 대표 파일명·나머지 개수가 실시간으로
-   갱신된다(App.jsx의 deleteRepId). */
+   갱신된다(App.jsx의 deleteRepId). 제목-본문 간격(11.7px)은 기존 균일
+   간격(15.6px)에서 25% 줄인 값이다. */
 .search-bar-confirm-desc {
-  margin: 0;
+  margin: 11.7px 0 0;
   font-size: 13px;
   color: var(--text-2);
   text-align: left;
 }
+/* 본문-버튼 간격(18.72px)은 기존 균일 간격(15.6px)에서 20% 늘린 값이다. */
 .search-bar-confirm-actions {
   display: flex;
   gap: 8px;
+  margin-top: 18.72px;
 }
 /* 취소·확인 둘 다 같은 옅은 회색 배경을 쓴다 — 굵기 차이(취소 보통,
    확인 볼드)만으로 둘을 구분한다. 검색 독과 같은 알약 모양(R값)을 쓴다. */
