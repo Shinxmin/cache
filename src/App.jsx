@@ -133,6 +133,10 @@ export default function App() {
   // 모달 대신 하단 검색바가 위로 확장되며 그 자리에서 확인을 받는다
   // (BottomSearchBar 참고) — 다른 삭제·복원 확인은 전부 그대로 ConfirmModal.
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  // 삭제 확인 패널 본문에 "OO 외 N개" 형태로 표기할 대표 파일의 id. 패널을
+  // 열 때 그 시점의 선택 중 하나로 고정되고, 선택이 바뀌어도 그 파일 자체가
+  // 선택 해제되기 전까지는 계속 같은 파일을 대표로 유지한다.
+  const [deleteRepId, setDeleteRepId] = useState(null);
   // 스튜디오 툴킷의 편집(연필) 아이콘으로 연 이름 바꾸기 모달. null이면 닫힌
   // 상태고, 배열이면 그 항목들(1개=단일, 2개 이상=다중)을 대상으로 떠 있다.
   const [renameTargets, setRenameTargets] = useState(null);
@@ -241,6 +245,21 @@ export default function App() {
   useEffect(() => {
     setSelectedIds(new Set());
   }, [parentId, searchQuery, showFavorites]);
+
+  // 삭제 확인 패널이 열려 있는 동안 선택이 실시간으로 바뀔 수 있다(다른
+  // 항목을 추가로 선택하거나 해제). 대상이 전부 선택 해제되면 패널을 닫고,
+  // 대표로 표기 중이던 파일만 선택 해제됐다면 남은 선택 중 하나로 대표를
+  // 새로 정한다.
+  useEffect(() => {
+    if (!deleteConfirmOpen) return;
+    if (selectedIds.size === 0) {
+      setDeleteConfirmOpen(false);
+      return;
+    }
+    if (!selectedIds.has(deleteRepId)) {
+      setDeleteRepId([...selectedIds][0]);
+    }
+  }, [selectedIds, deleteConfirmOpen, deleteRepId]);
 
   const handleSearch = (value) => {
     setSearchQuery(value);
@@ -655,7 +674,10 @@ export default function App() {
       case "info":
         return handleToggleInfo();
       case "trash":
-        if (selectedIds.size > 0) setDeleteConfirmOpen(true);
+        if (selectedIds.size > 0) {
+          setDeleteRepId([...selectedIds][0]);
+          setDeleteConfirmOpen(true);
+        }
         return;
       case "download":
         return handleDownloadSelected();
@@ -856,6 +878,8 @@ export default function App() {
             searchQuery={searchQuery}
             onSearch={handleSearch}
             confirmOpen={deleteConfirmOpen}
+            confirmRepName={visibleItems.find((it) => it.id === deleteRepId)?.name}
+            confirmOtherCount={Math.max(selectedIds.size - 1, 0)}
             onConfirmDelete={confirmTrashSelected}
             onCancelDelete={() => setDeleteConfirmOpen(false)}
           />
