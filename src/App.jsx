@@ -74,11 +74,6 @@ export default function App() {
   }, []);
   const theme = themeMode === "system" ? (systemDark ? "dark" : "light") : themeMode;
 
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLORS[theme]);
-  }, [theme]);
-
   const handleChangeThemeMode = (mode) => {
     setThemeMode(mode);
     saveTheme(mode);
@@ -88,6 +83,15 @@ export default function App() {
   // (로그인 화면이 잠깐 번쩍이는 것을 막기 위함).
   const [session, setSession] = useState(null);
   const [checkingSession, setCheckingSession] = useState(true);
+
+  // 로그인 화면(AuthPage)은 기기·앱 설정과 무관하게 항상 라이트모드로
+  // 고정한다 — session이 없는 동안은 아래에서 AuthPage만 그려지므로, 그
+  // 사이엔 실제 theme 대신 강제로 "light"를 적용한다.
+  useEffect(() => {
+    const effectiveTheme = session ? theme : "light";
+    document.documentElement.setAttribute("data-theme", effectiveTheme);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLORS[effectiveTheme]);
+  }, [theme, session]);
 
   const [tab, setTab] = useState(TABS[0].id);
   // 설정의 "스튜디오 툴킷 항상 활성화" 체크박스 값. 실제로 툴킷이 보이는지는

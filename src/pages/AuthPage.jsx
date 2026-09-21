@@ -91,7 +91,14 @@ export default function AuthPage({ onLogin }) {
       <form className="auth-card" onSubmit={submit}>
         <div className="auth-brand-wrap">
           <div className={`auth-brand${revealed ? " is-revealed" : ""}`}>
-            <img className="auth-logo" src="/icons/icon-192.png" alt="" />
+            <img
+              className="auth-logo"
+              src="/icons/icon-192.png"
+              alt=""
+              draggable="false"
+              onContextMenu={(e) => e.preventDefault()}
+              onDragStart={(e) => e.preventDefault()}
+            />
             <h1 className="auth-title">
               <span className="sr-only">{GREETING}</span>
               <span aria-hidden="true">

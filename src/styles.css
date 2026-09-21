@@ -338,7 +338,8 @@ button {
   gap: 10px;
   height: 44px;
   padding: 0 16px;
-  border-radius: 999px;
+  /* 로그인 화면 아이디 입력창(.auth-input)과 동일한 R값 */
+  border-radius: 16px;
   background: var(--glass);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
   backdrop-filter: blur(28px) saturate(200%);
@@ -1940,6 +1941,12 @@ button {
   width: 88px;
   height: 88px;
   border-radius: 20px;
+  /* 우클릭·드래그로 복사/저장 못 하게(JSX의 draggable=false·onContextMenu
+     preventDefault와 짝) — -webkit-touch-callout은 iOS 사파리에서 길게
+     눌렀을 때 뜨는 "이미지 저장" 메뉴까지 막는다. */
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  user-select: none;
 }
 /* 로고 옆에 나타나는 제목. max-width가 0→고정값으로 애니메이션되며 자리가
    열리고(로고가 밀려나는 애니메이션), 그 다음에 글자가 하나씩 타이핑된다
