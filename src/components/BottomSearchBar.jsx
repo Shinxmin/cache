@@ -55,12 +55,12 @@ export default function BottomSearchBar({
     <div className="bottom-search-wrap">
       <div className={`search-dock${confirmOpen ? " has-confirm" : ""}`}>
         <div className={`search-bar-confirm-panel${confirmOpen ? " is-open" : ""}`} aria-hidden={!confirmOpen}>
-          <p className="search-bar-confirm-title">선택된 파일을 삭제하시겠습니까?</p>
+          <p className="search-bar-confirm-title">선택한 파일을 삭제하시겠습니까?</p>
           {confirmRepName && (
             <p className="search-bar-confirm-desc">
               {confirmOtherCount > 0
-                ? `${confirmRepName} 외 ${confirmOtherCount}개 파일이 휴지통으로 이동합니다`
-                : `${confirmRepName} 파일이 휴지통으로 이동합니다`}
+                ? `${confirmRepName} 외 ${confirmOtherCount}개 파일을 휴지통으로 이동합니다`
+                : `${confirmRepName} 파일을 휴지통으로 이동합니다`}
             </p>
           )}
           <div className="search-bar-confirm-actions">
