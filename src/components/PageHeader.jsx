@@ -12,8 +12,8 @@ const TRANSFER_RING_C = 2 * Math.PI * TRANSFER_RING_R;
 // 상단 좌측정렬 제목(+선택적 검색바). position: fixed로 화면 상단에 고정되어
 // 스크롤 범위 자체에 포함되지 않는다 — 제목과 검색바를 한 박스로 묶어서, 문서를
 // 아무리 스크롤해도 둘 다 함께 그 자리에 그대로 있고 절대 움직이거나 사라지지
-// 않는다. 헤더 배경은 스크롤과 무관하게 항상 사이트 기본 배경색(--bg)
-// 그대로다(styles.css의 .page-header 참고).
+// 않는다. 스크롤 진행도만 --hdr(0~1) CSS 변수로 흘려보내 뒤에 깔리는 유리
+// 레이어의 블러 불투명도를 순수 CSS가 조절한다(제목·검색바 자체는 변하지 않음).
 //
 // 검색바 항상 활성화(searchAlwaysOn) 켜짐(기본값): 홈·파일 탭에서 스크롤하는
 // 동안에는(멈출 때까지) 검색바가 삼점 버튼과 같은 50px 원으로 축소되어 그
@@ -112,7 +112,15 @@ export default function PageHeader({
   }, [searchAlwaysOn]);
 
   useEffect(() => {
+    const el = ref.current;
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const p = Math.min(1, Math.max(0, window.scrollY / 56));
+      el.style.setProperty("--hdr", p.toFixed(3));
+    };
     const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
       if (showSearch) {
         setCollapsed(true);
         clearTimeout(collapseTimerRef.current);
@@ -123,9 +131,11 @@ export default function PageHeader({
         }
       }
     };
+    update();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
       clearTimeout(collapseTimerRef.current);
     };
   }, [showSearch, searchAlwaysOn]);
