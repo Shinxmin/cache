@@ -434,10 +434,11 @@ main.page {
   transition: max-height 0.35s var(--spring), opacity 0.25s var(--ease), padding 0.35s var(--spring);
 }
 .search-bar-confirm-panel.is-open {
-  max-height: 170px;
+  max-height: 200px;
   opacity: 1;
   pointer-events: auto;
-  padding: 16px;
+  /* 제목 위 여백은 기본 16px의 2배(32px), 버튼 아래 여백은 1.5배(24px) */
+  padding: 32px 16px 24px;
 }
 .search-bar-confirm-title {
   margin: 0;
