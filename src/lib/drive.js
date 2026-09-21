@@ -92,12 +92,6 @@ export async function listFavorites(token) {
   return sortFileList(rows);
 }
 
-// ── 홈 탭 저장 용량 카드 ──────────────────────────────────────────────────
-// 총 용량과 사진/동영상/기타 3분류 크기. by_kind는 항상 이 순서로 온다.
-export async function storageSummary(token) {
-  return rpcResult(await supabase.rpc("storage_summary", { p_token: token }));
-}
-
 // ── 태그 관리(설정 → 태그) ──────────────────────────────────────────────
 // 지금 쓰이고 있는(휴지통에 있지 않은 파일에 붙어 있는) 태그를 중복 없이
 // 나열한다. 각 항목은 { tag, count }(그 태그가 붙은 파일·폴더 개수) 형태다.
