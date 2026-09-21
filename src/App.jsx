@@ -13,7 +13,6 @@ import RenameModal from "./components/RenameModal";
 import MoveModal from "./components/MoveModal";
 import TagModal from "./components/TagModal";
 import OptimizeModal from "./components/OptimizeModal";
-import NewFolderModal from "./components/NewFolderModal";
 import Toast from "./components/Toast";
 import AddonStorePage from "./pages/AddonStorePage";
 import {
@@ -148,8 +147,11 @@ export default function App() {
   // 닫힌 상태. 폴더나 이미지가 아닌 파일은 대상에서 빠진다(캔버스로 다시
   // 인코딩할 수 있는 게 이미지뿐이라서).
   const [optimizeTargets, setOptimizeTargets] = useState(null);
-  // 헤더 삼점 버튼의 "새 폴더"로 여는 모달. true면 열려 있는 상태.
+  // 헤더 삼점 버튼의 "새 폴더". 별도 모달 대신 삭제 확인과 같은 방식으로
+  // 하단 검색바가 위로 확장되며 그 자리에서 이름을 입력받는다(BottomSearchBar
+  // 참고). 둘 다 같은 패널 자리를 쓰므로 동시에 열리지 않는다.
   const [newFolderOpen, setNewFolderOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
 
   // 전송(업로드/다운로드) 상태. 진행 중인 것이 있을 때만 헤더에 버튼이 뜬다.
   const [transfers, setTransfers] = useState([]);
@@ -326,16 +328,27 @@ export default function App() {
   };
 
   // 새 폴더도 업로드와 같은 이유로, 즐겨찾기 화면에서 눌렀다면 먼저
-  // 즐겨찾기를 닫은 뒤 모달을 연다.
+  // 즐겨찾기를 닫은 뒤 패널을 연다. 삭제 확인 패널과 자리를 공유하므로
+  // 열려 있었다면 먼저 닫는다.
   const handleNewFolder = () => {
     if (showFavorites) setShowFavorites(false);
+    setDeleteConfirmOpen(false);
+    setNewFolderName("");
     setNewFolderOpen(true);
   };
 
-  const handleNewFolderSubmit = async (name) => {
+  const cancelNewFolder = () => {
+    setNewFolderOpen(false);
+    setNewFolderName("");
+  };
+
+  const confirmNewFolder = async () => {
+    const name = newFolderName.trim();
+    if (!name) return;
     try {
       await createFolder(session.token, name, parentId);
       setNewFolderOpen(false);
+      setNewFolderName("");
       setRefreshKey((k) => k + 1);
     } catch {
       window.alert("폴더를 만들지 못했습니다");
@@ -675,6 +688,7 @@ export default function App() {
         return handleToggleInfo();
       case "trash":
         if (selectedIds.size > 0) {
+          setNewFolderOpen(false);
           setDeleteRepId([...selectedIds][0]);
           setDeleteConfirmOpen(true);
         }
@@ -882,6 +896,11 @@ export default function App() {
             confirmOtherCount={Math.max(selectedIds.size - 1, 0)}
             onConfirmDelete={confirmTrashSelected}
             onCancelDelete={() => setDeleteConfirmOpen(false)}
+            newFolderOpen={newFolderOpen}
+            newFolderName={newFolderName}
+            onChangeNewFolderName={setNewFolderName}
+            onConfirmNewFolder={confirmNewFolder}
+            onCancelNewFolder={cancelNewFolder}
           />
         </>
       )}
@@ -908,7 +927,6 @@ export default function App() {
       {optimizeTargets && (
         <OptimizeModal items={optimizeTargets} onClose={() => setOptimizeTargets(null)} onSubmit={handleOptimizeSubmit} />
       )}
-      {newFolderOpen && <NewFolderModal onClose={() => setNewFolderOpen(false)} onSubmit={handleNewFolderSubmit} />}
       {paletteViewerItem && (
         <FileViewer
           session={session}
