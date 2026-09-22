@@ -437,9 +437,9 @@ main.page {
   max-height: 200px;
   opacity: 1;
   pointer-events: auto;
-  /* 패널 전체 높이(위+아래 여백 56px)는 그대로 두고, 위쪽을 조금 줄이고
-     그만큼 아래쪽을 늘려 내용 전체를 살짝 위로 올린다. */
-  padding: 26px 16px 30px;
+  /* 패널 전체 높이(위+아래 여백 56px)는 그대로 두고, 위쪽을 좀 더 줄이고
+     그만큼 아래쪽을 늘려 제목·본문·버튼 전체를 조금 더 위로 올린다. */
+  padding: 20px 16px 36px;
 }
 .search-bar-confirm-title {
   margin: 0;
@@ -449,19 +449,19 @@ main.page {
   text-align: left;
 }
 /* 삭제 대상 파일 안내: 선택이 바뀌면 대표 파일명·나머지 개수가 실시간으로
-   갱신된다(App.jsx의 deleteRepId). 제목-본문 간격(11.7px)은 기존 균일
-   간격(15.6px)에서 25% 줄인 값이다. */
+   갱신된다(App.jsx의 deleteRepId). 제목-본문 간격(9px)은 원래 균일 간격
+   (15.6px)에서 25% 줄인 11.7px을 다시 한번 더 줄인 값이다. */
 .search-bar-confirm-desc {
-  margin: 11.7px 0 0;
+  margin: 9px 0 0;
   font-size: 13px;
   color: var(--text-2);
   text-align: left;
 }
 /* 새 폴더 패널의 이름 입력창. 삭제 확인 패널의 안내 문구(.search-bar-confirm-desc)
-   자리에 대신 들어가므로 제목과의 간격도 똑같이 11.7px을 쓴다. 다른 모달의
+   자리에 대신 들어가므로 제목과의 간격도 똑같이 9px을 쓴다. 다른 모달의
    .rename-input과 같은 밑줄 스타일이되, 이 패널은 항상 좌측정렬 폭 100%다. */
 .search-bar-confirm-input {
-  margin-top: 11.7px;
+  margin-top: 9px;
   width: 100%;
   height: 28px;
   padding: 0 2px;
