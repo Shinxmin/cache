@@ -756,28 +756,35 @@ main.page {
   transition: transform 0.45s var(--spring);
   will-change: transform;
 }
-/* 한 줄(1열=전체 선택 체크박스+기본 도구, 2열=애드온)의 공통 정렬 규칙.
-   justify-content: space-between이라 화면 폭이 얼마든 첫 항목은 왼쪽 끝,
-   마지막 항목은 오른쪽 끝에 붙고 그 사이 여백이 유동적으로 늘어난다 —
-   그래서 375px대 아이폰이든 태블릿이든 항목 사이 간격만 달라질 뿐 겹치는
-   일이 없다. gap은 space-between이 만드는 여백의 "최소값" 역할만 한다
-   (화면이 아주 좁아도 이 값 밑으로는 좁혀지지 않는다). 1열은 체크박스+
-   기본 도구 10개, 총 11개로 항상 고정된 개수라 줄바꿈 없이 한 줄에 다
-   들어가도록 계산돼 있고(가장 좁은 iPhone 폭 375px 기준으로 확인), 2열
-   (애드온)은 혹시 아주 많이 설치해도 겹치지 않도록 줄바꿈을 허용한다. */
+/* 두 줄(1열=전체 선택 체크박스+기본 도구, 2열=애드온) 다 부모(.studio-toolkit,
+   flex-direction:column)의 flex 자식이라 같은 폭(align-items의 기본값인
+   stretch)으로 늘어난다 — 그래서 애드온이 몇 개든 2열의 가로 폭은 항상
+   1열과 정확히 같다. */
 .studio-toolkit-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   min-height: 22px;
   color: var(--text-2);
 }
+/* 1열: 체크박스+기본 도구 10개, 총 11개로 항상 고정된 개수다.
+   justify-content: space-between이라 화면 폭이 얼마든 첫 항목(체크박스)은
+   왼쪽 끝, 마지막 아이콘은 오른쪽 끝에 붙고 그 사이 여백이 유동적으로
+   늘어난다 — 375px대 아이폰이든 태블릿이든 겹치지 않으면서 화면을 꽉
+   채운다. gap은 그 여백의 "최소값" 역할만 한다(화면이 아주 좁아도 이 값
+   밑으로는 좁혀지지 않는다). 개수가 고정이라 줄바꿈 없이 한 줄에 다
+   들어가도록 계산돼 있다(가장 좁은 iPhone 폭 375px 기준으로 확인). */
 .studio-toolkit-row-base {
   flex-wrap: nowrap;
+  justify-content: space-between;
 }
+/* 2열(애드온)은 1열과 달리 왼쪽부터 순서대로 붙여 정렬한다(space-between
+   으로 늘려 흩어 놓지 않는다) — 몇 개 안 되는 애드온이 폭 전체에 듬성듬성
+   퍼져 보이지 않고 한 덩어리로 모여 보이게 하기 위해서다. 혹시 아주 많이
+   설치해도 겹치지 않도록 줄바꿈은 허용한다. */
 .studio-toolkit-row-addons {
   flex-wrap: wrap;
+  justify-content: flex-start;
   row-gap: 10px;
 }
 .studio-toolkit-select {
