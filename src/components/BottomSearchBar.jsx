@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronRightIcon, HashIcon } from "./icons";
+import { ChevronRightIcon } from "./icons";
 
 // 하단바 아이콘(단일 solid fill, currentColor)과 같은 방식으로 그린 돋보기 아이콘.
 // 링은 두 원을 evenodd로 겹쳐 만든 진짜 구멍(반투명 색에서도 이중 톤이 생기지
@@ -18,12 +18,31 @@ function SearchIcon({ size = 18 }) {
   );
 }
 
-// 스튜디오 툴킷의 이름 바꾸기(연필) 아이콘과 같은 모양. 새 폴더·이름 바꾸기
-// 패널이 열려 검색바가 이름 입력창으로 바뀌는 동안 돋보기 대신 이걸 보여준다.
+// 스튜디오 툴킷의 이름 바꾸기(연필) 아이콘과 같은 모양. 이름 바꾸기·다중
+// 이름 바꾸기 패널이 열려 검색바가 입력창으로 바뀌는 동안 돋보기 대신
+// 이걸 보여준다.
 function EditIcon({ size = 18 }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
       <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+    </svg>
+  );
+}
+
+// 헤더 삼점 버튼의 "새 폴더" 아이콘과 같은 모양.
+function FolderIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+    </svg>
+  );
+}
+
+// 스튜디오 툴킷의 태그(북마크) 아이콘과 같은 모양.
+function BookmarkIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
     </svg>
   );
 }
@@ -282,7 +301,18 @@ export default function BottomSearchBar({
     onCancelScrim?.();
   };
 
-  const showHashIcon = tagOpen || multiTagOpen;
+  // 검색바 아이콘은 삭제 패널만 빼고, 그 패널을 연 툴킷 아이콘과 똑같은
+  // 모양으로 바뀐다(새 폴더→폴더, 이름 바꾸기→연필, 태그→북마크).
+  const isTagMode = tagOpen || multiTagOpen;
+  const searchBarIcon = !textEntryOpen ? (
+    <SearchIcon />
+  ) : newFolderOpen ? (
+    <FolderIcon />
+  ) : isTagMode ? (
+    <BookmarkIcon />
+  ) : (
+    <EditIcon />
+  );
 
   return (
     <>
@@ -354,9 +384,7 @@ export default function BottomSearchBar({
             )}
           </div>
           <div className="search-bar">
-            <span className="search-bar-icon">
-              {textEntryOpen ? showHashIcon ? <HashIcon /> : <EditIcon /> : <SearchIcon />}
-            </span>
+            <span className="search-bar-icon">{searchBarIcon}</span>
             <input
               ref={inputRef}
               className="search-bar-input"
@@ -364,7 +392,7 @@ export default function BottomSearchBar({
               inputMode={textEntryOpen ? "text" : "search"}
               enterKeyHint={textEntryOpen ? "done" : "search"}
               placeholder={textEntryOpen ? "여기에 입력하세요" : "검색"}
-              maxLength={showHashIcon ? 24 : undefined}
+              maxLength={isTagMode ? 24 : undefined}
               value={textValue}
               onChange={(e) => onTextChange(e.target.value)}
               onKeyDown={(e) => {
