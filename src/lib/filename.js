@@ -63,15 +63,3 @@ export function displayName(item) {
   const ext = extensionFromMime(item.mime);
   return ext ? `${name}.${ext}` : name;
 }
-
-// 이름 바꾸기 확인 시 쓴다: 사용자가 입력한 새 이름에 확장자가 이미 있으면
-// (점이 있으면) 그대로 존중하고, 없으면 원래 파일의 확장자(없으면 mime으로
-// 추정한 확장자)를 자동으로 붙인다. "3.jpg"를 "5"로만 바꿔도 "5.jpg"가
-// 되는 게 이 함수의 역할이다.
-export function withPreservedExtension(newName, originalItem) {
-  const trimmed = (newName ?? "").trim();
-  if (!trimmed || originalItem?.is_folder) return trimmed;
-  if (extensionOf(trimmed)) return trimmed;
-  const ext = extensionOf(originalItem?.name) || extensionFromMime(originalItem?.mime);
-  return ext ? `${trimmed}.${ext}` : trimmed;
-}
