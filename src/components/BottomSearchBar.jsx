@@ -17,8 +17,8 @@ function SearchIcon({ size = 18 }) {
   );
 }
 
-// 스튜디오 툴킷의 이름 바꾸기(연필) 아이콘과 같은 모양. 새 폴더 패널이 열려
-// 검색바가 이름 입력창으로 바뀌는 동안 돋보기 대신 이걸 보여준다.
+// 스튜디오 툴킷의 이름 바꾸기(연필) 아이콘과 같은 모양. 새 폴더·이름 바꾸기
+// 패널이 열려 검색바가 이름 입력창으로 바뀌는 동안 돋보기 대신 이걸 보여준다.
 function EditIcon({ size = 18 }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
@@ -35,15 +35,16 @@ function EditIcon({ size = 18 }) {
 // 배경·블러·그림자·둥근 모서리는 전부 바깥 껍데기 하나(.search-dock)가
 // 맡는다 — 확인 문구(.search-bar-confirm-panel)와 검색창(.search-bar)은 그
 // 안의 내용일 뿐, 각자 따로 유리 재질을 두르지 않는다. 스튜디오 툴킷의
-// 삭제(휴지통) 아이콘이나 헤더 삼점 버튼의 "새 폴더"를 누르면 이 패널이
-// 검색창 위로 확장되며 제목(과 삭제일 땐 안내 문구)을 보여준다 — 취소
-// 버튼은 없고, 검색바를 뺀 화면 어디를 눌러도 취소로 닫힌다(.search-bar-scrim).
-// 확인 버튼은 패널이 아니라 검색바 자신의 오른쪽 끝에 뜬다 — 새 폴더일
-// 때는 검색바의 돋보기·플레이스홀더도 연필 아이콘·"폴더 이름"으로 바뀌어
-// 그 입력창에 직접 이름을 타이핑한다(별도 입력창을 새로 만들지 않는다).
-// 둘 다 동시에 열릴 수는 없으므로(App.jsx가 한쪽을 열 때 다른 쪽을 닫는다)
-// 패널·검색바 내용물은 그때그때 하나만 그린다. 다른 삭제·복원 확인(휴지통
-// 화면 등)은 전부 그대로 ConfirmModal을 쓴다.
+// 삭제(휴지통)·이름 바꾸기(연필, 단일 선택일 때만) 아이콘이나 헤더 삼점
+// 버튼의 "새 폴더"를 누르면 이 패널이 검색창 위로 확장되며 제목(과 삭제일
+// 땐 안내 문구)을 보여준다 — 취소 버튼은 없고, 검색바를 뺀 화면 어디를
+// 눌러도 취소로 닫힌다(.search-bar-scrim). 확인 버튼은 패널이 아니라
+// 검색바 자신의 오른쪽 끝에 뜬다 — 새 폴더·이름 바꾸기일 때는 검색바의
+// 돋보기·플레이스홀더도 연필 아이콘·"여기에 입력하세요"로 바뀌어 그
+// 입력창에 직접 값을 타이핑한다(별도 입력창을 새로 만들지 않는다). 셋 중
+// 둘 이상 동시에 열릴 수는 없으므로(App.jsx가 하나를 열 때 나머지를 닫는다)
+// 패널·검색바 내용물은 그때그때 하나만 그린다. 다중 선택 이름 바꾸기 등
+// 목록 형태가 필요한 확인(휴지통 화면 등)은 전부 그대로 각자의 모달을 쓴다.
 export default function BottomSearchBar({
   searchQuery,
   onSearch,
@@ -55,29 +56,37 @@ export default function BottomSearchBar({
   onChangeNewFolderName,
   onConfirmNewFolder,
   onCancelNewFolder,
+  renameOpen,
+  renameName,
+  onChangeRenameName,
+  onConfirmRename,
+  onCancelRename,
 }) {
   const [busy, setBusy] = useState(false);
   const [folderBusy, setFolderBusy] = useState(false);
-  const panelOpen = confirmOpen || newFolderOpen;
+  const [renameBusy, setRenameBusy] = useState(false);
+  const panelOpen = confirmOpen || newFolderOpen || renameOpen;
+  // 검색바가 검색 대신 이름을 입력받는 상태(새 폴더·이름 바꾸기 둘 다 공통).
+  const textEntryOpen = newFolderOpen || renameOpen;
   const inputRef = useRef(null);
 
   // 패널이 닫히는 동안(max-height·opacity 트랜지션 0.25~0.35초)에도 DOM은
-  // 그대로 남아 있는데, 내용을 newFolderOpen으로 바로 판단하면 두 값이 이미
-  // false로 바뀐 뒤라 "삭제" 쪽 문구로 순간 바뀌어 버린다 — 사라지는 새 폴더
-  // 패널 위에 삭제 확인 문구가 잠깐 겹쳐 보이던 버그가 이것 때문이었다.
-  // 그래서 실제로 열릴 때만(new/삭제 둘 중 하나가 true가 될 때만) 갱신하고,
-  // 둘 다 닫힐 때는 마지막 내용을 그대로 유지해 사라지는 동안 바뀌지 않게 한다.
-  const [displayMode, setDisplayMode] = useState(newFolderOpen ? "newFolder" : "confirm");
+  // 그대로 남아 있는데, 내용을 live 플래그로 바로 판단하면 그 플래그가 이미
+  // false로 바뀐 뒤라 다른 패널 문구로 순간 바뀌어 버린다 — 사라지는 패널
+  // 위에 다른 문구가 잠깐 겹쳐 보이던 버그가 이것 때문이었다. 그래서 실제로
+  // 열릴 때만 갱신하고, 닫힐 때는 마지막 내용을 그대로 유지한다.
+  const [displayMode, setDisplayMode] = useState(newFolderOpen ? "newFolder" : renameOpen ? "rename" : "confirm");
   useEffect(() => {
     if (newFolderOpen) setDisplayMode("newFolder");
+    else if (renameOpen) setDisplayMode("rename");
     else if (confirmOpen) setDisplayMode("confirm");
-  }, [newFolderOpen, confirmOpen]);
+  }, [newFolderOpen, renameOpen, confirmOpen]);
 
-  // 검색바 입력창은 늘 같은 DOM 노드라 newFolderOpen이 켜질 때 autoFocus는
+  // 검색바 입력창은 늘 같은 DOM 노드라 textEntryOpen이 켜질 때 autoFocus는
   // 다시 발동하지 않는다(마운트 시 한 번뿐) — 그래서 열릴 때마다 직접 포커스한다.
   useEffect(() => {
-    if (newFolderOpen) inputRef.current?.focus();
-  }, [newFolderOpen]);
+    if (textEntryOpen) inputRef.current?.focus();
+  }, [textEntryOpen]);
 
   const confirm = async () => {
     if (busy) return;
@@ -100,19 +109,41 @@ export default function BottomSearchBar({
     }
   };
 
+  const canSubmitRename = Boolean(renameName?.trim()) && !renameBusy;
+  const submitRename = async () => {
+    if (!canSubmitRename) return;
+    setRenameBusy(true);
+    try {
+      await onConfirmRename();
+    } finally {
+      setRenameBusy(false);
+    }
+  };
+
+  const textValue = newFolderOpen ? newFolderName : renameOpen ? renameName : searchQuery;
+  const onTextChange = (value) => {
+    if (newFolderOpen) onChangeNewFolderName?.(value);
+    else if (renameOpen) onChangeRenameName?.(value);
+    else onSearch?.(value);
+  };
+  const canSubmitText = newFolderOpen ? canSubmitFolder : renameOpen ? canSubmitRename : true;
+  const submitText = () => {
+    if (newFolderOpen) return submitFolder();
+    if (renameOpen) return submitRename();
+    return confirm();
+  };
+  const onCancelScrim = newFolderOpen ? onCancelNewFolder : renameOpen ? onCancelRename : onCancelDelete;
+
   return (
     <>
-      {panelOpen && (
-        <div
-          className="search-bar-scrim"
-          onClick={newFolderOpen ? onCancelNewFolder : onCancelDelete}
-        />
-      )}
+      {panelOpen && <div className="search-bar-scrim" onClick={onCancelScrim} />}
       <div className="bottom-search-wrap">
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
           <div className={`search-bar-confirm-panel${panelOpen ? " is-open" : ""}`} aria-hidden={!panelOpen}>
             {displayMode === "newFolder" ? (
               <p className="search-bar-confirm-title">새 폴더</p>
+            ) : displayMode === "rename" ? (
+              <p className="search-bar-confirm-title">이름 바꾸기</p>
             ) : (
               <>
                 <p className="search-bar-confirm-title">선택한 파일을 삭제하시겠습니까?</p>
@@ -121,20 +152,20 @@ export default function BottomSearchBar({
             )}
           </div>
           <div className="search-bar">
-            <span className="search-bar-icon">{newFolderOpen ? <EditIcon /> : <SearchIcon />}</span>
+            <span className="search-bar-icon">{textEntryOpen ? <EditIcon /> : <SearchIcon />}</span>
             <input
               ref={inputRef}
               className="search-bar-input"
-              type={newFolderOpen ? "text" : "search"}
-              inputMode={newFolderOpen ? "text" : "search"}
-              enterKeyHint={newFolderOpen ? "done" : "search"}
-              placeholder={newFolderOpen ? "폴더 이름" : "검색"}
-              value={newFolderOpen ? newFolderName : searchQuery}
-              onChange={(e) => (newFolderOpen ? onChangeNewFolderName?.(e.target.value) : onSearch?.(e.target.value))}
+              type={textEntryOpen ? "text" : "search"}
+              inputMode={textEntryOpen ? "text" : "search"}
+              enterKeyHint={textEntryOpen ? "done" : "search"}
+              placeholder={textEntryOpen ? "여기에 입력하세요" : "검색"}
+              value={textValue}
+              onChange={(e) => onTextChange(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key !== "Enter") return;
                 // 모바일 키보드의 "검색"/"완료" 확인 버튼도 엔터와 동일한 keydown을 발생시킨다.
-                if (newFolderOpen) submitFolder();
+                if (textEntryOpen) submitText();
                 e.currentTarget.blur();
               }}
             />
@@ -142,8 +173,8 @@ export default function BottomSearchBar({
               <button
                 type="button"
                 className="search-bar-inline-confirm"
-                onClick={newFolderOpen ? submitFolder : confirm}
-                disabled={newFolderOpen ? !canSubmitFolder : busy}
+                onClick={confirmOpen ? confirm : submitText}
+                disabled={confirmOpen ? busy : !canSubmitText}
               >
                 확인
               </button>

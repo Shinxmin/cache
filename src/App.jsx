@@ -132,9 +132,14 @@ export default function App() {
   // 모달 대신 하단 검색바가 위로 확장되며 그 자리에서 확인을 받는다
   // (BottomSearchBar 참고) — 다른 삭제·복원 확인은 전부 그대로 ConfirmModal.
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  // 스튜디오 툴킷의 편집(연필) 아이콘으로 연 이름 바꾸기 모달. null이면 닫힌
-  // 상태고, 배열이면 그 항목들(1개=단일, 2개 이상=다중)을 대상으로 떠 있다.
+  // 스튜디오 툴킷의 편집(연필) 아이콘으로 연 이름 바꾸기. 단일 선택이면
+  // 삭제 확인·새 폴더와 같은 방식으로 하단 검색바가 확장되는 패널을 쓰고
+  // (renameOpen), 다중 선택이면(항목마다 입력창 + 일괄 처리 버튼이 필요해
+  // 패널 하나로는 담을 수 없다) 그대로 RenameModal을 쓴다.
   const [renameTargets, setRenameTargets] = useState(null);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameName, setRenameName] = useState("");
+  const [renameTargetId, setRenameTargetId] = useState(null);
   // 스튜디오 툴킷의 이동(→) 아이콘으로 연 이동 모달. null이면 닫힌 상태.
   const [moveTargets, setMoveTargets] = useState(null);
   // 스튜디오 툴킷의 태그(#) 아이콘으로 연 태그 모달. null이면 닫힌 상태.
@@ -252,6 +257,16 @@ export default function App() {
     if (selectedIds.size === 0) setDeleteConfirmOpen(false);
   }, [selectedIds, deleteConfirmOpen]);
 
+  // 단일 이름 바꾸기 패널도 대상 선택이 통째로 사라지면 같은 이유로 닫는다.
+  useEffect(() => {
+    if (!renameOpen) return;
+    if (selectedIds.size === 0) {
+      setRenameOpen(false);
+      setRenameName("");
+      setRenameTargetId(null);
+    }
+  }, [selectedIds, renameOpen]);
+
   const handleSearch = (value) => {
     setSearchQuery(value);
   };
@@ -322,6 +337,7 @@ export default function App() {
   const handleNewFolder = () => {
     if (showFavorites) setShowFavorites(false);
     setDeleteConfirmOpen(false);
+    cancelRename();
     setNewFolderName("");
     setNewFolderOpen(true);
   };
@@ -484,11 +500,41 @@ export default function App() {
     setDeleteConfirmOpen(false);
   };
 
-  // 선택된 항목으로 이름 바꾸기 모달을 연다(1개=단일, 여러 개=다중 편집).
+  // 선택된 항목으로 이름을 바꾼다. 단일 선택이면 삭제 확인·새 폴더와 같은
+  // 하단 패널을 열고, 여러 개면(패널 하나에 입력창 여러 줄을 담을 수 없어)
+  // 그대로 RenameModal을 연다.
   const handleEditSelected = () => {
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
     if (!targets.length) return;
+    if (targets.length === 1) {
+      setDeleteConfirmOpen(false);
+      setNewFolderOpen(false);
+      setRenameTargetId(targets[0].id);
+      setRenameName(targets[0].name);
+      setRenameOpen(true);
+      return;
+    }
     setRenameTargets(targets);
+  };
+
+  const cancelRename = () => {
+    setRenameOpen(false);
+    setRenameName("");
+    setRenameTargetId(null);
+  };
+
+  // 하단 검색바가 확장돼 보여주는 이름 바꾸기 패널의 "확인" 버튼.
+  const confirmRename = async () => {
+    const name = renameName.trim();
+    if (!name || !renameTargetId) return;
+    try {
+      await renameFiles(session.token, [{ id: renameTargetId, name }]);
+      cancelRename();
+      setSelectedIds(new Set());
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("이름을 바꾸지 못했습니다");
+    }
   };
 
   // 선택된 항목으로 이동 모달을 연다. 폴더를 옮기면 하위 항목은 parent_id로
@@ -678,6 +724,7 @@ export default function App() {
       case "trash":
         if (selectedIds.size > 0) {
           setNewFolderOpen(false);
+          cancelRename();
           setDeleteConfirmOpen(true);
         }
         return;
@@ -887,6 +934,11 @@ export default function App() {
             onChangeNewFolderName={setNewFolderName}
             onConfirmNewFolder={confirmNewFolder}
             onCancelNewFolder={cancelNewFolder}
+            renameOpen={renameOpen}
+            renameName={renameName}
+            onChangeRenameName={setRenameName}
+            onConfirmRename={confirmRename}
+            onCancelRename={cancelRename}
           />
         </>
       )}
