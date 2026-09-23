@@ -38,8 +38,6 @@ export default function BottomSearchBar({
   searchQuery,
   onSearch,
   confirmOpen,
-  confirmRepName,
-  confirmOtherCount = 0,
   onConfirmDelete,
   onCancelDelete,
   newFolderOpen,
@@ -113,13 +111,7 @@ export default function BottomSearchBar({
           ) : (
             <>
               <p className="search-bar-confirm-title">선택한 파일을 삭제하시겠습니까?</p>
-              {confirmRepName && (
-                <p className="search-bar-confirm-desc">
-                  {confirmOtherCount > 0
-                    ? `${confirmRepName} 외 ${confirmOtherCount}개 파일을 휴지통으로 이동합니다`
-                    : `${confirmRepName} 파일을 휴지통으로 이동합니다`}
-                </p>
-              )}
+              <p className="search-bar-confirm-desc">해당 항목은 휴지통에서 복구 및 삭제할 수 있습니다</p>
               <div className="search-bar-confirm-actions">
                 <button
                   type="button"

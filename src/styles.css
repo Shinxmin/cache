@@ -450,8 +450,7 @@ main.page {
   color: var(--text);
   text-align: left;
 }
-/* 삭제 대상 파일 안내: 선택이 바뀌면 대표 파일명·나머지 개수가 실시간으로
-   갱신된다(App.jsx의 deleteRepId). 제목-본문 간격(9px)은 원래 균일 간격
+/* 삭제 확인 보조 설명(고정 문구). 제목-본문 간격(9px)은 원래 균일 간격
    (15.6px)에서 25% 줄인 11.7px을 다시 한번 더 줄인 값이다. */
 .search-bar-confirm-desc {
   margin: 9px 0 0;
