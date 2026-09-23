@@ -21,6 +21,12 @@ export const ADDONS = [
     version: "1.0.0",
     description: "동영상에서 원하는 구간의 시작과 끝을 찍어 하이라이트 클립으로 모아 둡니다",
   },
+  {
+    id: "thumbnail",
+    name: "폴더 썸네일",
+    version: "1.0.0",
+    description: "폴더 안 이미지·움짤·동영상 중 하나를 골라 그 폴더의 대표 얼굴로 지정합니다",
+  },
 ];
 
 export const ADDON_IDS = new Set(ADDONS.map((a) => a.id));

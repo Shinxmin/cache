@@ -1799,6 +1799,19 @@ main.page {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* 폴더 썸네일 애드온에서 이미 이 파일을 썸네일로 지정했음을 표시 —
+   이름을 굵게 강조하고 오른쪽 끝에 체크 배지를 붙인다. */
+.move-row.is-picked .move-row-name {
+  color: var(--text);
+  font-weight: 700;
+}
+.move-row-picked {
+  flex: none;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  color: var(--text);
+}
 .move-note {
   padding: 14px 0;
   display: flex;

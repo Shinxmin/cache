@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BackIcon, ChevronRightIcon, FileIcon } from "./icons";
+import { BackIcon, CheckIcon, ChevronRightIcon, FileIcon } from "./icons";
 import Spinner from "./Spinner";
 import { isOptimizableFile, OPTIMIZE_LEVELS, OPTIMIZE_LEVEL_LABELS } from "../lib/optimize";
 import { displayName } from "../lib/filename";
@@ -144,6 +144,26 @@ export default function BottomSearchBar({
   onMoveBack,
   onConfirmMove,
   onCancelMove,
+  thumbnailOpen,
+  thumbnailTargetName,
+  thumbnailSourceId,
+  thumbnailPath,
+  thumbnailRows,
+  thumbnailRowsState,
+  thumbnailExcludedIds,
+  onThumbnailInto,
+  onThumbnailBack,
+  onPickThumbnailSource,
+  onConfirmThumbnail,
+  onCancelThumbnail,
+  multiThumbnailOpen,
+  multiThumbnailItems,
+  multiThumbnailIndex,
+  multiThumbnailExcludedIds,
+  onPrevMultiThumbnail,
+  onNextMultiThumbnail,
+  onConfirmMultiThumbnail,
+  onCancelMultiThumbnail,
 }) {
   const [busy, setBusy] = useState(false);
   const [folderBusy, setFolderBusy] = useState(false);
@@ -154,6 +174,8 @@ export default function BottomSearchBar({
   const [optimizeBusy, setOptimizeBusy] = useState(false);
   const [multiOptimizeBusy, setMultiOptimizeBusy] = useState(false);
   const [moveBusy, setMoveBusy] = useState(false);
+  const [thumbnailBusy, setThumbnailBusy] = useState(false);
+  const [multiThumbnailBusy, setMultiThumbnailBusy] = useState(false);
   const panelOpen =
     confirmOpen ||
     newFolderOpen ||
@@ -163,7 +185,9 @@ export default function BottomSearchBar({
     multiTagOpen ||
     optimizeOpen ||
     multiOptimizeOpen ||
-    moveOpen;
+    moveOpen ||
+    thumbnailOpen ||
+    multiThumbnailOpen;
   // 검색바가 검색 대신 값을 입력받는 상태(새 폴더·이름 바꾸기·다중 이름
   // 바꾸기·태그·다중 태그 다섯 다 공통).
   const textEntryOpen = newFolderOpen || renameOpen || multiRenameOpen || tagOpen || multiTagOpen;
@@ -195,7 +219,11 @@ export default function BottomSearchBar({
                   ? "multiOptimize"
                   : moveOpen
                     ? "move"
-                    : "confirm";
+                    : thumbnailOpen
+                      ? "thumbnail"
+                      : multiThumbnailOpen
+                        ? "multiThumbnail"
+                        : "confirm";
   const [displayMode, setDisplayMode] = useState(resolveMode);
   useEffect(() => {
     if (newFolderOpen) setDisplayMode("newFolder");
@@ -206,6 +234,8 @@ export default function BottomSearchBar({
     else if (optimizeOpen) setDisplayMode("optimize");
     else if (multiOptimizeOpen) setDisplayMode("multiOptimize");
     else if (moveOpen) setDisplayMode("move");
+    else if (thumbnailOpen) setDisplayMode("thumbnail");
+    else if (multiThumbnailOpen) setDisplayMode("multiThumbnail");
     else if (confirmOpen) setDisplayMode("confirm");
   }, [
     newFolderOpen,
@@ -216,6 +246,8 @@ export default function BottomSearchBar({
     optimizeOpen,
     multiOptimizeOpen,
     moveOpen,
+    thumbnailOpen,
+    multiThumbnailOpen,
     confirmOpen,
   ]);
 
@@ -349,6 +381,40 @@ export default function BottomSearchBar({
   // 막지만 목록에서 미리 눌리지 않게 해 둔다.
   const moveExcluded = moveExcludedIds ?? new Set();
 
+  // 폴더 썸네일 애드온도 이동과 같은 폴더 탐색 UI를 재사용하지만, 목록에서
+  // 고르는 게 목적지 폴더가 아니라 이미지·움짤·동영상 "파일"이다. thumb_key가
+  // 있는 파일만(업로드 때 캔버스로 만든 썸네일이 있어야 그대로 복사해 쓸 수
+  // 있다) 클릭해 지정할 수 있고, 폴더 행은 그 안으로 들어가는 탐색용이다 —
+  // 다만 지금 썸네일을 지정하려는 폴더 자신은(이동의 "옮기는 중인 항목
+  // 자신"과 같은 이유로) 들어갈 수 없게 막는다.
+  const isMultiThumbnail = Boolean(multiThumbnailOpen);
+  const multiThumbnailCurrent = multiThumbnailItems?.[multiThumbnailIndex];
+  const currentThumbnailSourceId = thumbnailOpen ? thumbnailSourceId : isMultiThumbnail ? (multiThumbnailCurrent?.sourceId ?? null) : null;
+  const thumbnailExcluded = thumbnailOpen ? (thumbnailExcludedIds ?? new Set()) : multiThumbnailExcludedIds ?? new Set();
+  const isThumbnailSourceRow = (row) => !row.is_folder && Boolean(row.thumb_key);
+
+  const canSubmitThumbnail = Boolean(thumbnailSourceId) && !thumbnailBusy;
+  const submitThumbnail = async () => {
+    if (!canSubmitThumbnail) return;
+    setThumbnailBusy(true);
+    try {
+      await onConfirmThumbnail();
+    } finally {
+      setThumbnailBusy(false);
+    }
+  };
+  const canSubmitMultiThumbnail =
+    Boolean(multiThumbnailItems?.length) && multiThumbnailItems.every((it) => it.sourceId) && !multiThumbnailBusy;
+  const submitMultiThumbnail = async () => {
+    if (!canSubmitMultiThumbnail) return;
+    setMultiThumbnailBusy(true);
+    try {
+      await onConfirmMultiThumbnail();
+    } finally {
+      setMultiThumbnailBusy(false);
+    }
+  };
+
   // 다중 이름 바꾸기·다중 태그는 검색바 입력창 하나를 이전·다음 화살표로
   // 넘기며 재사용한다 — 아래는 둘 중 열려 있는 쪽 기준의 공통 값들.
   const isMultiRename = Boolean(multiRenameOpen);
@@ -413,7 +479,11 @@ export default function BottomSearchBar({
                 ? onCancelMultiOptimize
                 : moveOpen
                   ? onCancelMove
-                  : onCancelDelete;
+                  : thumbnailOpen
+                    ? onCancelThumbnail
+                    : multiThumbnailOpen
+                      ? onCancelMultiThumbnail
+                      : onCancelDelete;
 
   // 스크림이 화면 전체를 덮으면 그 밑에 있는 스튜디오 툴킷 바(전체 선택
   // 체크박스 + 기본 도구 1열 + 애드온 2열)도 가려져서 아이콘을 눌러 패널을
@@ -503,7 +573,7 @@ export default function BottomSearchBar({
       <div className="bottom-search-wrap">
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
           <div
-            className={`search-bar-confirm-panel${displayMode === "optimize" || displayMode === "multiOptimize" ? " mode-optimize" : ""}${displayMode === "move" ? " mode-move" : ""}${panelOpen ? " is-open" : ""}`}
+            className={`search-bar-confirm-panel${displayMode === "optimize" || displayMode === "multiOptimize" ? " mode-optimize" : ""}${displayMode === "move" || displayMode === "thumbnail" || displayMode === "multiThumbnail" ? " mode-move" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
           >
             {displayMode === "newFolder" ? (
@@ -657,6 +727,87 @@ export default function BottomSearchBar({
                   )}
                 </ul>
               </>
+            ) : displayMode === "thumbnail" || displayMode === "multiThumbnail" ? (
+              <>
+                {displayMode === "multiThumbnail" ? (
+                  <div className="search-bar-confirm-title-row">
+                    <p className="search-bar-confirm-title">썸네일</p>
+                    <div className="search-bar-confirm-nav">
+                      <button
+                        type="button"
+                        className="search-bar-confirm-nav-btn search-bar-confirm-nav-btn--prev"
+                        aria-label="이전 항목"
+                        onClick={onPrevMultiThumbnail}
+                        disabled={multiThumbnailIndex <= 0}
+                      >
+                        <ChevronRightIcon size={14} />
+                      </button>
+                      <span className="search-bar-confirm-nav-count">
+                        {multiThumbnailIndex + 1}/{multiThumbnailItems?.length ?? 0}
+                      </span>
+                      <button
+                        type="button"
+                        className="search-bar-confirm-nav-btn"
+                        aria-label="다음 항목"
+                        onClick={onNextMultiThumbnail}
+                        disabled={multiThumbnailIndex >= (multiThumbnailItems?.length ?? 1) - 1}
+                      >
+                        <ChevronRightIcon size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="search-bar-confirm-title">썸네일</p>
+                )}
+                <p className="search-bar-confirm-filename">
+                  {displayMode === "multiThumbnail" ? multiThumbnailCurrent?.name : thumbnailTargetName}
+                </p>
+                {thumbnailPath.length > 0 && (
+                  <div className="move-path">
+                    <button type="button" className="move-path-back" aria-label="상위 폴더로" onClick={onThumbnailBack}>
+                      <BackIcon size={16} />
+                    </button>
+                    <span className="move-path-name">{thumbnailPath[thumbnailPath.length - 1].name}</span>
+                  </div>
+                )}
+                <ul className="move-list">
+                  {thumbnailRowsState === "loading" ? (
+                    <li className="move-note">
+                      <Spinner />
+                    </li>
+                  ) : thumbnailRowsState === "error" ? (
+                    <li className="move-note">불러오지 못했습니다</li>
+                  ) : thumbnailRows.length === 0 ? (
+                    <li className="move-note">이 폴더는 비어 있습니다</li>
+                  ) : (
+                    thumbnailRows.map((row) => {
+                      const pickable = isThumbnailSourceRow(row);
+                      const disabled = row.is_folder ? thumbnailExcluded.has(row.id) : !pickable;
+                      const picked = pickable && row.id === currentThumbnailSourceId;
+                      return (
+                        <li key={row.id}>
+                          <button
+                            type="button"
+                            className={`move-row${picked ? " is-picked" : ""}`}
+                            disabled={disabled}
+                            onClick={() => (row.is_folder ? onThumbnailInto?.(row) : onPickThumbnailSource?.(row))}
+                          >
+                            <span className="move-row-icon">
+                              {row.is_folder ? <FolderIcon size={16} /> : <FileIcon size={16} />}
+                            </span>
+                            <span className="move-row-name">{row.name}</span>
+                            {picked && (
+                              <span className="move-row-picked">
+                                <CheckIcon size={14} />
+                              </span>
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })
+                  )}
+                </ul>
+              </>
             ) : (
               <>
                 <p className="search-bar-confirm-title">선택한 파일을 삭제하시겠습니까?</p>
@@ -721,7 +872,11 @@ export default function BottomSearchBar({
                         ? submitMultiOptimize
                         : moveOpen
                           ? submitMove
-                          : submitText
+                          : thumbnailOpen
+                            ? submitThumbnail
+                            : multiThumbnailOpen
+                              ? submitMultiThumbnail
+                              : submitText
                 }
                 disabled={
                   confirmOpen
@@ -732,7 +887,11 @@ export default function BottomSearchBar({
                         ? !canSubmitMultiOptimize
                         : moveOpen
                           ? !canSubmitMove
-                          : !canSubmitText
+                          : thumbnailOpen
+                            ? !canSubmitThumbnail
+                            : multiThumbnailOpen
+                              ? !canSubmitMultiThumbnail
+                              : !canSubmitText
                 }
               >
                 확인

@@ -92,6 +92,16 @@ export function ScissorsIcon({ size = 18 }) {
   );
 }
 
+// 폴더 썸네일 애드온: 인물(프로필) 아이콘. "폴더의 대표 얼굴을 정한다"는
+// 은유로, 머리+어깨 실루엣 하나만 채워 그린다.
+export function PersonIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2.5c-3.34 0-10 1.68-10 5V22h20v-2.5c0-3.32-6.66-5-10-5z" />
+    </svg>
+  );
+}
+
 // 스튜디오 툴킷 도구 레지스트리. 툴킷 바(StudioToolkitBar)와 설정의 사용자
 // 정렬 미리보기(ToolkitArranger)가 같은 정의를 공유한다. ctx: { viewMode }.
 export const TOOL_META = {
@@ -113,6 +123,7 @@ export const TOOL_META = {
   palette: { label: "팔레트 추출", needsSelection: true, icon: () => <PaletteIcon /> },
   split: { label: "스플릿 비교", needsSelection: true, icon: () => <SplitIcon /> },
   clip: { label: "하이라이트 클립", needsSelection: true, icon: () => <ScissorsIcon /> },
+  thumbnail: { label: "폴더 썸네일", needsSelection: true, icon: () => <PersonIcon /> },
 };
 
 export function toolLabel(id, ctx) {

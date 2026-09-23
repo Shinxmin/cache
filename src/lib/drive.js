@@ -92,6 +92,13 @@ export async function listFavorites(token) {
   return sortFileList(rows);
 }
 
+// ── 폴더 썸네일 애드온 ───────────────────────────────────────────────────
+// 소스 파일(이미지·움짤·동영상)의 thumb_key를 대상 폴더에 그대로 복사해
+// 그 폴더의 대표 썸네일로 쓴다.
+export async function setFolderThumbnail(token, folderId, sourceId) {
+  return rpcResult(await supabase.rpc("set_folder_thumbnail", { p_token: token, p_folder_id: folderId, p_source_id: sourceId }));
+}
+
 // ── 태그 관리(설정 → 태그) ──────────────────────────────────────────────
 // 지금 쓰이고 있는(휴지통에 있지 않은 파일에 붙어 있는) 태그를 중복 없이
 // 나열한다. 각 항목은 { tag, count }(그 태그가 붙은 파일·폴더 개수) 형태다.
