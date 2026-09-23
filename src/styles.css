@@ -446,6 +446,46 @@ main.page {
 .search-bar-inline-confirm:disabled {
   opacity: 0.6;
 }
+/* 최적화(단일·다중) 패널이 열려 있을 때만 확인 버튼 바로 왼쪽에 뜨는 품질
+   세그먼트. 패널 본문 안에 있던 것과 같은 3칸 알약 컨트롤이지만, 검색바
+   행(48px)에 놓이는 만큼 옆의 확인 버튼(32px)과 높이를 맞췄다. */
+.search-bar-optimize-seg-group {
+  flex: none;
+  display: flex;
+  gap: 2px;
+  height: 32px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(128, 128, 128, 0.2);
+  touch-action: none;
+}
+.search-bar-optimize-seg {
+  flex: none;
+  width: 26px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  transition: background 0.2s var(--ease), transform 0.35s var(--spring);
+}
+.search-bar-optimize-seg.active {
+  background: var(--text);
+}
+.search-bar-optimize-seg:active {
+  transform: scale(0.94);
+}
+.search-bar-optimize-seg-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--surface);
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+}
+.search-bar-optimize-seg.active .search-bar-optimize-seg-dot {
+  opacity: 1;
+}
 /* ── 스튜디오 툴킷 삭제 확인 + 새 폴더: 둘 다 별도 모달 대신, 검색 독 안에서
    검색창 위에 이 패널이 아래에서 위로 커지듯 나타난다. 항상 DOM에 있고
    max-height·여백만 트랜지션하므로(조건부 마운트가 아니다) 부드럽게 커지고
@@ -476,15 +516,24 @@ main.page {
   /* 제목·본문을 조금 위로 올리도록 위쪽 여백만 줄인다(아래쪽은 그대로). */
   padding: 18px 16px 28px;
 }
-/* 최적화 패널만 요약 문구(+경고)와 품질 세그먼트가 함께 들어가 다른
-   패널보다 세로로 조금 더 길다 — 그래서 이 모드일 때만 최대 높이를
-   키우고, 내용도 다른 패널처럼 세로 가운데 정렬 대신 위에서부터 순서대로
-   쌓는다. */
+/* 최적화 패널(단일·다중)은 경고 문구·품질 라벨·낮음/중간/높음 줄이 함께
+   들어가 다른 패널보다 세로로 조금 더 길다 — 그래서 이 모드일 때만 최대
+   높이를 키우고, 내용도 다른 패널처럼 세로 가운데 정렬 대신 위에서부터
+   순서대로 쌓는다. 품질을 실제로 고르는 세그먼트 컨트롤은 검색바 쪽으로
+   옮겨갔으므로(.search-bar-optimize-seg-group) 이 패널 자체의 높이는
+   예전보다 줄었다. */
 .search-bar-confirm-panel.mode-optimize {
   justify-content: flex-start;
 }
 .search-bar-confirm-panel.mode-optimize.is-open {
-  max-height: 210px;
+  max-height: 150px;
+}
+/* 이동 패널은 경로 표시줄 + 스크롤되는 폴더 목록까지 들어가 가장 길다. */
+.search-bar-confirm-panel.mode-move {
+  justify-content: flex-start;
+}
+.search-bar-confirm-panel.mode-move.is-open {
+  max-height: 260px;
 }
 .search-bar-confirm-title {
   margin: 0;
@@ -1557,12 +1606,10 @@ main.page {
   color: var(--danger);
   text-align: left;
 }
-/* 최적화 패널의 압축 비율 선택. 알약 모양 세그먼트 3칸짜리 컨트롤이다 —
-   고른 칸은 꽉 채워지고 그 안에 작은 원(.optimize-seg-dot)이 떠서
-   "이 칸이 지금 선택됐다"를 나타낸다. 바로 밑 낮음·중간·높음 글자도
-   같은 칸을 눌러 고를 수 있다(세그먼트 자체와 라벨 둘 다 같은 동작).
-   가로 폭은 패널 전체의 1/3만 차지하도록 좁혀, 라벨 줄(.optimize-marks)도
-   같은 폭으로 맞춰 바로 아래 그대로 이어진다. */
+/* 최적화 패널 본문에 남은 것은 "품질" 라벨과 낮음/중간/높음 글자뿐이다 —
+   실제로 고르는 세그먼트 컨트롤은 검색바의 확인 버튼 옆으로 옮겨갔다
+   (.search-bar-optimize-seg-group). 여기 낮음/중간/높음 글자를 눌러도
+   똑같이 값을 바꿀 수 있다(라벨과 세그먼트 둘 다 같은 값을 반영·조작). */
 .optimize-levels {
   flex: none;
   display: flex;
@@ -1575,43 +1622,6 @@ main.page {
   font-size: 12px;
   font-weight: 700;
   color: var(--text);
-}
-.optimize-seg-group {
-  display: flex;
-  gap: 2px;
-  width: 33.3334%;
-  padding: 3px;
-  border-radius: 999px;
-  background: rgba(128, 128, 128, 0.15);
-  /* 손가락으로 옆 칸까지 끌 때 브라우저가 이를 세로 스크롤 제스처로
-     가로채지 않게 한다 — 드래그는 전부 useSegmentDrag가 직접 처리한다. */
-  touch-action: none;
-}
-.optimize-seg {
-  flex: 1;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  transition: background 0.2s var(--ease), transform 0.35s var(--spring);
-}
-.optimize-seg.active {
-  background: var(--text);
-}
-.optimize-seg:active {
-  transform: scale(0.94);
-}
-.optimize-seg-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--surface);
-  opacity: 0;
-  transition: opacity 0.2s var(--ease);
-}
-.optimize-seg.active .optimize-seg-dot {
-  opacity: 1;
 }
 .optimize-marks {
   display: flex;
@@ -1684,8 +1694,9 @@ main.page {
   }
 }
 
-/* ── 이동 모달: 카드 껍데기(.rename-overlay/.rename-card)는 이름 바꾸기와
-   같은 것을 쓰고, 안쪽 경로 줄과 목록만 따로 정의한다. ── */
+/* ── 이동 패널: 삭제·최적화와 같은 검색 독 확인 패널
+   (.search-bar-confirm-panel.mode-move) 안에 경로 줄과 폴더 목록이 들어간다.
+   ── */
 .move-path {
   flex: none;
   display: flex;
@@ -1712,14 +1723,16 @@ main.page {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* 부모(.search-bar-confirm-panel)는 max-height로만 늘어나는 콘텐츠 기준
+   높이라 flex:1로는 목록에 스크롤 기준 높이가 생기지 않는다 — 그래서
+   목록 자신에게 명시적인 최대 높이를 직접 준다. */
 .move-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
+  max-height: 140px;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;

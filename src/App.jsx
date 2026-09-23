@@ -9,7 +9,6 @@ import TrashPage from "./pages/TrashPage";
 import TagsPage from "./pages/TagsPage";
 import FileViewer from "./pages/FileViewer";
 import SplitCompareViewer from "./pages/SplitCompareViewer";
-import MoveModal from "./components/MoveModal";
 import Toast from "./components/Toast";
 import AddonStorePage from "./pages/AddonStorePage";
 import {
@@ -27,6 +26,7 @@ import {
   downloadFolderAsZip,
   downloadSelectionAsZip,
   downloadSplitPresetFiles,
+  listFiles,
   moveFiles,
   optimizeFiles,
   renameFiles,
@@ -141,8 +141,14 @@ export default function App() {
   const [multiRenameOpen, setMultiRenameOpen] = useState(false);
   const [multiRenameItems, setMultiRenameItems] = useState([]);
   const [multiRenameIndex, setMultiRenameIndex] = useState(0);
-  // 스튜디오 툴킷의 이동(→) 아이콘으로 연 이동 모달. null이면 닫힌 상태.
-  const [moveTargets, setMoveTargets] = useState(null);
+  // 스튜디오 툴킷의 이동(→) 아이콘. 삭제 확인과 같은 방식으로 하단 검색바가
+  // 확장되는 패널을 쓴다. 패널 안에서 드라이브를 폴더별로 눌러 내려가다가
+  // 확인을 누르면 지금 들어와 있는 폴더로 옮긴다(movePath가 빈 배열이면
+  // 최상위). moveRows는 지금 보고 있는 폴더의 목록이다.
+  const [moveOpen, setMoveOpen] = useState(false);
+  const [movePath, setMovePath] = useState([]); // [{ id, name }]
+  const [moveRows, setMoveRows] = useState([]);
+  const [moveRowsState, setMoveRowsState] = useState("loading"); // loading | ready | error
   // 스튜디오 툴킷의 태그(#) 아이콘. 이름 바꾸기와 똑같은 구조로 단일/다중
   // 패널로 나뉜다 — 다만 태그는 비어 있어도 되고(전부 지우는 것도 유효한
   // 값) 값이 같아도 되므로 확인 버튼이 빈 값이라고 비활성화되지 않고,
@@ -153,13 +159,16 @@ export default function App() {
   const [multiTagOpen, setMultiTagOpen] = useState(false);
   const [multiTagItems, setMultiTagItems] = useState([]);
   const [multiTagIndex, setMultiTagIndex] = useState(0);
-  // 스튜디오 툴킷의 용량 압축(원그래프) 아이콘. 삭제 확인과 같은 방식으로
-  // 하단 검색바가 확장되는 패널을 쓴다. 폴더나 이미지가 아닌 파일은
+  // 스튜디오 툴킷의 용량 압축(원그래프) 아이콘. 이름 바꾸기·태그와 똑같은
+  // 단일/다중 구조를 쓴다 — 다만 편집하는 값이 이름이나 태그 문자열이
+  // 아니라 품질 단계(0=낮음/1=중간/2=높음)다. 폴더나 이미지가 아닌 파일은
   // 대상에서 빠진다(캔버스로 다시 인코딩할 수 있는 게 이미지뿐이라서).
-  // 품질(압축 비율)은 개별 항목이 아니라 선택 전체에 공통으로 적용되므로
-  // 이름 바꾸기·태그처럼 단일/다중으로 나뉘지 않는다.
   const [optimizeOpen, setOptimizeOpen] = useState(false);
+  const [optimizeTargetId, setOptimizeTargetId] = useState(null);
   const [optimizeLevel, setOptimizeLevel] = useState(1);
+  const [multiOptimizeOpen, setMultiOptimizeOpen] = useState(false);
+  const [multiOptimizeItems, setMultiOptimizeItems] = useState([]); // [{ id, name, level }]
+  const [multiOptimizeIndex, setMultiOptimizeIndex] = useState(0);
   // 헤더 삼점 버튼의 "새 폴더". 별도 모달 대신 삭제 확인과 같은 방식으로
   // 하단 검색바가 위로 확장되며 그 자리에서 이름을 입력받는다(BottomSearchBar
   // 참고). 둘 다 같은 패널 자리를 쓰므로 동시에 열리지 않는다.
@@ -183,15 +192,6 @@ export default function App() {
   const mediaItems = useMemo(
     () => visibleItems.filter((it) => (isImage(it.mime) || isVideo(it.mime)) && !it.split_pair),
     [visibleItems]
-  );
-
-  // 최적화 패널이 열려 있는 동안에도 다른 파일을 탭해 선택을 더하거나 뺄 수
-  // 있다 — 스냅샷으로 한 번 떠 두는 대신 선택이 바뀔 때마다 그대로 다시
-  // 계산해서, 패널이 항상 지금 선택된 파일(폴더 제외) 기준으로 요약·확인을
-  // 보여준다.
-  const optimizeItems = useMemo(
-    () => visibleItems.filter((it) => selectedIds.has(it.id) && !it.is_folder),
-    [visibleItems, selectedIds]
   );
 
   useEffect(() => {
@@ -315,12 +315,9 @@ export default function App() {
       setMultiTagIndex(0);
     }
   }, [selectedIds, multiTagOpen]);
-  // 최적화 패널도 마찬가지(대상 목록 자체는 위 optimizeItems가 선택을
-  // 그대로 다시 계산하므로, 여기서는 패널을 닫기만 하면 된다).
-  useEffect(() => {
-    if (!optimizeOpen) return;
-    if (selectedIds.size === 0) setOptimizeOpen(false);
-  }, [selectedIds, optimizeOpen]);
+  // 최적화 패널은 폴더가 대상에서 빠지므로(용량 압축은 이미지 파일만
+  // 가능하다) "선택이 0개"가 아니라 "폴더를 뺀 대상이 0개"일 때 닫아야
+  // 한다 — 그래서 아래 재계산 효과 안에서 함께 처리한다(단독 효과 없음).
 
   // 이름 바꾸기 패널이 열린 채로도 다른 파일을 탭해 선택을 더하거나 뺄 수
   // 있다(빈 화면 스크림에 뚫린 구멍을 통해 타일 클릭이 그대로 전달된다).
@@ -389,6 +386,68 @@ export default function App() {
     setMultiTagIndex((i) => Math.min(i, nextItems.length - 1));
     setMultiTagOpen(true);
   }, [selectedIds]);
+
+  // 최적화 패널도 같은 방식으로 선택 변화에 맞춰 다시 계산한다 — 다만
+  // 폴더는 애초에 대상이 아니므로 걸러내고, 대상이 하나도 안 남으면(선택은
+  // 남아 있어도 전부 폴더뿐이면) 패널을 직접 닫는다(다른 두 효과처럼 별도
+  // "0개면 닫기" 효과에 기대지 않는다 — selectedIds.size는 0이 아닐 수
+  // 있어서다).
+  useEffect(() => {
+    if (!optimizeOpen && !multiOptimizeOpen) return;
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && !it.is_folder);
+    if (targets.length === 0) {
+      setOptimizeOpen(false);
+      setOptimizeTargetId(null);
+      setMultiOptimizeOpen(false);
+      setMultiOptimizeItems([]);
+      setMultiOptimizeIndex(0);
+      return;
+    }
+    const levelFor = (it) => {
+      const fromMulti = multiOptimizeItems.find((x) => x.id === it.id);
+      if (fromMulti) return fromMulti.level;
+      if (optimizeOpen && optimizeTargetId === it.id) return optimizeLevel;
+      return 1;
+    };
+    if (targets.length === 1) {
+      const only = targets[0];
+      const nextLevel = levelFor(only);
+      setMultiOptimizeOpen(false);
+      setMultiOptimizeItems([]);
+      setMultiOptimizeIndex(0);
+      setOptimizeTargetId(only.id);
+      setOptimizeLevel(nextLevel);
+      setOptimizeOpen(true);
+      return;
+    }
+    const nextItems = targets.map((it) => ({ id: it.id, name: it.name, level: levelFor(it) }));
+    setOptimizeOpen(false);
+    setOptimizeTargetId(null);
+    setMultiOptimizeItems(nextItems);
+    setMultiOptimizeIndex((i) => Math.min(i, nextItems.length - 1));
+    setMultiOptimizeOpen(true);
+  }, [selectedIds]);
+
+  // 이동 패널이 열려 있는 동안, 지금 들어와 있는 폴더(movePath 맨 끝, 없으면
+  // 최상위)의 목록을 받아 온다. 경로가 바뀔 때마다 다시 받는다.
+  useEffect(() => {
+    if (!moveOpen || !session) return;
+    const destinationId = movePath.length ? movePath[movePath.length - 1].id : null;
+    let cancelled = false;
+    setMoveRowsState("loading");
+    listFiles(session.token, destinationId)
+      .then((data) => {
+        if (cancelled) return;
+        setMoveRows(data);
+        setMoveRowsState("ready");
+      })
+      .catch(() => {
+        if (!cancelled) setMoveRowsState("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [moveOpen, movePath, session?.token]);
 
   const handleSearch = (value) => {
     setSearchQuery(value);
@@ -628,13 +687,10 @@ export default function App() {
     setDeleteConfirmOpen(false);
   };
 
-  // 빈 화면을 눌러 삭제 확인을 취소한 경우에만 쓰인다(다른 도구로
-  // 전환하려고 closeAllToolPanels가 닫을 때는 이 함수를 거치지 않고
-  // setDeleteConfirmOpen을 직접 부르므로 선택이 그대로 유지된다) — 진짜로
-  // "그만두겠다"는 뜻이므로 선택도 함께 해제한다.
+  // 빈 화면을 눌러 삭제 확인을 취소했거나, 휴지통 아이콘을 다시 눌러
+  // 닫은 경우에 쓰인다 — 다른 패널과 마찬가지로 선택은 그대로 유지한다.
   const cancelDeleteConfirm = () => {
     setDeleteConfirmOpen(false);
-    setSelectedIds(new Set());
   };
 
   // 선택된 항목으로 이름을 바꾼다. 단일 선택이면 이름 하나만 편집하는
@@ -736,31 +792,57 @@ export default function App() {
     }
   };
 
-  // 삭제 확인·새 폴더·단일/다중 이름 바꾸기·단일/다중 태그·최적화는 전부
-  // 검색바 위 같은 패널 자리를 공유한다 — 그중 하나를 열기 전에 항상 이걸
-  // 먼저 불러 나머지를 전부 닫는다.
+  // 삭제 확인·새 폴더·이동·단일/다중 이름 바꾸기·단일/다중 태그·단일/다중
+  // 최적화는 전부 검색바 위 같은 패널 자리를 공유한다 — 그중 하나를 열기
+  // 전에 항상 이걸 먼저 불러 나머지를 전부 닫는다.
   const closeAllToolPanels = () => {
     setDeleteConfirmOpen(false);
     setNewFolderOpen(false);
+    cancelMove();
     cancelRename();
     cancelMultiRename();
     cancelTag();
     cancelMultiTag();
     cancelOptimize();
+    cancelMultiOptimize();
   };
 
-  // 선택된 항목으로 이동 모달을 연다. 폴더를 옮기면 하위 항목은 parent_id로
-  // 딸려 있어 서버에서 자동으로 함께 따라온다.
+  // 선택된 항목으로 이동 패널을 연다(항상 최상위에서 시작). 폴더를 옮기면
+  // 하위 항목은 parent_id로 딸려 있어 서버에서 자동으로 함께 따라온다.
   const handleMoveSelected = () => {
-    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
-    if (!targets.length) return;
-    setMoveTargets(targets);
+    // 이미 이동 패널이 열려 있는 채로 같은 아이콘을 다시 누르면 여는
+    // 대신 닫는다 — 빈 화면을 눌러 취소하는 것과 같은 처리다.
+    if (moveOpen) {
+      closeAllToolPanels();
+      return;
+    }
+    if (!selectedIds.size) return;
+    closeAllToolPanels();
+    setMovePath([]);
+    setMoveOpen(true);
   };
 
-  const handleMoveSubmit = async (destinationId) => {
+  const cancelMove = () => {
+    setMoveOpen(false);
+  };
+
+  const moveNavigateInto = (row) => {
+    setMovePath((p) => [...p, { id: row.id, name: row.name }]);
+  };
+
+  const moveNavigateBack = () => {
+    setMovePath((p) => p.slice(0, -1));
+  };
+
+  // 확인 뒤에는 선택을 푼다 — 옮긴 항목은 지금 폴더에 더 이상 없으니
+  // 이름 바꾸기·태그처럼 다음 동작을 위해 선택을 남겨 둘 이유가 없다.
+  const confirmMove = async () => {
+    const ids = [...selectedIds];
+    if (!ids.length) return;
+    const destinationId = movePath.length ? movePath[movePath.length - 1].id : null;
     try {
-      await moveFiles(session.token, moveTargets.map((it) => it.id), destinationId);
-      setMoveTargets(null);
+      await moveFiles(session.token, ids, destinationId);
+      cancelMove();
       setSelectedIds(new Set());
       setRefreshKey((k) => k + 1);
     } catch {
@@ -858,36 +940,87 @@ export default function App() {
   };
 
   // 선택된 항목 중 폴더만 뺀 파일들로 최적화 패널을 연다(폴더는 자체 용량이
-  // 없어 대상이 아니다). 실제로 캔버스가 읽지 못하는 형식(이미지가 아니거나
-  // 브라우저가 못 여는 포맷)은 압축 단계에서 그 파일만 건너뛴다 — mime
-  // 문자열만으로 미리 걸러내면, 사진 형식에 따라 브라우저가 mime을 빈
-  // 문자열로 주는 경우(예: 일부 환경의 HEIC) 정작 열리는 이미지까지 패널 자체가
-  // 뜨지 않는 문제가 있었다.
+  // 없어 대상이 아니다). 단일 선택이면 품질 하나만 고르는 optimizeOpen을,
+  // 여러 개면 이전·다음 화살표로 하나씩 넘기며 항목마다 다른 품질을 고를
+  // 수 있는 multiOptimizeOpen을 연다(이름 바꾸기와 똑같은 구조). 기본값은
+  // 둘 다 "중간"(인덱스 1)이다. 실제로 캔버스가 읽지 못하는 형식(이미지가
+  // 아니거나 브라우저가 못 여는 포맷)은 압축 단계에서 그 파일만 건너뛴다 —
+  // mime 문자열만으로 미리 걸러내면, 사진 형식에 따라 브라우저가 mime을
+  // 빈 문자열로 주는 경우(예: 일부 환경의 HEIC) 정작 열리는 이미지까지
+  // 패널 자체가 뜨지 않는 문제가 있었다.
   const handleOptimizeSelected = () => {
-    // 이미 최적화 패널이 열려 있는 채로 같은 아이콘을 다시 누르면(재선택
-    // 없이) 여는 대신 닫는다 — 빈 화면을 눌러 취소하는 것과 같은 처리다.
-    if (optimizeOpen) {
+    // 이미 최적화 패널(단일이든 다중이든)이 열려 있는 채로 같은 아이콘을
+    // 다시 누르면 여는 대신 닫는다 — 빈 화면을 눌러 취소하는 것과 같은
+    // 처리다.
+    if (optimizeOpen || multiOptimizeOpen) {
       closeAllToolPanels();
       return;
     }
-    if (!optimizeItems.length) return;
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && !it.is_folder);
+    if (!targets.length) return;
     closeAllToolPanels();
-    setOptimizeLevel(1);
-    setOptimizeOpen(true);
+    if (targets.length === 1) {
+      setOptimizeTargetId(targets[0].id);
+      setOptimizeLevel(1);
+      setOptimizeOpen(true);
+      return;
+    }
+    setMultiOptimizeItems(targets.map((it) => ({ id: it.id, name: it.name, level: 1 })));
+    setMultiOptimizeIndex(0);
+    setMultiOptimizeOpen(true);
   };
 
   const cancelOptimize = () => {
     setOptimizeOpen(false);
+    setOptimizeTargetId(null);
   };
 
-  // 최적화는 이름·태그와 달리 항목마다 다른 값을 받지 않고, 고른 품질
-  // 하나를 선택 전체에 그대로 적용한다. 확인 뒤에도 선택은 풀지 않는다
-  // (원래 모달 때부터 그랬다 — 압축 결과를 바로 이어서 볼 수 있게).
+  // 확인 뒤에도 선택은 풀지 않는다(원래 모달 때부터 그랬다 — 압축 결과를
+  // 바로 이어서 볼 수 있게).
   const confirmOptimize = async () => {
-    if (!optimizeItems.length || optimizeItems.some((it) => !isOptimizableFile(it.name))) return;
+    const target = visibleItems.find((it) => it.id === optimizeTargetId);
+    if (!target || !isOptimizableFile(target.name)) return;
     try {
-      await optimizeFiles({ token: session.token, items: optimizeItems, ratioPercent: OPTIMIZE_LEVELS[optimizeLevel] });
+      await optimizeFiles({ token: session.token, items: [target], ratioPercent: OPTIMIZE_LEVELS[optimizeLevel] });
       cancelOptimize();
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("용량을 줄이지 못했습니다");
+    }
+  };
+
+  const cancelMultiOptimize = () => {
+    setMultiOptimizeOpen(false);
+    setMultiOptimizeItems([]);
+    setMultiOptimizeIndex(0);
+  };
+
+  const changeMultiOptimizeLevel = (level) => {
+    setMultiOptimizeItems((prev) => prev.map((it, i) => (i === multiOptimizeIndex ? { ...it, level } : it)));
+  };
+
+  const prevMultiOptimize = () => setMultiOptimizeIndex((i) => Math.max(0, i - 1));
+  const nextMultiOptimize = () => setMultiOptimizeIndex((i) => Math.min(multiOptimizeItems.length - 1, i + 1));
+
+  // 태그와 같은 방식으로, 같은 품질 값끼리 묶어 그룹별로 한 번씩만
+  // optimizeFiles를 호출한다.
+  const confirmMultiOptimize = async () => {
+    const targets = multiOptimizeItems
+      .map((it) => ({ level: it.level, file: visibleItems.find((v) => v.id === it.id) }))
+      .filter((it) => it.file);
+    if (!targets.length || targets.some((it) => !isOptimizableFile(it.file.name))) return;
+    try {
+      const groups = new Map();
+      for (const { level, file } of targets) {
+        if (!groups.has(level)) groups.set(level, []);
+        groups.get(level).push(file);
+      }
+      await Promise.all(
+        [...groups.entries()].map(([level, files]) =>
+          optimizeFiles({ token: session.token, items: files, ratioPercent: OPTIMIZE_LEVELS[level] })
+        )
+      );
+      cancelMultiOptimize();
       setRefreshKey((k) => k + 1);
     } catch {
       window.alert("용량을 줄이지 못했습니다");
@@ -1247,11 +1380,29 @@ export default function App() {
             onConfirmMultiTag={confirmMultiTag}
             onCancelMultiTag={cancelMultiTag}
             optimizeOpen={optimizeOpen}
-            optimizeItems={optimizeItems}
+            optimizeTargetName={visibleItems.find((it) => it.id === optimizeTargetId)?.name ?? ""}
             optimizeLevel={optimizeLevel}
             onChangeOptimizeLevel={setOptimizeLevel}
             onConfirmOptimize={confirmOptimize}
             onCancelOptimize={cancelOptimize}
+            multiOptimizeOpen={multiOptimizeOpen}
+            multiOptimizeItems={multiOptimizeItems}
+            multiOptimizeIndex={multiOptimizeIndex}
+            onChangeMultiOptimizeLevel={changeMultiOptimizeLevel}
+            onPrevMultiOptimize={prevMultiOptimize}
+            onNextMultiOptimize={nextMultiOptimize}
+            onConfirmMultiOptimize={confirmMultiOptimize}
+            onCancelMultiOptimize={cancelMultiOptimize}
+            moveOpen={moveOpen}
+            moveItemCount={selectedIds.size}
+            movePath={movePath}
+            moveRows={moveRows}
+            moveRowsState={moveRowsState}
+            moveExcludedIds={selectedIds}
+            onMoveInto={moveNavigateInto}
+            onMoveBack={moveNavigateBack}
+            onConfirmMove={confirmMove}
+            onCancelMove={cancelMove}
           />
         </>
       )}
@@ -1261,14 +1412,6 @@ export default function App() {
           items={mediaItems}
           initialIndex={viewerIndex}
           onClose={() => setViewerIndex(null)}
-        />
-      )}
-      {moveTargets && (
-        <MoveModal
-          session={session}
-          items={moveTargets}
-          onClose={() => setMoveTargets(null)}
-          onSubmit={handleMoveSubmit}
         />
       )}
       {paletteViewerItem && (
