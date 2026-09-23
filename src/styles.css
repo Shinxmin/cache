@@ -447,44 +447,42 @@ main.page {
   opacity: 0.6;
 }
 /* 최적화(단일·다중) 패널이 열려 있을 때만 확인 버튼 바로 왼쪽에 뜨는 품질
-   세그먼트. 패널 본문 안에 있던 것과 같은 3칸 알약 컨트롤이지만, 검색바
-   행(48px)에 놓이는 만큼 옆의 확인 버튼(32px)과 높이를 맞췄다. */
+   세그먼트. 예전엔 칸마다 선택 여부만 보여주는 작은 점이었는데, 그 점 자리에
+   낮음/중간/높음 글자를 직접 넣어 값을 바로 읽을 수 있게 했다 — 그래서 패널
+   본문에 따로 두던 "품질" 라벨과 낮음/중간/높음 줄은 없앴다(이 세그먼트
+   하나가 그 역할을 다 한다). 글자가 들어가는 만큼 칸 너비는 내용에 맞춰
+   움직이지만, 세로 높이·안쪽 여백은 오히려 줄여 검색바 안에서 더 작고
+   조밀해 보이게 했다. */
 .search-bar-optimize-seg-group {
   flex: none;
   display: flex;
   gap: 2px;
-  height: 32px;
-  padding: 3px;
+  height: 26px;
+  padding: 2px;
   border-radius: 999px;
   background: rgba(128, 128, 128, 0.2);
   touch-action: none;
 }
 .search-bar-optimize-seg {
   flex: none;
-  width: 26px;
   height: 100%;
+  padding: 0 7px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  transition: background 0.2s var(--ease), transform 0.35s var(--spring);
+  font-size: 10px;
+  color: var(--text-2);
+  white-space: nowrap;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease), transform 0.35s var(--spring);
 }
 .search-bar-optimize-seg.active {
   background: var(--text);
+  color: var(--surface);
+  font-weight: 700;
 }
 .search-bar-optimize-seg:active {
   transform: scale(0.94);
-}
-.search-bar-optimize-seg-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--surface);
-  opacity: 0;
-  transition: opacity 0.2s var(--ease);
-}
-.search-bar-optimize-seg.active .search-bar-optimize-seg-dot {
-  opacity: 1;
 }
 /* ── 스튜디오 툴킷 삭제 확인 + 새 폴더: 둘 다 별도 모달 대신, 검색 독 안에서
    검색창 위에 이 패널이 아래에서 위로 커지듯 나타난다. 항상 DOM에 있고
@@ -516,17 +514,14 @@ main.page {
   /* 제목·본문을 조금 위로 올리도록 위쪽 여백만 줄인다(아래쪽은 그대로). */
   padding: 18px 16px 28px;
 }
-/* 최적화 패널(단일·다중)은 경고 문구·품질 라벨·낮음/중간/높음 줄이 함께
-   들어가 다른 패널보다 세로로 조금 더 길다 — 그래서 이 모드일 때만 최대
-   높이를 키우고, 내용도 다른 패널처럼 세로 가운데 정렬 대신 위에서부터
-   순서대로 쌓는다. 품질을 실제로 고르는 세그먼트 컨트롤은 검색바 쪽으로
-   옮겨갔으므로(.search-bar-optimize-seg-group) 이 패널 자체의 높이는
-   예전보다 줄었다. */
+/* 최적화 패널(단일·다중)은 항목에 따라 경고 문구·다중 전용 이전/다음
+   화살표·전체 적용 버튼이 오갈 수 있어, 다른 패널처럼 세로 가운데 정렬
+   대신 위에서부터 순서대로 쌓는다. 품질을 실제로 고르는 세그먼트는
+   패널이 아니라 검색바 쪽에 있고(.search-bar-optimize-seg-group) 그 자리에
+   낮음/중간/높음 글자까지 직접 담으므로, 패널 자체에는 더 이상 품질 관련
+   줄이 없어 기본 최대 높이만으로 충분하다. */
 .search-bar-confirm-panel.mode-optimize {
   justify-content: flex-start;
-}
-.search-bar-confirm-panel.mode-optimize.is-open {
-  max-height: 150px;
 }
 /* 이동 패널은 경로 표시줄 + 스크롤되는 폴더 목록까지 들어가 가장 길다. */
 .search-bar-confirm-panel.mode-move {
@@ -1605,37 +1600,6 @@ main.page {
   font-size: 13px;
   color: var(--danger);
   text-align: left;
-}
-/* 최적화 패널 본문에 남은 것은 "품질" 라벨과 낮음/중간/높음 글자뿐이다 —
-   실제로 고르는 세그먼트 컨트롤은 검색바의 확인 버튼 옆으로 옮겨갔다
-   (.search-bar-optimize-seg-group). 여기 낮음/중간/높음 글자를 눌러도
-   똑같이 값을 바꿀 수 있다(라벨과 세그먼트 둘 다 같은 값을 반영·조작). */
-.optimize-levels {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 12px;
-}
-.optimize-quality-label {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text);
-}
-.optimize-marks {
-  display: flex;
-  width: 33.3334%;
-}
-.optimize-mark {
-  flex: 1;
-  font-size: 12px;
-  color: var(--text-2);
-  transition: color 0.2s var(--ease);
-}
-.optimize-mark.active {
-  color: var(--text);
-  font-weight: 700;
 }
 /* ── 확인 모달(휴지통의 삭제·복원 확인): 목록·입력창이 없어 다른 모달만큼
    세로로 길 필요가 없으므로, 공통 고정 높이 대신 내용에 맞춰 자연스럽게

@@ -128,6 +128,7 @@ export default function BottomSearchBar({
   multiOptimizeItems,
   multiOptimizeIndex,
   onChangeMultiOptimizeLevel,
+  onApplyAllMultiOptimize,
   onPrevMultiOptimize,
   onNextMultiOptimize,
   onConfirmMultiOptimize,
@@ -564,53 +565,47 @@ export default function BottomSearchBar({
             ) : displayMode === "optimize" || displayMode === "multiOptimize" ? (
               <>
                 {displayMode === "multiOptimize" ? (
-                  <div className="search-bar-confirm-title-row">
-                    <p className="search-bar-confirm-title">최적화</p>
-                    <div className="search-bar-confirm-nav">
-                      <button
-                        type="button"
-                        className="search-bar-confirm-nav-btn search-bar-confirm-nav-btn--prev"
-                        aria-label="이전 항목"
-                        onClick={onPrevMultiOptimize}
-                        disabled={multiOptimizeIndex <= 0}
-                      >
-                        <ChevronRightIcon size={14} />
-                      </button>
-                      <span className="search-bar-confirm-nav-count">
-                        {multiOptimizeIndex + 1}/{multiOptimizeItems?.length ?? 0}
-                      </span>
-                      <button
-                        type="button"
-                        className="search-bar-confirm-nav-btn"
-                        aria-label="다음 항목"
-                        onClick={onNextMultiOptimize}
-                        disabled={multiOptimizeIndex >= (multiOptimizeItems?.length ?? 1) - 1}
-                      >
-                        <ChevronRightIcon size={14} />
+                  <>
+                    <div className="search-bar-confirm-title-row">
+                      <p className="search-bar-confirm-title">최적화</p>
+                      <div className="search-bar-confirm-nav">
+                        <button
+                          type="button"
+                          className="search-bar-confirm-nav-btn search-bar-confirm-nav-btn--prev"
+                          aria-label="이전 항목"
+                          onClick={onPrevMultiOptimize}
+                          disabled={multiOptimizeIndex <= 0}
+                        >
+                          <ChevronRightIcon size={14} />
+                        </button>
+                        <span className="search-bar-confirm-nav-count">
+                          {multiOptimizeIndex + 1}/{multiOptimizeItems?.length ?? 0}
+                        </span>
+                        <button
+                          type="button"
+                          className="search-bar-confirm-nav-btn"
+                          aria-label="다음 항목"
+                          onClick={onNextMultiOptimize}
+                          disabled={multiOptimizeIndex >= (multiOptimizeItems?.length ?? 1) - 1}
+                        >
+                          <ChevronRightIcon size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="search-bar-confirm-bulk-actions">
+                      {/* 지금 보고 있는 항목의 품질을 자신과 뒤에 남은 항목에만
+                          적용한다 — 앞서 따로 골라 둔 항목은 그대로 둔다. */}
+                      <button type="button" className="search-bar-confirm-bulk-btn" onClick={onApplyAllMultiOptimize}>
+                        전체 적용
                       </button>
                     </div>
-                  </div>
+                  </>
                 ) : (
                   <p className="search-bar-confirm-title">최적화</p>
                 )}
                 {hasUnsupportedOptimize && (
                   <p className="search-bar-confirm-optimize-warn">지원하지 않는 확장자를 가진 파일이 있습니다</p>
                 )}
-                <div className="optimize-levels">
-                  <p className="optimize-quality-label">품질</p>
-                  <div className="optimize-marks">
-                    {OPTIMIZE_LEVEL_LABELS.map((label, i) => (
-                      <button
-                        key={label}
-                        type="button"
-                        className={`optimize-mark${currentOptimizeLevel === i ? " active" : ""}`}
-                        onClick={() => changeCurrentOptimizeLevel(i)}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </>
             ) : displayMode === "move" ? (
               <>
@@ -695,11 +690,10 @@ export default function BottomSearchBar({
                     key={pct}
                     type="button"
                     className={`search-bar-optimize-seg${currentOptimizeLevel === i ? " active" : ""}`}
-                    aria-label={OPTIMIZE_LEVEL_LABELS[i]}
                     aria-pressed={currentOptimizeLevel === i}
                     onClick={() => changeCurrentOptimizeLevel(i)}
                   >
-                    <span className="search-bar-optimize-seg-dot" />
+                    {OPTIMIZE_LEVEL_LABELS[i]}
                   </button>
                 ))}
               </div>
