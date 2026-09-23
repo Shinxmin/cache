@@ -476,6 +476,15 @@ main.page {
   /* 제목·본문을 조금 위로 올리도록 위쪽 여백만 줄인다(아래쪽은 그대로). */
   padding: 18px 16px 28px;
 }
+/* 최적화 패널만 대상 목록(스크롤)+품질 스테퍼가 함께 들어가 다른 패널보다
+   세로로 더 길다 — 그래서 이 모드일 때만 최대 높이를 키우고, 내용도 다른
+   패널처럼 세로 가운데 정렬 대신 위에서부터 순서대로 쌓는다. */
+.search-bar-confirm-panel.mode-optimize {
+  justify-content: flex-start;
+}
+.search-bar-confirm-panel.mode-optimize.is-open {
+  max-height: 280px;
+}
 .search-bar-confirm-title {
   margin: 0;
   font-size: 15px;
@@ -1535,24 +1544,6 @@ main.page {
 .rename-input::placeholder {
   color: var(--text-2);
 }
-.rename-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: contain;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* 구형 Edge/IE */
-}
-.rename-list::-webkit-scrollbar {
-  display: none; /* 크롬·사파리·안드로이드(삼성 인터넷 포함) — 스크롤 자체는 그대로 된다 */
-}
 .rename-list-row {
   display: flex;
   align-items: center;
@@ -1564,13 +1555,12 @@ main.page {
   display: flex;
   color: var(--text-2);
 }
-/* 태그 모달의 읽기 전용 목록도 이름 바꾸기의 편집 가능한 입력창과 같은
-   가로폭·높이·밑줄을 가져 두 모달의 리스트 레이아웃이 통일되어 보인다 —
-   다만 이건 <input>이 아니라 <span>이라 실제로는 수정할 수 없다. */
+/* 최적화 패널의 대상 목록에 쓰는 읽기 전용 파일 이름칸. <input>이 아니라
+   <span>이라 실제로는 수정할 수 없다. */
 .rename-list-name {
-  /* 보통은(경고가 없을 때) 다른 모달의 입력창과 같은 66.6667% 폭을 갖지만,
-     최적화 모달에서 옆에 "지원하지 않는 확장자" 경고가 붙을 땐 그 자리를
-     내주도록 grow 없이 줄어들 수만 있게 한다(최댓값만 66.6667%로 고정). */
+  /* 보통은(경고가 없을 때) 66.6667% 폭을 갖지만, 옆에 "지원하지 않는
+     확장자" 경고가 붙을 땐 그 자리를 내주도록 grow 없이 줄어들 수만
+     있게 한다(최댓값만 66.6667%로 고정). */
   flex: 0 1 auto;
   display: flex;
   align-items: center;
@@ -1585,23 +1575,44 @@ main.page {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* 캔버스로 못 여는 확장자를 최적화 모달에서 파일명 바로 옆에 알리는 경고.
-   하나라도 있으면 확인 버튼이 비활성화된다(OptimizeModal.jsx 참고). */
+/* 최적화 패널 안, 검색바 입력창 대신 쓰는 대상 목록. 항목이 많아지면
+   패널 자체가 아니라 이 목록만 스크롤된다(다른 패널과 같은 고정 높이를
+   지키기 위해서다). */
+.search-bar-confirm-optimize-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 108px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* 구형 Edge/IE */
+}
+.search-bar-confirm-optimize-list::-webkit-scrollbar {
+  display: none; /* 크롬·사파리·안드로이드(삼성 인터넷 포함) — 스크롤 자체는 그대로 된다 */
+}
+/* 캔버스로 못 여는 확장자를 최적화 패널에서 파일명 바로 옆에 알리는 경고.
+   하나라도 있으면 확인 버튼이 비활성화된다(BottomSearchBar.jsx 참고). */
 .optimize-warn {
   flex: none;
   font-size: 12px;
   color: var(--danger);
   white-space: nowrap;
 }
-/* 최적화 모달의 압축 비율 선택. 리스트 밑, 확인 버튼 위에 온다. 제목("품질")
-   아래 점 3개(25/50/75%)를 선으로 이은 스테퍼(•----•----•) 모양이다 —
-   고른 점까지(자신 포함) 점과 그 사이 선이 채워져 지금까지 고른 값이
+/* 최적화 패널의 압축 비율 선택. 목록 밑, 검색바의 "확인" 버튼 위에 온다.
+   제목("품질") 아래 점 3개(25/50/75%)를 선으로 이은 스테퍼(•----•----•)
+   모양이다 — 고른 점까지(자신 포함) 점과 그 사이 선이 채워져 지금까지 고른 값이
    한눈에 보이고, 점이나 그 밑 숫자 어느 쪽을 눌러도 그 구간이 선택된다. */
 .optimize-levels {
   flex: none;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-top: 12px;
 }
 .optimize-quality-label {
   margin: 0;
