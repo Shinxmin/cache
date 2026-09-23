@@ -491,6 +491,68 @@ main.page {
   color: var(--text-2);
   text-align: left;
 }
+/* 다중 이름 바꾸기 패널의 제목 줄: 제목은 왼쪽, "몇 번째/전체" 카운터와
+   이전·다음 화살표는 오른쪽에 둔다. 몇 개를 고르든 패널 크기가 똑같이
+   유지되도록, 실제 목록을 늘어놓는 대신 검색바 입력창 하나를 화살표로
+   넘기며 재사용한다. */
+.search-bar-confirm-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.search-bar-confirm-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+.search-bar-confirm-nav-btn {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--text-2);
+}
+/* 오른쪽 화살표(ChevronRightIcon)를 뒤집어 왼쪽(이전) 화살표로 쓴다 —
+   아이콘을 새로 그리지 않고 재사용. */
+.search-bar-confirm-nav-btn--prev {
+  transform: scaleX(-1);
+}
+.search-bar-confirm-nav-btn:disabled {
+  opacity: 0.3;
+}
+.search-bar-confirm-nav-count {
+  flex: none;
+  min-width: 28px;
+  font-size: 12px;
+  color: var(--text-2);
+  text-align: center;
+}
+/* 전체 지우기·전체 적용·번호 붙이기 — 항목을 하나씩 보며 확인할 필요
+   없이 눌린 즉시 전체에 적용된다. 삭제·확인 버튼과 같은 옅은 회색 알약
+   모양이되, 보조 동작이라 한 단계 더 옅고 작게 뒀다. */
+.search-bar-confirm-bulk-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.search-bar-confirm-bulk-btn {
+  flex: none;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(128, 128, 128, 0.15);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 400;
+  transition: transform 0.35s var(--spring);
+}
+.search-bar-confirm-bulk-btn:active {
+  transform: scale(0.9);
+}
 
 /* ── 체크박스: 네이티브 input은 투명 처리해 접근성/토글 동작만 맡기고, 시각
    표현은 형제 요소(.checkbox-box)가 담당한다. 체크 시 text/bg 색을 서로
