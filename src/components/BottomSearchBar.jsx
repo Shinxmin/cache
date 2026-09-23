@@ -150,7 +150,6 @@ export default function BottomSearchBar({
   thumbnailPath,
   thumbnailRows,
   thumbnailRowsState,
-  thumbnailExcludedIds,
   onThumbnailInto,
   onThumbnailBack,
   onPickThumbnailSource,
@@ -159,7 +158,6 @@ export default function BottomSearchBar({
   multiThumbnailOpen,
   multiThumbnailItems,
   multiThumbnailIndex,
-  multiThumbnailExcludedIds,
   onPrevMultiThumbnail,
   onNextMultiThumbnail,
   onConfirmMultiThumbnail,
@@ -384,13 +382,14 @@ export default function BottomSearchBar({
   // 폴더 썸네일 애드온도 이동과 같은 폴더 탐색 UI를 재사용하지만, 목록에서
   // 고르는 게 목적지 폴더가 아니라 이미지·움짤·동영상 "파일"이다. thumb_key가
   // 있는 파일만(업로드 때 캔버스로 만든 썸네일이 있어야 그대로 복사해 쓸 수
-  // 있다) 클릭해 지정할 수 있고, 폴더 행은 그 안으로 들어가는 탐색용이다 —
-  // 다만 지금 썸네일을 지정하려는 폴더 자신은(이동의 "옮기는 중인 항목
-  // 자신"과 같은 이유로) 들어갈 수 없게 막는다.
+  // 있다) 클릭해 지정할 수 있고, 폴더 행은 그 안으로 들어가는 탐색용이다.
+  // 이동과 달리 자기 자신 폴더 안으로 들어가도 트리가 깨지지 않으므로(그냥
+  // 그 안의 파일을 보는 것뿐) 지금 썸네일을 지정하려는 폴더 자신도 그대로
+  // 눌러 들어갈 수 있게 둔다 — 오히려 그 폴더 안의 사진을 대표 썸네일로
+  // 쓰는 게 가장 흔한 경우다.
   const isMultiThumbnail = Boolean(multiThumbnailOpen);
   const multiThumbnailCurrent = multiThumbnailItems?.[multiThumbnailIndex];
   const currentThumbnailSourceId = thumbnailOpen ? thumbnailSourceId : isMultiThumbnail ? (multiThumbnailCurrent?.sourceId ?? null) : null;
-  const thumbnailExcluded = thumbnailOpen ? (thumbnailExcludedIds ?? new Set()) : multiThumbnailExcludedIds ?? new Set();
   const isThumbnailSourceRow = (row) => !row.is_folder && Boolean(row.thumb_key);
 
   const canSubmitThumbnail = Boolean(thumbnailSourceId) && !thumbnailBusy;
@@ -782,7 +781,7 @@ export default function BottomSearchBar({
                   ) : (
                     thumbnailRows.map((row) => {
                       const pickable = isThumbnailSourceRow(row);
-                      const disabled = row.is_folder ? thumbnailExcluded.has(row.id) : !pickable;
+                      const disabled = row.is_folder ? false : !pickable;
                       const picked = pickable && row.id === currentThumbnailSourceId;
                       return (
                         <li key={row.id}>
