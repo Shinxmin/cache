@@ -159,7 +159,6 @@ export default function App() {
   // 품질(압축 비율)은 개별 항목이 아니라 선택 전체에 공통으로 적용되므로
   // 이름 바꾸기·태그처럼 단일/다중으로 나뉘지 않는다.
   const [optimizeOpen, setOptimizeOpen] = useState(false);
-  const [optimizeItems, setOptimizeItems] = useState([]);
   const [optimizeLevel, setOptimizeLevel] = useState(1);
   // 헤더 삼점 버튼의 "새 폴더". 별도 모달 대신 삭제 확인과 같은 방식으로
   // 하단 검색바가 위로 확장되며 그 자리에서 이름을 입력받는다(BottomSearchBar
@@ -184,6 +183,15 @@ export default function App() {
   const mediaItems = useMemo(
     () => visibleItems.filter((it) => (isImage(it.mime) || isVideo(it.mime)) && !it.split_pair),
     [visibleItems]
+  );
+
+  // 최적화 패널이 열려 있는 동안에도 다른 파일을 탭해 선택을 더하거나 뺄 수
+  // 있다 — 스냅샷으로 한 번 떠 두는 대신 선택이 바뀔 때마다 그대로 다시
+  // 계산해서, 패널이 항상 지금 선택된 파일(폴더 제외) 기준으로 요약·확인을
+  // 보여준다.
+  const optimizeItems = useMemo(
+    () => visibleItems.filter((it) => selectedIds.has(it.id) && !it.is_folder),
+    [visibleItems, selectedIds]
   );
 
   useEffect(() => {
@@ -307,14 +315,80 @@ export default function App() {
       setMultiTagIndex(0);
     }
   }, [selectedIds, multiTagOpen]);
-  // 최적화 패널도 마찬가지.
+  // 최적화 패널도 마찬가지(대상 목록 자체는 위 optimizeItems가 선택을
+  // 그대로 다시 계산하므로, 여기서는 패널을 닫기만 하면 된다).
   useEffect(() => {
     if (!optimizeOpen) return;
-    if (selectedIds.size === 0) {
-      setOptimizeOpen(false);
-      setOptimizeItems([]);
-    }
+    if (selectedIds.size === 0) setOptimizeOpen(false);
   }, [selectedIds, optimizeOpen]);
+
+  // 이름 바꾸기 패널이 열린 채로도 다른 파일을 탭해 선택을 더하거나 뺄 수
+  // 있다(빈 화면 스크림에 뚫린 구멍을 통해 타일 클릭이 그대로 전달된다).
+  // 그러면 이 효과가 선택이 바뀔 때마다 편집 중인 항목을 다시 계산한다 —
+  // 이미 입력해 둔 값(단일 칸이든 다중 배열의 항목이든)은 그대로 이어가고,
+  // 새로 추가된 항목은 파일의 원래 이름을 기본값으로 채운다. 선택이 1개로
+  // 줄면 단일 패널로, 2개 이상이면 다중 패널로 자동 전환된다. 선택이
+  // 0개가 되는 경우는 위 두 효과가 이미 처리하므로 여기서는 손대지 않는다.
+  useEffect(() => {
+    if (!renameOpen && !multiRenameOpen) return;
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    if (targets.length === 0) return;
+    const valueFor = (it) => {
+      const fromMulti = multiRenameItems.find((x) => x.id === it.id);
+      if (fromMulti) return fromMulti.name;
+      if (renameOpen && renameTargetId === it.id) return renameName;
+      return it.name;
+    };
+    if (targets.length === 1) {
+      const only = targets[0];
+      const nextName = valueFor(only);
+      setMultiRenameOpen(false);
+      setMultiRenameItems([]);
+      setMultiRenameIndex(0);
+      setRenameTargetId(only.id);
+      setRenameName(nextName);
+      setRenameOpen(true);
+      return;
+    }
+    const nextItems = targets.map((it) => ({ id: it.id, name: valueFor(it) }));
+    setRenameOpen(false);
+    setRenameName("");
+    setRenameTargetId(null);
+    setMultiRenameItems(nextItems);
+    setMultiRenameIndex((i) => Math.min(i, nextItems.length - 1));
+    setMultiRenameOpen(true);
+  }, [selectedIds]);
+
+  // 태그 패널도 같은 방식으로 선택 변화에 맞춰 다시 계산한다.
+  useEffect(() => {
+    if (!tagOpen && !multiTagOpen) return;
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    if (targets.length === 0) return;
+    const valueFor = (it) => {
+      const fromMulti = multiTagItems.find((x) => x.id === it.id);
+      if (fromMulti) return fromMulti.tag;
+      if (tagOpen && tagTargetId === it.id) return tagValue;
+      return it.tag || "";
+    };
+    if (targets.length === 1) {
+      const only = targets[0];
+      const nextValue = valueFor(only);
+      setMultiTagOpen(false);
+      setMultiTagItems([]);
+      setMultiTagIndex(0);
+      setTagTargetId(only.id);
+      setTagValue(nextValue);
+      setTagOpen(true);
+      return;
+    }
+    const nextItems = targets.map((it) => ({ id: it.id, tag: valueFor(it) }));
+    setTagOpen(false);
+    setTagValue("");
+    setTagTargetId(null);
+    setMultiTagItems(nextItems);
+    setMultiTagIndex((i) => Math.min(i, nextItems.length - 1));
+    setMultiTagOpen(true);
+  }, [selectedIds]);
 
   const handleSearch = (value) => {
     setSearchQuery(value);
@@ -384,6 +458,12 @@ export default function App() {
   // 즐겨찾기를 닫은 뒤 패널을 연다. 삭제 확인 패널과 자리를 공유하므로
   // 열려 있었다면 먼저 닫는다.
   const handleNewFolder = () => {
+    // 이미 새 폴더 패널이 열려 있는 채로 다시 누르면(더 보기 메뉴를 다시
+    // 열어) 여는 대신 닫는다.
+    if (newFolderOpen) {
+      closeAllToolPanels();
+      return;
+    }
     if (showFavorites) setShowFavorites(false);
     closeAllToolPanels();
     setNewFolderName("");
@@ -561,6 +641,13 @@ export default function App() {
   // renameOpen 패널을, 여러 개면 이전·다음 화살표로 하나씩 넘기며 편집하는
   // multiRenameOpen 패널을 연다.
   const handleEditSelected = () => {
+    // 이미 이름 바꾸기 패널(단일이든 다중이든)이 열려 있는 채로 같은
+    // 아이콘을 다시 누르면 여는 대신 닫는다 — 빈 화면을 눌러 취소하는
+    // 것과 같은 처리다.
+    if (renameOpen || multiRenameOpen) {
+      closeAllToolPanels();
+      return;
+    }
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
     if (!targets.length) return;
     closeAllToolPanels();
@@ -685,6 +772,13 @@ export default function App() {
   // tagOpen 패널을, 여러 개면 이전·다음 화살표로 하나씩 넘기며 편집하는
   // multiTagOpen 패널을 연다(이름 바꾸기와 똑같은 구조).
   const handleTagSelected = () => {
+    // 이미 태그 패널(단일이든 다중이든)이 열려 있는 채로 같은 아이콘을
+    // 다시 누르면 여는 대신 닫는다 — 빈 화면을 눌러 취소하는 것과 같은
+    // 처리다.
+    if (tagOpen || multiTagOpen) {
+      closeAllToolPanels();
+      return;
+    }
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
     if (!targets.length) return;
     closeAllToolPanels();
@@ -770,17 +864,20 @@ export default function App() {
   // 문자열로 주는 경우(예: 일부 환경의 HEIC) 정작 열리는 이미지까지 패널 자체가
   // 뜨지 않는 문제가 있었다.
   const handleOptimizeSelected = () => {
-    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && !it.is_folder);
-    if (!targets.length) return;
+    // 이미 최적화 패널이 열려 있는 채로 같은 아이콘을 다시 누르면(재선택
+    // 없이) 여는 대신 닫는다 — 빈 화면을 눌러 취소하는 것과 같은 처리다.
+    if (optimizeOpen) {
+      closeAllToolPanels();
+      return;
+    }
+    if (!optimizeItems.length) return;
     closeAllToolPanels();
-    setOptimizeItems(targets);
     setOptimizeLevel(1);
     setOptimizeOpen(true);
   };
 
   const cancelOptimize = () => {
     setOptimizeOpen(false);
-    setOptimizeItems([]);
   };
 
   // 최적화는 이름·태그와 달리 항목마다 다른 값을 받지 않고, 고른 품질
@@ -911,6 +1008,13 @@ export default function App() {
       case "info":
         return handleToggleInfo();
       case "trash":
+        // 이미 삭제 확인 패널이 열려 있는 채로 휴지통 아이콘을 다시 누르면
+        // 여는 대신 취소한다(선택도 함께 풀린다 — 빈 화면을 눌러 취소하는
+        // 것과 같은 처리다).
+        if (deleteConfirmOpen) {
+          cancelDeleteConfirm();
+          return;
+        }
         if (selectedIds.size > 0) {
           closeAllToolPanels();
           setDeleteConfirmOpen(true);

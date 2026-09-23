@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronRightIcon } from "./icons";
 import { isOptimizableFile, OPTIMIZE_LEVELS, OPTIMIZE_LEVEL_LABELS } from "../lib/optimize";
+import useSegmentDrag from "../hooks/useSegmentDrag";
 
 // 하단바 아이콘(단일 solid fill, currentColor)과 같은 방식으로 그린 돋보기 아이콘.
 // 링은 두 원을 evenodd로 겹쳐 만든 진짜 구멍(반투명 색에서도 이중 톤이 생기지
@@ -240,12 +241,12 @@ export default function BottomSearchBar({
   // 일부만 압축되는 애매한 결과 대신 확인 버튼 자체를 막는다.
   const hasUnsupportedOptimize = (optimizeItems ?? []).some((it) => !isOptimizableFile(it.name));
   const canSubmitOptimize = Boolean(optimizeItems?.length) && !hasUnsupportedOptimize && !optimizeBusy;
-  // 목록을 그대로 늘어놓는 대신 삭제 확인 패널처럼 한 줄로 요약한다 —
-  // 첫 번째 파일 이름 뒤에 나머지 개수를 붙인다(하나뿐이면 그 이름만).
-  const optimizeSummary =
-    (optimizeItems?.length ?? 0) <= 1
-      ? (optimizeItems?.[0]?.name ?? "")
-      : `${optimizeItems[0].name} 외 ${optimizeItems.length - 1}개 파일`;
+  // 목록이나 파일명을 늘어놓는 대신 개수만 짧게 요약한다("1개 파일",
+  // "4개 파일" 처럼).
+  const optimizeSummary = `${optimizeItems?.length ?? 0}개 파일`;
+  // 품질 세그먼트를 탭뿐 아니라 마우스 드래그·손가락 슬라이드로도 고를 수
+  // 있게 한다.
+  const optimizeSegDrag = useSegmentDrag(OPTIMIZE_LEVELS.length, (i) => onChangeOptimizeLevel?.(i));
   const submitOptimize = async () => {
     if (!canSubmitOptimize) return;
     setOptimizeBusy(true);
@@ -341,6 +342,23 @@ export default function BottomSearchBar({
     return () => window.removeEventListener("resize", measure);
   }, [panelOpen]);
 
+  // 패널이 열려 있어도 파일·폴더 타일을 탭하면(스크림에 가려져 있어도)
+  // 취소 대신 그 타일의 선택을 켜거나 끈다 — 패널을 계속 연 채로 대상을
+  // 더하거나 뺄 수 있게 하기 위해서다. elementsFromPoint로 클릭 지점의
+  // 실제 요소 스택을 살펴 타일(.drive-tile-btn/.drive-row)이 있으면 그
+  // 버튼을 대신 눌러준다(App.jsx의 선택 상태가 바뀌면 열려 있던 패널이
+  // 알아서 새 선택에 맞게 다시 계산된다). 타일이 아닌 빈 자리를 눌렀을
+  // 때만 원래대로 취소로 처리된다.
+  const handleScrimClick = (e) => {
+    const stack = document.elementsFromPoint(e.clientX, e.clientY);
+    const tile = stack.find((el) => el.classList?.contains("drive-tile-btn") || el.classList?.contains("drive-row"));
+    if (tile) {
+      tile.click();
+      return;
+    }
+    onCancelScrim?.();
+  };
+
   // 검색바 아이콘은 삭제 패널만 빼고, 그 패널을 연 툴킷 아이콘과 똑같은
   // 모양으로 바뀐다(새 폴더→폴더, 이름 바꾸기→연필, 태그→북마크).
   const isTagMode = tagOpen || multiTagOpen;
@@ -363,29 +381,29 @@ export default function BottomSearchBar({
               <div
                 className="search-bar-scrim"
                 style={{ top: 0, left: 0, right: 0, bottom: "auto", height: scrimHole.top }}
-                onClick={onCancelScrim}
+                onClick={handleScrimClick}
               />
             )}
             <div
               className="search-bar-scrim"
               style={{ top: scrimHole.bottom, left: 0, right: 0, bottom: 0, height: "auto" }}
-              onClick={onCancelScrim}
+              onClick={handleScrimClick}
             />
             {scrimHole.left > 0 && (
               <div
                 className="search-bar-scrim"
                 style={{ top: scrimHole.top, left: 0, right: "auto", bottom: "auto", width: scrimHole.left, height: scrimHole.bottom - scrimHole.top }}
-                onClick={onCancelScrim}
+                onClick={handleScrimClick}
               />
             )}
             <div
               className="search-bar-scrim"
               style={{ top: scrimHole.top, left: scrimHole.right, right: 0, bottom: "auto", height: scrimHole.bottom - scrimHole.top }}
-              onClick={onCancelScrim}
+              onClick={handleScrimClick}
             />
           </>
         ) : (
-          <div className="search-bar-scrim" onClick={onCancelScrim} />
+          <div className="search-bar-scrim" onClick={handleScrimClick} />
         ))}
       <div className="bottom-search-wrap">
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
@@ -458,7 +476,7 @@ export default function BottomSearchBar({
                 )}
                 <div className="optimize-levels">
                   <p className="optimize-quality-label">품질</p>
-                  <div className="optimize-seg-group" role="group" aria-label="압축 비율">
+                  <div className="optimize-seg-group" role="group" aria-label="압축 비율" {...optimizeSegDrag}>
                     {OPTIMIZE_LEVELS.map((pct, i) => (
                       <button
                         key={pct}
