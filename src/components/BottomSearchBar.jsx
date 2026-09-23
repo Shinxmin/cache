@@ -155,6 +155,7 @@ export default function BottomSearchBar({
   onPickThumbnailSource,
   onConfirmThumbnail,
   onCancelThumbnail,
+  onClearThumbnail,
   multiThumbnailOpen,
   multiThumbnailItems,
   multiThumbnailIndex,
@@ -162,6 +163,8 @@ export default function BottomSearchBar({
   onNextMultiThumbnail,
   onConfirmMultiThumbnail,
   onCancelMultiThumbnail,
+  onClearCurrentMultiThumbnail,
+  onClearAllMultiThumbnail,
 }) {
   const [busy, setBusy] = useState(false);
   const [folderBusy, setFolderBusy] = useState(false);
@@ -761,6 +764,20 @@ export default function BottomSearchBar({
                 <p className="search-bar-confirm-filename">
                   {displayMode === "multiThumbnail" ? multiThumbnailCurrent?.name : thumbnailTargetName}
                 </p>
+                <div className="search-bar-confirm-bulk-actions">
+                  {displayMode === "multiThumbnail" && (
+                    <button type="button" className="search-bar-confirm-bulk-btn" onClick={onClearAllMultiThumbnail}>
+                      전체 지우기
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="search-bar-confirm-bulk-btn"
+                    onClick={displayMode === "multiThumbnail" ? onClearCurrentMultiThumbnail : onClearThumbnail}
+                  >
+                    지우기
+                  </button>
+                </div>
                 {thumbnailPath.length > 0 && (
                   <div className="move-path">
                     <button type="button" className="move-path-back" aria-label="상위 폴더로" onClick={onThumbnailBack}>

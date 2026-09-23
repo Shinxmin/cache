@@ -21,6 +21,7 @@ import {
   verifySession,
 } from "./lib/session";
 import {
+  clearFolderThumbnail,
   createFolder,
   createSplitPreset,
   downloadFile,
@@ -721,11 +722,16 @@ export default function App() {
     );
   };
 
-  // 선택된 항목 중 이미지·영상만 대상으로 썸네일 블러를 토글한다. 전체가 이미
-  // 블러 상태면 풀고, 아니면(하나도 안 되어 있거나 일부만 되어 있으면) 전부 건다
-  // — 전체 선택 체크박스와 같은 "일부면 켜는 쪽으로" 방식이다.
+  // 선택된 항목 중 이미지·영상, 그리고 폴더 썸네일이 지정된 폴더만 대상으로
+  // 썸네일 블러를 토글한다(썸네일이 없는 폴더는 애초에 블러 걸 그림이 없으니
+  // 제외). 전체가 이미 블러 상태면 풀고, 아니면(하나도 안 되어 있거나 일부만
+  // 되어 있으면) 전부 건다 — 전체 선택 체크박스와 같은 "일부면 켜는 쪽으로"
+  // 방식이다. 폴더를 블러해도 그 안의 개별 파일들에는 영향이 없다 — 폴더
+  // 자신의 blurred 컬럼만 바뀐다.
   const handleBlurSelected = async () => {
-    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && (isImage(it.mime) || isVideo(it.mime)));
+    const targets = visibleItems.filter(
+      (it) => selectedIds.has(it.id) && (isImage(it.mime) || isVideo(it.mime) || (it.is_folder && it.folder_thumb_key))
+    );
     if (!targets.length) return;
     const nextBlurred = !targets.every((it) => it.blurred);
     try {
@@ -1029,6 +1035,49 @@ export default function App() {
       setRefreshKey((k) => k + 1);
     } catch {
       window.alert("썸네일을 지정하지 못했습니다");
+    }
+  };
+
+  // "지우기": 새로 고를 필요 없이 지금 지정된(혹은 지정하려던) 폴더 썸네일을
+  // 바로 없앤다 — 확인 버튼을 거치지 않는 즉시 동작이다. 원래 폴더 아이콘으로
+  // 돌아간다.
+  const clearThumbnail = async () => {
+    if (!thumbnailTargetId) return;
+    try {
+      await clearFolderThumbnail(session.token, thumbnailTargetId);
+      cancelThumbnail();
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("썸네일을 지우지 못했습니다");
+    }
+  };
+
+  // 다중일 때 "지우기"는 지금 보고 있는 항목 하나만 지운다 — 패널은 열어
+  // 둔 채로, 나머지 항목은 그대로 이전·다음으로 넘기며 계속 고를 수 있다.
+  const clearCurrentMultiThumbnail = async () => {
+    const current = multiThumbnailItems[multiThumbnailIndex];
+    if (!current) return;
+    try {
+      await clearFolderThumbnail(session.token, current.id);
+      setMultiThumbnailItems((prev) => prev.map((it, i) => (i === multiThumbnailIndex ? { ...it, sourceId: null } : it)));
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("썸네일을 지우지 못했습니다");
+    }
+  };
+
+  // "전체 지우기"는 지금 다중으로 보고 있는 폴더 전부의 썸네일을 순서대로
+  // 지운 뒤 패널을 닫는다.
+  const clearAllMultiThumbnail = async () => {
+    if (!multiThumbnailItems.length) return;
+    try {
+      for (const it of multiThumbnailItems) {
+        await clearFolderThumbnail(session.token, it.id);
+      }
+      cancelMultiThumbnail();
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("썸네일을 지우지 못했습니다");
     }
   };
 
@@ -1594,6 +1643,7 @@ export default function App() {
             onPickThumbnailSource={pickThumbnailSource}
             onConfirmThumbnail={confirmThumbnail}
             onCancelThumbnail={cancelThumbnail}
+            onClearThumbnail={clearThumbnail}
             multiThumbnailOpen={multiThumbnailOpen}
             multiThumbnailItems={multiThumbnailItems}
             multiThumbnailIndex={multiThumbnailIndex}
@@ -1601,6 +1651,8 @@ export default function App() {
             onNextMultiThumbnail={nextMultiThumbnail}
             onConfirmMultiThumbnail={confirmMultiThumbnail}
             onCancelMultiThumbnail={cancelMultiThumbnail}
+            onClearCurrentMultiThumbnail={clearCurrentMultiThumbnail}
+            onClearAllMultiThumbnail={clearAllMultiThumbnail}
           />
         </>
       )}

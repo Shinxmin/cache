@@ -99,6 +99,11 @@ export async function setFolderThumbnail(token, folderId, sourceId) {
   return rpcResult(await supabase.rpc("set_folder_thumbnail", { p_token: token, p_folder_id: folderId, p_source_id: sourceId }));
 }
 
+// 지정해 둔 폴더 썸네일을 지운다(원래 폴더 아이콘으로 돌아간다).
+export async function clearFolderThumbnail(token, folderId) {
+  return rpcResult(await supabase.rpc("clear_folder_thumbnail", { p_token: token, p_folder_id: folderId }));
+}
+
 // ── 태그 관리(설정 → 태그) ──────────────────────────────────────────────
 // 지금 쓰이고 있는(휴지통에 있지 않은 파일에 붙어 있는) 태그를 중복 없이
 // 나열한다. 각 항목은 { tag, count }(그 태그가 붙은 파일·폴더 개수) 형태다.
