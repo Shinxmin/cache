@@ -999,6 +999,16 @@ export default function App() {
     setMultiOptimizeItems((prev) => prev.map((it, i) => (i === multiOptimizeIndex ? { ...it, level } : it)));
   };
 
+  // 이름 바꾸기·태그의 "전체 적용"과 달리, 첫 항목이 아니라 지금 보고 있는
+  // 항목의 값을 기준으로 삼는다 — 그 값을 자신과 그 뒤로 남은 항목에만
+  // 적용한다(앞서 이미 따로 정해 둔 항목은 건드리지 않는다).
+  const applyAllMultiOptimize = () => {
+    setMultiOptimizeItems((prev) => {
+      const level = prev[multiOptimizeIndex]?.level ?? 1;
+      return prev.map((it, i) => (i >= multiOptimizeIndex ? { ...it, level } : it));
+    });
+  };
+
   const prevMultiOptimize = () => setMultiOptimizeIndex((i) => Math.max(0, i - 1));
   const nextMultiOptimize = () => setMultiOptimizeIndex((i) => Math.min(multiOptimizeItems.length - 1, i + 1));
 
@@ -1389,6 +1399,7 @@ export default function App() {
             multiOptimizeItems={multiOptimizeItems}
             multiOptimizeIndex={multiOptimizeIndex}
             onChangeMultiOptimizeLevel={changeMultiOptimizeLevel}
+            onApplyAllMultiOptimize={applyAllMultiOptimize}
             onPrevMultiOptimize={prevMultiOptimize}
             onNextMultiOptimize={nextMultiOptimize}
             onConfirmMultiOptimize={confirmMultiOptimize}
