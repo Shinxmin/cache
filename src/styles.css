@@ -89,11 +89,11 @@ button {
   padding: var(--header-h, 73px) 20px calc(env(safe-area-inset-bottom, 0px) + 32px);
 }
 /* 파일 화면(과 그 안에서 연 즐겨찾기)만 하단에 고정된 검색바(.bottom-search-wrap)
-   가 떠 있으므로, 그 바 높이(44px)+여백만큼 아래 여백을 더 확보한다. 휴지통·
+   가 떠 있으므로, 그 바 높이(48px)+여백만큼 아래 여백을 더 확보한다. 휴지통·
    태그·설정·애드온 스토어처럼 <div className="page">를 쓰는 다른 화면은 하단
    검색바가 없으니 그대로 기본 32px 여백을 쓴다. */
 main.page {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 44px + 16.1px + 16px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 48px + 16.1px + 16px);
 }
 
 /* ── 상단 제목: 스크롤 범위 자체에 포함되지 않도록 position: fixed로 화면 상단에
@@ -350,18 +350,18 @@ main.page {
    (.search-bar)은 각자 유리 재질을 두르지 않는 내용물일 뿐이다 — 그래서
    스튜디오 툴킷의 삭제 아이콘을 눌러 확인 패널이 열려도 이중 테두리·
    그림자로 생기는 틈 없이 진짜 하나의 상자가 위아래로 늘어난다.
-   R값(22px = 접힌 44px 높이의 절반)은 접혀 있을 때 기준으로 고정한다.
+   R값(24px = 접힌 48px 높이의 절반)은 접혀 있을 때 기준으로 고정한다.
    그래서 접혔을 땐 좌우 끝이 완전히 둥근 알약 모양이고, 확인 패널이 열려
    위로 커지면 그 늘어난 만큼은 양옆이 그냥 직선으로 이어지다가 맨 위
-   모서리에서 다시 같은 R값(22px)만큼만 둥글게 마무리된다 — border-radius를
+   모서리에서 다시 같은 R값(24px)만큼만 둥글게 마무리된다 — border-radius를
    999px 같은 큰 값으로 두면 상자가 커질수록 반경도 따라 커져 버려서(둥근
    정도가 높이에 비례해 다시 계산됨) 통통한 스타디움 모양이 되는데, 그건
-   원하는 모양이 아니다. 고정된 22px이라야 높이가 얼마든 항상 같은 크기의
+   원하는 모양이 아니다. 고정된 24px이라야 높이가 얼마든 항상 같은 크기의
    모서리 곡률을 유지한다. ── */
 .search-dock {
   position: relative;
   isolation: isolate;
-  border-radius: 22px;
+  border-radius: 24px;
   background: var(--glass);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
   backdrop-filter: blur(28px) saturate(200%);
@@ -393,7 +393,7 @@ main.page {
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 44px;
+  height: 48px;
   padding: 0 16px;
   color: var(--text-2);
 }
@@ -423,7 +423,7 @@ main.page {
 }
 /* 삭제 확인·새 폴더의 "확인" 버튼. 패널이 아니라 검색바 자신의 오른쪽
    끝에 뜬다 — 입력창(flex:1)이 남는 공간을 전부 차지하므로 이 버튼은
-   자연히 오른쪽에 붙는다. 검색바(44px 행) 안에 들어가는 만큼 키를 낮춰
+   자연히 오른쪽에 붙는다. 검색바(48px 행) 안에 들어가는 만큼 키를 낮춰
    사이즈를 맞췄고, 볼드는 쓰지 않되 배경색은 기존 취소·확인 버튼과
    동일하게 유지한다. */
 .search-bar-inline-confirm {
