@@ -9,7 +9,6 @@ import TrashPage from "./pages/TrashPage";
 import TagsPage from "./pages/TagsPage";
 import FileViewer from "./pages/FileViewer";
 import SplitCompareViewer from "./pages/SplitCompareViewer";
-import RenameModal from "./components/RenameModal";
 import MoveModal from "./components/MoveModal";
 import TagModal from "./components/TagModal";
 import OptimizeModal from "./components/OptimizeModal";
@@ -46,6 +45,7 @@ import { isSearchActive } from "./lib/search";
 import { loadTheme, saveTheme } from "./lib/theme";
 import { BASE_TOOL_IDS, installedAddonIds, normalizeLayout } from "./lib/toolkit";
 import { isOptimizableFile } from "./lib/optimize";
+import { dedupeStrings } from "./lib/dedupe";
 
 const TOAST_MS = 2000;
 
@@ -132,14 +132,17 @@ export default function App() {
   // 모달 대신 하단 검색바가 위로 확장되며 그 자리에서 확인을 받는다
   // (BottomSearchBar 참고) — 다른 삭제·복원 확인은 전부 그대로 ConfirmModal.
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  // 스튜디오 툴킷의 편집(연필) 아이콘으로 연 이름 바꾸기. 단일 선택이면
-  // 삭제 확인·새 폴더와 같은 방식으로 하단 검색바가 확장되는 패널을 쓰고
-  // (renameOpen), 다중 선택이면(항목마다 입력창 + 일괄 처리 버튼이 필요해
-  // 패널 하나로는 담을 수 없다) 그대로 RenameModal을 쓴다.
-  const [renameTargets, setRenameTargets] = useState(null);
+  // 스튜디오 툴킷의 편집(연필) 아이콘으로 연 이름 바꾸기. 삭제 확인·새 폴더와
+  // 같은 방식으로 하단 검색바가 확장되는 패널을 쓴다. 단일 선택이면
+  // 이름 하나만 편집하는 renameOpen을, 여러 개 선택이면 이전·다음 화살표로
+  // 하나씩 넘기며 편집하는(검색바 입력창 하나를 계속 재사용) multiRenameOpen을
+  // 쓴다 — 패널 자체는 항상 같은 크기를 유지한다.
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameName, setRenameName] = useState("");
   const [renameTargetId, setRenameTargetId] = useState(null);
+  const [multiRenameOpen, setMultiRenameOpen] = useState(false);
+  const [multiRenameItems, setMultiRenameItems] = useState([]);
+  const [multiRenameIndex, setMultiRenameIndex] = useState(0);
   // 스튜디오 툴킷의 이동(→) 아이콘으로 연 이동 모달. null이면 닫힌 상태.
   const [moveTargets, setMoveTargets] = useState(null);
   // 스튜디오 툴킷의 태그(#) 아이콘으로 연 태그 모달. null이면 닫힌 상태.
@@ -267,6 +270,16 @@ export default function App() {
     }
   }, [selectedIds, renameOpen]);
 
+  // 다중 이름 바꾸기 패널도 마찬가지.
+  useEffect(() => {
+    if (!multiRenameOpen) return;
+    if (selectedIds.size === 0) {
+      setMultiRenameOpen(false);
+      setMultiRenameItems([]);
+      setMultiRenameIndex(0);
+    }
+  }, [selectedIds, multiRenameOpen]);
+
   const handleSearch = (value) => {
     setSearchQuery(value);
   };
@@ -338,6 +351,7 @@ export default function App() {
     if (showFavorites) setShowFavorites(false);
     setDeleteConfirmOpen(false);
     cancelRename();
+    cancelMultiRename();
     setNewFolderName("");
     setNewFolderOpen(true);
   };
@@ -500,21 +514,25 @@ export default function App() {
     setDeleteConfirmOpen(false);
   };
 
-  // 선택된 항목으로 이름을 바꾼다. 단일 선택이면 삭제 확인·새 폴더와 같은
-  // 하단 패널을 열고, 여러 개면(패널 하나에 입력창 여러 줄을 담을 수 없어)
-  // 그대로 RenameModal을 연다.
+  // 선택된 항목으로 이름을 바꾼다. 단일 선택이면 이름 하나만 편집하는
+  // renameOpen 패널을, 여러 개면 이전·다음 화살표로 하나씩 넘기며 편집하는
+  // multiRenameOpen 패널을 연다.
   const handleEditSelected = () => {
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
     if (!targets.length) return;
+    setDeleteConfirmOpen(false);
+    setNewFolderOpen(false);
     if (targets.length === 1) {
-      setDeleteConfirmOpen(false);
-      setNewFolderOpen(false);
+      cancelMultiRename();
       setRenameTargetId(targets[0].id);
       setRenameName(targets[0].name);
       setRenameOpen(true);
       return;
     }
-    setRenameTargets(targets);
+    cancelRename();
+    setMultiRenameItems(targets.map((it) => ({ id: it.id, name: it.name })));
+    setMultiRenameIndex(0);
+    setMultiRenameOpen(true);
   };
 
   const cancelRename = () => {
@@ -530,6 +548,60 @@ export default function App() {
     try {
       await renameFiles(session.token, [{ id: renameTargetId, name }]);
       cancelRename();
+      setSelectedIds(new Set());
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("이름을 바꾸지 못했습니다");
+    }
+  };
+
+  const cancelMultiRename = () => {
+    setMultiRenameOpen(false);
+    setMultiRenameItems([]);
+    setMultiRenameIndex(0);
+  };
+
+  // 지금 보고 있는(multiRenameIndex번째) 항목의 이름만 바꾼다 — 검색바
+  // 입력창 하나를 화살표로 넘기며 재사용하는 방식이라, 다른 항목의 값은
+  // 건드리지 않는다.
+  const changeMultiRenameName = (value) => {
+    setMultiRenameItems((prev) => prev.map((it, i) => (i === multiRenameIndex ? { ...it, name: value } : it)));
+  };
+
+  const prevMultiRename = () => setMultiRenameIndex((i) => Math.max(0, i - 1));
+  const nextMultiRename = () => setMultiRenameIndex((i) => Math.min(multiRenameItems.length - 1, i + 1));
+
+  // 첫 번째 항목의 값을 모두에게 그대로 적용한다.
+  const applyAllMultiRename = () => {
+    setMultiRenameItems((prev) => {
+      const first = prev[0]?.name ?? "";
+      return prev.map((it) => ({ ...it, name: first }));
+    });
+  };
+
+  const clearAllMultiRename = () => {
+    setMultiRenameItems((prev) => prev.map((it) => ({ ...it, name: "" })));
+  };
+
+  // 첫 번째 항목의 값을 기준점으로 삼는다: 끝에 붙은 숫자를 뽑아 그 숫자부터
+  // 순서대로 이어 붙인다.
+  const attachNumbersMultiRename = () => {
+    setMultiRenameItems((prev) => {
+      const first = prev[0]?.name || "";
+      const match = first.match(/^(.*?)(\d+)$/);
+      const prefix = match ? match[1] : first;
+      const base = match ? parseInt(match[2], 10) : 1;
+      return prev.map((it, i) => ({ ...it, name: `${prefix}${base + i}` }));
+    });
+  };
+
+  // 확인을 누르는 순간 겹치는 이름에만 (1),(2),(3)…을 붙인다.
+  const confirmMultiRename = async () => {
+    if (!multiRenameItems.every((it) => it.name.trim().length > 0)) return;
+    try {
+      const finalNames = dedupeStrings(multiRenameItems.map((it) => it.name.trim()));
+      await renameFiles(session.token, multiRenameItems.map((it, i) => ({ id: it.id, name: finalNames[i] })));
+      cancelMultiRename();
       setSelectedIds(new Set());
       setRefreshKey((k) => k + 1);
     } catch {
@@ -725,6 +797,7 @@ export default function App() {
         if (selectedIds.size > 0) {
           setNewFolderOpen(false);
           cancelRename();
+          cancelMultiRename();
           setDeleteConfirmOpen(true);
         }
         return;
@@ -769,17 +842,6 @@ export default function App() {
       "remove_addon",
       addonId
     );
-  };
-
-  const handleRenameSubmit = async (renames) => {
-    try {
-      await renameFiles(session.token, renames);
-      setRenameTargets(null);
-      setSelectedIds(new Set());
-      setRefreshKey((k) => k + 1);
-    } catch {
-      window.alert("이름을 바꾸지 못했습니다");
-    }
   };
 
   if (checkingSession) return null;
@@ -939,6 +1001,17 @@ export default function App() {
             onChangeRenameName={setRenameName}
             onConfirmRename={confirmRename}
             onCancelRename={cancelRename}
+            multiRenameOpen={multiRenameOpen}
+            multiRenameItems={multiRenameItems}
+            multiRenameIndex={multiRenameIndex}
+            onChangeMultiRenameName={changeMultiRenameName}
+            onPrevMultiRename={prevMultiRename}
+            onNextMultiRename={nextMultiRename}
+            onClearAllMultiRename={clearAllMultiRename}
+            onApplyAllMultiRename={applyAllMultiRename}
+            onAttachNumbersMultiRename={attachNumbersMultiRename}
+            onConfirmMultiRename={confirmMultiRename}
+            onCancelMultiRename={cancelMultiRename}
           />
         </>
       )}
@@ -949,9 +1022,6 @@ export default function App() {
           initialIndex={viewerIndex}
           onClose={() => setViewerIndex(null)}
         />
-      )}
-      {renameTargets && (
-        <RenameModal items={renameTargets} onClose={() => setRenameTargets(null)} onSubmit={handleRenameSubmit} />
       )}
       {moveTargets && (
         <MoveModal
