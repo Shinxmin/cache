@@ -483,9 +483,10 @@ main.page {
   color: var(--text);
   text-align: left;
 }
-/* 삭제 확인 보조 설명(고정 문구). */
+/* 삭제 확인 보조 설명(고정 문구). 제목과의 간격을 조금 더 줄여 본문을
+   살짝 위로 올린다. */
 .search-bar-confirm-desc {
-  margin: 9px 0 0;
+  margin: 5px 0 0;
   font-size: 13px;
   color: var(--text-2);
   text-align: left;

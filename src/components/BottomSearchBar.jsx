@@ -61,6 +61,18 @@ export default function BottomSearchBar({
   const panelOpen = confirmOpen || newFolderOpen;
   const inputRef = useRef(null);
 
+  // 패널이 닫히는 동안(max-height·opacity 트랜지션 0.25~0.35초)에도 DOM은
+  // 그대로 남아 있는데, 내용을 newFolderOpen으로 바로 판단하면 두 값이 이미
+  // false로 바뀐 뒤라 "삭제" 쪽 문구로 순간 바뀌어 버린다 — 사라지는 새 폴더
+  // 패널 위에 삭제 확인 문구가 잠깐 겹쳐 보이던 버그가 이것 때문이었다.
+  // 그래서 실제로 열릴 때만(new/삭제 둘 중 하나가 true가 될 때만) 갱신하고,
+  // 둘 다 닫힐 때는 마지막 내용을 그대로 유지해 사라지는 동안 바뀌지 않게 한다.
+  const [displayMode, setDisplayMode] = useState(newFolderOpen ? "newFolder" : "confirm");
+  useEffect(() => {
+    if (newFolderOpen) setDisplayMode("newFolder");
+    else if (confirmOpen) setDisplayMode("confirm");
+  }, [newFolderOpen, confirmOpen]);
+
   // 검색바 입력창은 늘 같은 DOM 노드라 newFolderOpen이 켜질 때 autoFocus는
   // 다시 발동하지 않는다(마운트 시 한 번뿐) — 그래서 열릴 때마다 직접 포커스한다.
   useEffect(() => {
@@ -99,7 +111,7 @@ export default function BottomSearchBar({
       <div className="bottom-search-wrap">
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
           <div className={`search-bar-confirm-panel${panelOpen ? " is-open" : ""}`} aria-hidden={!panelOpen}>
-            {newFolderOpen ? (
+            {displayMode === "newFolder" ? (
               <p className="search-bar-confirm-title">새 폴더</p>
             ) : (
               <>
