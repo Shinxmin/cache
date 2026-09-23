@@ -537,6 +537,15 @@ export default function App() {
     setDeleteConfirmOpen(false);
   };
 
+  // 빈 화면을 눌러 삭제 확인을 취소한 경우에만 쓰인다(다른 도구로
+  // 전환하려고 closeAllToolPanels가 닫을 때는 이 함수를 거치지 않고
+  // setDeleteConfirmOpen을 직접 부르므로 선택이 그대로 유지된다) — 진짜로
+  // "그만두겠다"는 뜻이므로 선택도 함께 해제한다.
+  const cancelDeleteConfirm = () => {
+    setDeleteConfirmOpen(false);
+    setSelectedIds(new Set());
+  };
+
   // 선택된 항목으로 이름을 바꾼다. 단일 선택이면 이름 하나만 편집하는
   // renameOpen 패널을, 여러 개면 이전·다음 화살표로 하나씩 넘기며 편집하는
   // multiRenameOpen 패널을 연다.
@@ -1072,7 +1081,7 @@ export default function App() {
             onSearch={handleSearch}
             confirmOpen={deleteConfirmOpen}
             onConfirmDelete={confirmTrashSelected}
-            onCancelDelete={() => setDeleteConfirmOpen(false)}
+            onCancelDelete={cancelDeleteConfirm}
             newFolderOpen={newFolderOpen}
             newFolderName={newFolderName}
             onChangeNewFolderName={setNewFolderName}
