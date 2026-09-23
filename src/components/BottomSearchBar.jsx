@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronRightIcon, FileIcon } from "./icons";
-import { isOptimizableFile, OPTIMIZE_LEVELS } from "../lib/optimize";
+import { ChevronRightIcon } from "./icons";
+import { isOptimizableFile, OPTIMIZE_LEVELS, OPTIMIZE_LEVEL_LABELS } from "../lib/optimize";
 
 // 하단바 아이콘(단일 solid fill, currentColor)과 같은 방식으로 그린 돋보기 아이콘.
 // 링은 두 원을 evenodd로 겹쳐 만든 진짜 구멍(반투명 색에서도 이중 톤이 생기지
@@ -59,7 +59,7 @@ function BookmarkIcon({ size = 18 }) {
 // 삭제(휴지통)·이름 바꾸기(연필)·태그(#)·최적화(용량 압축) 아이콘이나
 // 헤더 삼점 버튼의 "새 폴더"를 누르면 이 패널이 검색창 위로 확장되며
 // 제목(과 삭제일 땐 안내 문구, 다중 이름 바꾸기·다중 태그일 땐 이전·다음
-// 화살표 + 일괄 처리 버튼, 최적화일 땐 대상 목록 + 품질 스테퍼)을
+// 화살표 + 일괄 처리 버튼, 최적화일 땐 대상 요약 한 줄 + 품질 세그먼트)을
 // 보여준다 — 취소 버튼은 없고, 검색바를 뺀 화면 어디를 눌러도 취소로
 // 닫힌다(.search-bar-scrim). 확인 버튼은 패널이 아니라 검색바 자신의
 // 오른쪽 끝에 뜬다 — 새 폴더·이름 바꾸기·태그일 때는 검색바의
@@ -240,6 +240,12 @@ export default function BottomSearchBar({
   // 일부만 압축되는 애매한 결과 대신 확인 버튼 자체를 막는다.
   const hasUnsupportedOptimize = (optimizeItems ?? []).some((it) => !isOptimizableFile(it.name));
   const canSubmitOptimize = Boolean(optimizeItems?.length) && !hasUnsupportedOptimize && !optimizeBusy;
+  // 목록을 그대로 늘어놓는 대신 삭제 확인 패널처럼 한 줄로 요약한다 —
+  // 첫 번째 파일 이름 뒤에 나머지 개수를 붙인다(하나뿐이면 그 이름만).
+  const optimizeSummary =
+    (optimizeItems?.length ?? 0) <= 1
+      ? (optimizeItems?.[0]?.name ?? "")
+      : `${optimizeItems[0].name} 외 ${optimizeItems.length - 1}개 파일`;
   const submitOptimize = async () => {
     if (!canSubmitOptimize) return;
     setOptimizeBusy(true);
@@ -446,46 +452,35 @@ export default function BottomSearchBar({
             ) : displayMode === "optimize" ? (
               <>
                 <p className="search-bar-confirm-title">최적화</p>
-                <ul className="search-bar-confirm-optimize-list" data-scroll-lock-allow>
-                  {(optimizeItems ?? []).map((item) => {
-                    const supported = isOptimizableFile(item.name);
-                    return (
-                      <li className="rename-list-row" key={item.id}>
-                        <span className="rename-list-icon">
-                          <FileIcon size={16} />
-                        </span>
-                        <span className="rename-list-name">{item.name}</span>
-                        {!supported && <span className="optimize-warn">지원하지 않는 확장자</span>}
-                      </li>
-                    );
-                  })}
-                </ul>
+                <p className="search-bar-confirm-desc">{optimizeSummary}</p>
+                {hasUnsupportedOptimize && (
+                  <p className="search-bar-confirm-optimize-warn">지원하지 않는 확장자를 가진 파일이 있습니다</p>
+                )}
                 <div className="optimize-levels">
                   <p className="optimize-quality-label">품질</p>
-                  <div className="optimize-bar" role="group" aria-label="압축 비율">
-                    {OPTIMIZE_LEVELS.flatMap((pct, i) => [
-                      i > 0 && (
-                        <span key={`line-${pct}`} className={`optimize-line${i <= optimizeLevel ? " filled" : ""}`} />
-                      ),
-                      <button
-                        key={pct}
-                        type="button"
-                        className={`optimize-dot${i <= optimizeLevel ? " filled" : ""}`}
-                        aria-label={`${pct}%`}
-                        aria-pressed={optimizeLevel === i}
-                        onClick={() => onChangeOptimizeLevel?.(i)}
-                      />,
-                    ])}
-                  </div>
-                  <div className="optimize-marks">
+                  <div className="optimize-seg-group" role="group" aria-label="압축 비율">
                     {OPTIMIZE_LEVELS.map((pct, i) => (
                       <button
                         key={pct}
                         type="button"
+                        className={`optimize-seg${optimizeLevel === i ? " active" : ""}`}
+                        aria-label={OPTIMIZE_LEVEL_LABELS[i]}
+                        aria-pressed={optimizeLevel === i}
+                        onClick={() => onChangeOptimizeLevel?.(i)}
+                      >
+                        <span className="optimize-seg-dot" />
+                      </button>
+                    ))}
+                  </div>
+                  <div className="optimize-marks">
+                    {OPTIMIZE_LEVEL_LABELS.map((label, i) => (
+                      <button
+                        key={label}
+                        type="button"
                         className={`optimize-mark${optimizeLevel === i ? " active" : ""}`}
                         onClick={() => onChangeOptimizeLevel?.(i)}
                       >
-                        {pct}%
+                        {label}
                       </button>
                     ))}
                   </div>
