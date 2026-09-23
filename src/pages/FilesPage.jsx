@@ -183,8 +183,9 @@ export default function FilesPage({
         // 썸네일 URL은 만료되는 presigned URL이라 목록을 받은 뒤 한 번에
         // 발급받는다 — 다만 이미 받아 둔 키는 다시 요청하지 않는다. 같은
         // 이미지인데도 매번 새 서명 URL로 바뀌면 <img src>가 달라져 브라우저가
-        // 다시 그리면서 깜빡이기 때문이다.
-        const keys = rows.filter((r) => r.thumb_key).map((r) => r.thumb_key);
+        // 다시 그리면서 깜빡이기 때문이다. 폴더도 폴더 썸네일 애드온으로 지정한
+        // folder_thumb_key가 있으면 파일과 똑같이 이 배치에 끼워 함께 받는다.
+        const keys = rows.filter((r) => r.thumb_key || r.folder_thumb_key).map((r) => r.thumb_key || r.folder_thumb_key);
         const newKeys = keys.filter((k) => !thumbsRef.current[k]);
         if (newKeys.length) {
           const urls = await thumbnailUrls(session.token, newKeys);
@@ -255,7 +256,7 @@ export default function FilesPage({
         <li key={item.id}>
           <GalleryTile
             item={item}
-            thumb={item.thumb_key ? thumbs[item.thumb_key] : null}
+            thumb={item.thumb_key ? thumbs[item.thumb_key] : item.folder_thumb_key ? thumbs[item.folder_thumb_key] : null}
             selected={selectionMode && selectedIds.has(item.id)}
             size={sizeLabel(item, item.info_revealed, folderSizeMap)}
             onTap={() => openOrToggle(item)}

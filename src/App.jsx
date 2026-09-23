@@ -33,6 +33,7 @@ import {
   renameFiles,
   setBlur,
   setFavorite,
+  setFolderThumbnail,
   setInfoRevealed,
   setTag,
   splitPresetParts,
@@ -175,6 +176,21 @@ export default function App() {
   const [multiOptimizeOpen, setMultiOptimizeOpen] = useState(false);
   const [multiOptimizeItems, setMultiOptimizeItems] = useState([]); // [{ id, name, level }]
   const [multiOptimizeIndex, setMultiOptimizeIndex] = useState(0);
+  // 폴더 썸네일 애드온(인물 아이콘). 이동 패널과 같은 폴더 탐색 UI를 재사용해,
+  // 그 안에서 이미지·움짤·동영상 파일 하나를 골라 지금 선택된 폴더의 대표
+  // 썸네일로 지정한다. 이름 바꾸기·태그·최적화와 같은 단일/다중 구조를
+  // 쓰되, 폴더가 아닌 항목은 애초에 대상에서 빠진다(파일에서 실행하면 조용히
+  // 아무 일도 하지 않는다). thumbnailPath/Rows/RowsState는 단일·다중 공통 —
+  // 지금 활성화된 대상 하나에 대해서만 의미 있는 탐색 상태다.
+  const [thumbnailOpen, setThumbnailOpen] = useState(false);
+  const [thumbnailTargetId, setThumbnailTargetId] = useState(null);
+  const [thumbnailSourceId, setThumbnailSourceId] = useState(null);
+  const [multiThumbnailOpen, setMultiThumbnailOpen] = useState(false);
+  const [multiThumbnailItems, setMultiThumbnailItems] = useState([]); // [{ id, name, sourceId }]
+  const [multiThumbnailIndex, setMultiThumbnailIndex] = useState(0);
+  const [thumbnailPath, setThumbnailPath] = useState([]); // [{ id, name }]
+  const [thumbnailRows, setThumbnailRows] = useState([]);
+  const [thumbnailRowsState, setThumbnailRowsState] = useState("loading"); // loading | ready | error
   // 헤더 삼점 버튼의 "새 폴더". 별도 모달 대신 삭제 확인과 같은 방식으로
   // 하단 검색바가 위로 확장되며 그 자리에서 이름을 입력받는다(BottomSearchBar
   // 참고). 둘 다 같은 패널 자리를 쓰므로 동시에 열리지 않는다.
@@ -434,6 +450,47 @@ export default function App() {
     setMultiOptimizeOpen(true);
   }, [selectedIds]);
 
+  // 폴더 썸네일 패널도 같은 방식으로 선택 변화에 맞춰 다시 계산한다 — 다만
+  // 최적화와 반대로 "폴더만"이 대상이라(파일은 애초에 대상이 아니다), 대상이
+  // 하나도 안 남으면(선택은 남아 있어도 전부 파일뿐이면) 패널을 직접 닫는다.
+  useEffect(() => {
+    if (!thumbnailOpen && !multiThumbnailOpen) return;
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && it.is_folder);
+    if (targets.length === 0) {
+      setThumbnailOpen(false);
+      setThumbnailTargetId(null);
+      setThumbnailSourceId(null);
+      setMultiThumbnailOpen(false);
+      setMultiThumbnailItems([]);
+      setMultiThumbnailIndex(0);
+      return;
+    }
+    const sourceFor = (it) => {
+      const fromMulti = multiThumbnailItems.find((x) => x.id === it.id);
+      if (fromMulti) return fromMulti.sourceId;
+      if (thumbnailOpen && thumbnailTargetId === it.id) return thumbnailSourceId;
+      return null;
+    };
+    if (targets.length === 1) {
+      const only = targets[0];
+      const nextSource = sourceFor(only);
+      setMultiThumbnailOpen(false);
+      setMultiThumbnailItems([]);
+      setMultiThumbnailIndex(0);
+      setThumbnailTargetId(only.id);
+      setThumbnailSourceId(nextSource);
+      setThumbnailOpen(true);
+      return;
+    }
+    const nextItems = targets.map((it) => ({ id: it.id, name: it.name, sourceId: sourceFor(it) }));
+    setThumbnailOpen(false);
+    setThumbnailTargetId(null);
+    setThumbnailSourceId(null);
+    setMultiThumbnailItems(nextItems);
+    setMultiThumbnailIndex((i) => Math.min(i, nextItems.length - 1));
+    setMultiThumbnailOpen(true);
+  }, [selectedIds]);
+
   // 이동 패널이 열려 있는 동안, 지금 들어와 있는 폴더(movePath 맨 끝, 없으면
   // 최상위)의 목록을 받아 온다. 경로가 바뀔 때마다 다시 받는다.
   useEffect(() => {
@@ -454,6 +511,28 @@ export default function App() {
       cancelled = true;
     };
   }, [moveOpen, movePath, session?.token]);
+
+  // 폴더 썸네일 패널이 열려 있는 동안, 지금 들어와 있는 폴더(thumbnailPath
+  // 맨 끝, 없으면 최상위)의 목록을 받아 온다 — 이동 패널의 탐색 효과와
+  // 똑같은 구조다.
+  useEffect(() => {
+    if ((!thumbnailOpen && !multiThumbnailOpen) || !session) return;
+    const folderId = thumbnailPath.length ? thumbnailPath[thumbnailPath.length - 1].id : null;
+    let cancelled = false;
+    setThumbnailRowsState("loading");
+    listFiles(session.token, folderId)
+      .then((data) => {
+        if (cancelled) return;
+        setThumbnailRows(data);
+        setThumbnailRowsState("ready");
+      })
+      .catch(() => {
+        if (!cancelled) setThumbnailRowsState("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [thumbnailOpen, multiThumbnailOpen, thumbnailPath, session?.token]);
 
   const handleSearch = (value) => {
     setSearchQuery(value);
@@ -819,6 +898,8 @@ export default function App() {
     cancelMultiTag();
     cancelOptimize();
     cancelMultiOptimize();
+    cancelThumbnail();
+    cancelMultiThumbnail();
   };
 
   // 선택된 항목으로 이동 패널을 연다(항상 최상위에서 시작). 폴더를 옮기면
@@ -861,6 +942,99 @@ export default function App() {
       setRefreshKey((k) => k + 1);
     } catch {
       window.alert("옮기지 못했습니다");
+    }
+  };
+
+  // 폴더 썸네일 애드온: 선택 중 폴더만 골라 연다. 파일만 선택돼 있으면(폴더가
+  // 하나도 없으면) 조용히 아무 일도 하지 않는다 — 이 애드온은 폴더에서만
+  // 동작한다.
+  const handleThumbnailSelected = () => {
+    if (thumbnailOpen || multiThumbnailOpen) {
+      closeAllToolPanels();
+      return;
+    }
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && it.is_folder);
+    if (!targets.length) return;
+    closeAllToolPanels();
+    setThumbnailPath([]);
+    if (targets.length === 1) {
+      setThumbnailTargetId(targets[0].id);
+      setThumbnailSourceId(null);
+      setThumbnailOpen(true);
+      return;
+    }
+    setMultiThumbnailItems(targets.map((it) => ({ id: it.id, name: it.name, sourceId: null })));
+    setMultiThumbnailIndex(0);
+    setMultiThumbnailOpen(true);
+  };
+
+  const cancelThumbnail = () => {
+    setThumbnailOpen(false);
+    setThumbnailTargetId(null);
+    setThumbnailSourceId(null);
+  };
+
+  const thumbnailNavigateInto = (row) => {
+    setThumbnailPath((p) => [...p, { id: row.id, name: row.name }]);
+  };
+
+  const thumbnailNavigateBack = () => {
+    setThumbnailPath((p) => p.slice(0, -1));
+  };
+
+  // 지금 활성화된 대상(단일이면 그 폴더, 다중이면 지금 보고 있는 항목)에
+  // 고른 파일을 지정한다. 폴더·지원하지 않는 파일 행은 애초에 클릭이
+  // 안 되도록 BottomSearchBar 쪽에서 막는다(여기서는 다시 확인하지 않는다).
+  const pickThumbnailSource = (row) => {
+    if (thumbnailOpen) {
+      setThumbnailSourceId(row.id);
+      return;
+    }
+    if (multiThumbnailOpen) {
+      setMultiThumbnailItems((prev) => prev.map((it, i) => (i === multiThumbnailIndex ? { ...it, sourceId: row.id } : it)));
+    }
+  };
+
+  const confirmThumbnail = async () => {
+    if (!thumbnailTargetId || !thumbnailSourceId) return;
+    try {
+      await setFolderThumbnail(session.token, thumbnailTargetId, thumbnailSourceId);
+      cancelThumbnail();
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("썸네일을 지정하지 못했습니다");
+    }
+  };
+
+  const cancelMultiThumbnail = () => {
+    setMultiThumbnailOpen(false);
+    setMultiThumbnailItems([]);
+    setMultiThumbnailIndex(0);
+  };
+
+  // 탐색 위치는 지금 보고 있는 대상 하나 기준이라, 다른 항목으로 넘어가면
+  // 다시 최상위부터 찾아보게 한다.
+  const prevMultiThumbnail = () => {
+    setMultiThumbnailIndex((i) => Math.max(0, i - 1));
+    setThumbnailPath([]);
+  };
+  const nextMultiThumbnail = () => {
+    setMultiThumbnailIndex((i) => Math.min(multiThumbnailItems.length - 1, i + 1));
+    setThumbnailPath([]);
+  };
+
+  // 각자 고른 파일을 순서대로(하나씩 await) 적용한다 — 병렬로 한꺼번에
+  // 쏘지 않는 이유는 "순차적으로 적용됨"이라는 요구를 그대로 따르기 위해서다.
+  const confirmMultiThumbnail = async () => {
+    if (!multiThumbnailItems.length || multiThumbnailItems.some((it) => !it.sourceId)) return;
+    try {
+      for (const it of multiThumbnailItems) {
+        await setFolderThumbnail(session.token, it.id, it.sourceId);
+      }
+      cancelMultiThumbnail();
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("썸네일을 지정하지 못했습니다");
     }
   };
 
@@ -1074,39 +1248,25 @@ export default function App() {
 
   // 팔레트 추출 애드온(v1.1): 한 번에 파일 하나에만 실행된다. 이미지 파일 딱
   // 하나가 선택돼 있을 때만 파일 클릭 시 뜨는 기본 뷰어를 palette 모드로
-  // 열고, 그 외(아무것도 없거나 둘 이상, 또는 폴더·이미지가 아닌 파일)에는
-  // 토스트로 안내한다. 더 이상 별도 모달을 열지 않는다.
+  // 연다. 그 외(아무것도 없거나 둘 이상, 또는 폴더·이미지가 아닌 파일)에는
+  // 조용히 아무 일도 하지 않는다 — 실행 조건이 아닐 때 안내 토스트를
+  // 띄우던 예전 방식 대신, 다른 도구들처럼 그냥 무응답으로 통일했다.
   const handlePaletteSelected = () => {
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
-    if (targets.length !== 1 || targets[0].is_folder) {
-      showToast("한 개의 파일만 선택할 수 있습니다");
-      return;
-    }
+    if (targets.length !== 1 || targets[0].is_folder) return;
     const target = targets[0];
-    if (!looksLikeImageFile(target)) {
-      showToast("이미지 파일만 선택할 수 있습니다");
-      return;
-    }
+    if (!looksLikeImageFile(target)) return;
     setPaletteViewerItem(target);
   };
 
   // 스플릿 비교 애드온: 정확히 두 개의 이미지(움짤 포함)가 선택돼 있어야
   // 하며, 먼저 선택한 순서가 곧 A(왼쪽)·B(오른쪽)가 된다 — selectedIds는
-  // Set이라 삽입 순서를 그대로 보존한다. 그 외에는 토스트로 안내한다.
-  // 이미지가 아닌 걸(동영상 등) 하나만 선택하고 눌러도 "두 개를 고르라"는
-  // 개수 안내부터 뜨면 뭐가 문제인지 알기 어려우므로, 개수와 무관하게
-  // 종류부터 먼저 확인한다 — 이미지가 아닌 게 섞여 있으면 몇 개를 골랐든
-  // 항상 "이미지 파일만" 쪽을 먼저 보여준다.
+  // Set이라 삽입 순서를 그대로 보존한다. 조건이 아니면(개수·종류 어느
+  // 쪽이든) 조용히 아무 일도 하지 않는다.
   const handleSplitCompareSelected = () => {
     const targets = [...selectedIds].map((id) => visibleItems.find((it) => it.id === id)).filter(Boolean);
-    if (targets.some((it) => it.is_folder || !looksLikeImageFile(it))) {
-      showToast("이미지 파일만 선택할 수 있습니다");
-      return;
-    }
-    if (targets.length !== 2) {
-      showToast("두 개의 파일만 선택할 수 있습니다");
-      return;
-    }
+    if (targets.some((it) => it.is_folder || !looksLikeImageFile(it))) return;
+    if (targets.length !== 2) return;
     setSplitCompareTargets(targets);
   };
 
@@ -1144,18 +1304,12 @@ export default function App() {
 
   // 하이라이트 클립 애드온: 동영상 딱 하나가 선택돼 있을 때만 그 영상을
   // clipMode 뷰어로 연다. 구간 기록은 영상 하나를 기준으로만 뜻이 있으므로
-  // 여러 개나 동영상이 아닌 파일은 토스트로 안내한다.
+  // 여러 개나 동영상이 아닌 파일이면 조용히 아무 일도 하지 않는다.
   const handleClipSelected = () => {
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
-    if (targets.length !== 1 || targets[0].is_folder) {
-      showToast("한 개의 파일만 선택할 수 있습니다");
-      return;
-    }
+    if (targets.length !== 1 || targets[0].is_folder) return;
     const target = targets[0];
-    if (!looksLikeVideoFile(target)) {
-      showToast("동영상 파일만 선택할 수 있습니다");
-      return;
-    }
+    if (!looksLikeVideoFile(target)) return;
     setClipViewerItem(target);
   };
 
@@ -1199,6 +1353,8 @@ export default function App() {
         return handleSplitCompareSelected();
       case "clip":
         return handleClipSelected();
+      case "thumbnail":
+        return handleThumbnailSelected();
       default:
         return undefined;
     }
@@ -1433,6 +1589,26 @@ export default function App() {
             onMoveBack={moveNavigateBack}
             onConfirmMove={confirmMove}
             onCancelMove={cancelMove}
+            thumbnailOpen={thumbnailOpen}
+            thumbnailTargetName={visibleItems.find((it) => it.id === thumbnailTargetId)?.name ?? ""}
+            thumbnailSourceId={thumbnailSourceId}
+            thumbnailPath={thumbnailPath}
+            thumbnailRows={thumbnailRows}
+            thumbnailRowsState={thumbnailRowsState}
+            thumbnailExcludedIds={new Set([thumbnailTargetId])}
+            onThumbnailInto={thumbnailNavigateInto}
+            onThumbnailBack={thumbnailNavigateBack}
+            onPickThumbnailSource={pickThumbnailSource}
+            onConfirmThumbnail={confirmThumbnail}
+            onCancelThumbnail={cancelThumbnail}
+            multiThumbnailOpen={multiThumbnailOpen}
+            multiThumbnailItems={multiThumbnailItems}
+            multiThumbnailIndex={multiThumbnailIndex}
+            multiThumbnailExcludedIds={new Set(multiThumbnailItems.map((it) => it.id))}
+            onPrevMultiThumbnail={prevMultiThumbnail}
+            onNextMultiThumbnail={nextMultiThumbnail}
+            onConfirmMultiThumbnail={confirmMultiThumbnail}
+            onCancelMultiThumbnail={cancelMultiThumbnail}
           />
         </>
       )}
