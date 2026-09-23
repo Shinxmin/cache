@@ -790,6 +790,14 @@ main.page {
   flex-direction: column;
   /* 1열(기본 도구)과 2열(애드온) 사이 줄 간격 */
   gap: 10px;
+  /* 1열 아이콘 사이 간격. 남는 폭(체크박스+기본 도구 10개, 총 11개 사이
+     10칸)을 고르게 나눈 값이라 화면이 넓어질수록 유동적으로 벌어지지만,
+     이 값(20px)을 넘어서는 더 벌어지지 않는다 — 그 이상 남는 폭은 그냥
+     오른쪽에 빈 채로 남는다(가로로 아주 넓은 화면에서 아이콘 사이가
+     비정상적으로 멀어지는 것을 막기 위함). 240px = 체크박스(20px) +
+     기본 도구 10개(22px×10). 2열(애드온)도 이 값을 그대로 물려 써서
+     1열과 항상 같은 간격을 유지한다. */
+  --toolkit-gap: min(20px, calc((100% - 240px) / 10));
   border-top: 1px solid var(--glass-border);
   border-bottom: 1px solid var(--glass-border);
   transition: transform 0.45s var(--spring);
@@ -798,33 +806,45 @@ main.page {
 /* 두 줄(1열=전체 선택 체크박스+기본 도구, 2열=애드온) 다 부모(.studio-toolkit,
    flex-direction:column)의 flex 자식이라 같은 폭(align-items의 기본값인
    stretch)으로 늘어난다 — 그래서 애드온이 몇 개든 2열의 가로 폭은 항상
-   1열과 정확히 같다. */
+   1열과 정확히 같고, --toolkit-gap의 퍼센트 계산 기준(container width)도
+   두 줄이 똑같다. */
 .studio-toolkit-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--toolkit-gap);
   min-height: 22px;
   color: var(--text-2);
 }
-/* 1열: 체크박스+기본 도구 10개, 총 11개로 항상 고정된 개수다.
-   justify-content: space-between이라 화면 폭이 얼마든 첫 항목(체크박스)은
-   왼쪽 끝, 마지막 아이콘은 오른쪽 끝에 붙고 그 사이 여백이 유동적으로
-   늘어난다 — 375px대 아이폰이든 태블릿이든 겹치지 않으면서 화면을 꽉
-   채운다. gap은 그 여백의 "최소값" 역할만 한다(화면이 아주 좁아도 이 값
-   밑으로는 좁혀지지 않는다). 개수가 고정이라 줄바꿈 없이 한 줄에 다
-   들어가도록 계산돼 있다(가장 좁은 iPhone 폭 375px 기준으로 확인). */
+/* 1열: 체크박스+기본 도구 10개, 총 11개로 항상 고정된 개수다. flex-start +
+   위 --toolkit-gap 조합이 예전의 space-between과 똑같은 결과를 내면서도
+   (첫 항목인 체크박스는 항상 왼쪽 끝에 붙고, 남는 폭을 각 칸에 고르게
+   나눠 유동적으로 벌어진다) 위쪽 캡을 추가로 강제한다. 개수가 고정이라
+   줄바꿈 없이 한 줄에 다 들어가도록 계산돼 있다(가장 좁은 iPhone 폭
+   375px 기준으로 확인). */
 .studio-toolkit-row-base {
   flex-wrap: nowrap;
-  justify-content: space-between;
+  justify-content: flex-start;
 }
-/* 2열(애드온)은 1열과 달리 왼쪽부터 순서대로 붙여 정렬한다(space-between
-   으로 늘려 흩어 놓지 않는다) — 몇 개 안 되는 애드온이 폭 전체에 듬성듬성
-   퍼져 보이지 않고 한 덩어리로 모여 보이게 하기 위해서다. 혹시 아주 많이
-   설치해도 겹치지 않도록 줄바꿈은 허용한다. */
+/* 2열(애드온)도 1열과 똑같은 간격(--toolkit-gap)을 쓰고, 왼쪽부터 순서대로
+   붙여 정렬한다(늘려 흩어 놓지 않는다) — 몇 개 안 되는 애드온이 폭 전체에
+   듬성듬성 퍼져 보이지 않고 한 덩어리로 모여 보이게 하기 위해서다. 혹시
+   아주 많이 설치해도 겹치지 않도록 줄바꿈은 허용한다. 맨 앞의 투명
+   스페이서(.studio-toolkit-row-addons-spacer, 체크박스와 같은 20px)가
+   첫 애드온 아이콘을 1열의 첫 "아이콘"(체크박스 바로 다음 자리)과 정확히
+   같은 x좌표에서 시작하게 만든다 — padding-left로 밀지 않는 이유는,
+   padding을 주면 이 요소의 콘텐츠 박스 폭이 줄어들어 --toolkit-gap의
+   퍼센트 계산 기준이 1열과 달라지기 때문이다(간격이 1열과 어긋나 버린다).
+   플렉스 아이템(스페이서)으로 자리를 차지해야 두 줄의 콘텐츠 박스 폭이
+   똑같이 유지된다. */
 .studio-toolkit-row-addons {
   flex-wrap: wrap;
   justify-content: flex-start;
   row-gap: 10px;
+}
+.studio-toolkit-row-addons-spacer {
+  flex: none;
+  width: 20px;
+  align-self: stretch;
 }
 .studio-toolkit-select {
   display: flex;
