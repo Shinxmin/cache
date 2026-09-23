@@ -10,7 +10,6 @@ import TagsPage from "./pages/TagsPage";
 import FileViewer from "./pages/FileViewer";
 import SplitCompareViewer from "./pages/SplitCompareViewer";
 import MoveModal from "./components/MoveModal";
-import TagModal from "./components/TagModal";
 import OptimizeModal from "./components/OptimizeModal";
 import Toast from "./components/Toast";
 import AddonStorePage from "./pages/AddonStorePage";
@@ -145,8 +144,16 @@ export default function App() {
   const [multiRenameIndex, setMultiRenameIndex] = useState(0);
   // 스튜디오 툴킷의 이동(→) 아이콘으로 연 이동 모달. null이면 닫힌 상태.
   const [moveTargets, setMoveTargets] = useState(null);
-  // 스튜디오 툴킷의 태그(#) 아이콘으로 연 태그 모달. null이면 닫힌 상태.
-  const [tagTargets, setTagTargets] = useState(null);
+  // 스튜디오 툴킷의 태그(#) 아이콘. 이름 바꾸기와 똑같은 구조로 단일/다중
+  // 패널로 나뉜다 — 다만 태그는 비어 있어도 되고(전부 지우는 것도 유효한
+  // 값) 값이 같아도 되므로 확인 버튼이 빈 값이라고 비활성화되지 않고,
+  // 다중 패널에도 "번호 붙이기"는 없다(전체 지우기·전체 적용만 있다).
+  const [tagOpen, setTagOpen] = useState(false);
+  const [tagValue, setTagValue] = useState("");
+  const [tagTargetId, setTagTargetId] = useState(null);
+  const [multiTagOpen, setMultiTagOpen] = useState(false);
+  const [multiTagItems, setMultiTagItems] = useState([]);
+  const [multiTagIndex, setMultiTagIndex] = useState(0);
   // 스튜디오 툴킷의 용량 압축(원그래프) 아이콘으로 연 최적화 모달. null이면
   // 닫힌 상태. 폴더나 이미지가 아닌 파일은 대상에서 빠진다(캔버스로 다시
   // 인코딩할 수 있는 게 이미지뿐이라서).
@@ -280,6 +287,24 @@ export default function App() {
     }
   }, [selectedIds, multiRenameOpen]);
 
+  // 단일/다중 태그 패널도 마찬가지.
+  useEffect(() => {
+    if (!tagOpen) return;
+    if (selectedIds.size === 0) {
+      setTagOpen(false);
+      setTagValue("");
+      setTagTargetId(null);
+    }
+  }, [selectedIds, tagOpen]);
+  useEffect(() => {
+    if (!multiTagOpen) return;
+    if (selectedIds.size === 0) {
+      setMultiTagOpen(false);
+      setMultiTagItems([]);
+      setMultiTagIndex(0);
+    }
+  }, [selectedIds, multiTagOpen]);
+
   const handleSearch = (value) => {
     setSearchQuery(value);
   };
@@ -349,9 +374,7 @@ export default function App() {
   // 열려 있었다면 먼저 닫는다.
   const handleNewFolder = () => {
     if (showFavorites) setShowFavorites(false);
-    setDeleteConfirmOpen(false);
-    cancelRename();
-    cancelMultiRename();
+    closeAllToolPanels();
     setNewFolderName("");
     setNewFolderOpen(true);
   };
@@ -520,16 +543,13 @@ export default function App() {
   const handleEditSelected = () => {
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
     if (!targets.length) return;
-    setDeleteConfirmOpen(false);
-    setNewFolderOpen(false);
+    closeAllToolPanels();
     if (targets.length === 1) {
-      cancelMultiRename();
       setRenameTargetId(targets[0].id);
       setRenameName(targets[0].name);
       setRenameOpen(true);
       return;
     }
-    cancelRename();
     setMultiRenameItems(targets.map((it) => ({ id: it.id, name: it.name })));
     setMultiRenameIndex(0);
     setMultiRenameOpen(true);
@@ -609,6 +629,18 @@ export default function App() {
     }
   };
 
+  // 삭제 확인·새 폴더·단일/다중 이름 바꾸기·단일/다중 태그는 전부 검색바
+  // 위 같은 패널 자리를 공유한다 — 그중 하나를 열기 전에 항상 이걸 먼저
+  // 불러 나머지를 전부 닫는다.
+  const closeAllToolPanels = () => {
+    setDeleteConfirmOpen(false);
+    setNewFolderOpen(false);
+    cancelRename();
+    cancelMultiRename();
+    cancelTag();
+    cancelMultiTag();
+  };
+
   // 선택된 항목으로 이동 모달을 연다. 폴더를 옮기면 하위 항목은 parent_id로
   // 딸려 있어 서버에서 자동으로 함께 따라온다.
   const handleMoveSelected = () => {
@@ -628,30 +660,82 @@ export default function App() {
     }
   };
 
-  // 선택된 항목으로 태그 모달을 연다.
+  // 선택된 항목으로 태그를 단다. 단일 선택이면 이름 하나만 편집하는
+  // tagOpen 패널을, 여러 개면 이전·다음 화살표로 하나씩 넘기며 편집하는
+  // multiTagOpen 패널을 연다(이름 바꾸기와 똑같은 구조).
   const handleTagSelected = () => {
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
     if (!targets.length) return;
-    setTagTargets(targets);
+    closeAllToolPanels();
+    if (targets.length === 1) {
+      setTagTargetId(targets[0].id);
+      setTagValue(targets[0].tag || "");
+      setTagOpen(true);
+      return;
+    }
+    setMultiTagItems(targets.map((it) => ({ id: it.id, tag: it.tag || "" })));
+    setMultiTagIndex(0);
+    setMultiTagOpen(true);
   };
 
-  // payload는 공유 입력 모드에선 문자열 하나(전부 같은 태그), 항목별 모드에선
-  // [{id, tag}] 배열이다. 후자는 같은 태그 값끼리 묶어 그룹별로 한 번씩만
-  // set_tag를 호출한다(서버 RPC 자체는 여러 id에 같은 태그 하나만 받는다).
-  const handleTagSubmit = async (payload) => {
+  const cancelTag = () => {
+    setTagOpen(false);
+    setTagValue("");
+    setTagTargetId(null);
+  };
+
+  // 태그는 이름과 달리 비어 있어도 유효한 값이라(태그를 지우는 것) 값이
+  // 없다고 확인을 막지 않는다.
+  const confirmTag = async () => {
+    if (!tagTargetId) return;
     try {
-      if (Array.isArray(payload)) {
-        const groups = new Map();
-        for (const { id, tag } of payload) {
-          const key = tag || "";
-          if (!groups.has(key)) groups.set(key, []);
-          groups.get(key).push(id);
-        }
-        await Promise.all([...groups.entries()].map(([tag, ids]) => setTag(session.token, ids, tag)));
-      } else {
-        await setTag(session.token, tagTargets.map((it) => it.id), payload);
+      await setTag(session.token, [tagTargetId], tagValue.trim());
+      cancelTag();
+      setSelectedIds(new Set());
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("태그를 저장하지 못했습니다");
+    }
+  };
+
+  const cancelMultiTag = () => {
+    setMultiTagOpen(false);
+    setMultiTagItems([]);
+    setMultiTagIndex(0);
+  };
+
+  const changeMultiTagValue = (value) => {
+    setMultiTagItems((prev) => prev.map((it, i) => (i === multiTagIndex ? { ...it, tag: value } : it)));
+  };
+
+  const prevMultiTag = () => setMultiTagIndex((i) => Math.max(0, i - 1));
+  const nextMultiTag = () => setMultiTagIndex((i) => Math.min(multiTagItems.length - 1, i + 1));
+
+  const applyAllMultiTag = () => {
+    setMultiTagItems((prev) => {
+      const first = prev[0]?.tag ?? "";
+      return prev.map((it) => ({ ...it, tag: first }));
+    });
+  };
+
+  const clearAllMultiTag = () => {
+    setMultiTagItems((prev) => prev.map((it) => ({ ...it, tag: "" })));
+  };
+
+  // 태그는 이름과 달리 여러 항목이 같은 값이어도 되므로(오히려 그게 태그의
+  // 쓰임이다) 중복 방지 번호를 붙이지 않는다. 같은 태그 값끼리 묶어 그룹별로
+  // 한 번씩만 호출한다(서버 RPC가 여러 id에 같은 태그 하나만 받는다).
+  const confirmMultiTag = async () => {
+    try {
+      const groups = new Map();
+      for (const { id, tag } of multiTagItems) {
+        const key = tag || "";
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(id);
       }
-      setTagTargets(null);
+      await Promise.all([...groups.entries()].map(([tag, ids]) => setTag(session.token, ids, tag)));
+      cancelMultiTag();
+      setSelectedIds(new Set());
       setRefreshKey((k) => k + 1);
     } catch {
       window.alert("태그를 저장하지 못했습니다");
@@ -795,9 +879,7 @@ export default function App() {
         return handleToggleInfo();
       case "trash":
         if (selectedIds.size > 0) {
-          setNewFolderOpen(false);
-          cancelRename();
-          cancelMultiRename();
+          closeAllToolPanels();
           setDeleteConfirmOpen(true);
         }
         return;
@@ -1012,6 +1094,21 @@ export default function App() {
             onAttachNumbersMultiRename={attachNumbersMultiRename}
             onConfirmMultiRename={confirmMultiRename}
             onCancelMultiRename={cancelMultiRename}
+            tagOpen={tagOpen}
+            tagValue={tagValue}
+            onChangeTagValue={setTagValue}
+            onConfirmTag={confirmTag}
+            onCancelTag={cancelTag}
+            multiTagOpen={multiTagOpen}
+            multiTagItems={multiTagItems}
+            multiTagIndex={multiTagIndex}
+            onChangeMultiTagValue={changeMultiTagValue}
+            onPrevMultiTag={prevMultiTag}
+            onNextMultiTag={nextMultiTag}
+            onClearAllMultiTag={clearAllMultiTag}
+            onApplyAllMultiTag={applyAllMultiTag}
+            onConfirmMultiTag={confirmMultiTag}
+            onCancelMultiTag={cancelMultiTag}
           />
         </>
       )}
@@ -1031,7 +1128,6 @@ export default function App() {
           onSubmit={handleMoveSubmit}
         />
       )}
-      {tagTargets && <TagModal items={tagTargets} onClose={() => setTagTargets(null)} onSubmit={handleTagSubmit} />}
       {optimizeTargets && (
         <OptimizeModal items={optimizeTargets} onClose={() => setOptimizeTargets(null)} onSubmit={handleOptimizeSubmit} />
       )}
