@@ -7,16 +7,16 @@ import { StarIcon } from "../components/toolkitIcons";
 import Spinner from "../components/Spinner";
 import useLongPress from "../hooks/useLongPress";
 
-// 즐겨찾기된 항목은 제목 바로 오른쪽에 작은 별로 표시한다.
+// 즐겨찾기된 항목은 이름 맨 앞(제일 왼쪽)에 작은 별로 표시한다.
 function NameWithStar({ name, favorite, className }) {
   return (
     <span className={className}>
-      {name}
       {favorite && (
         <span className="drive-fav-star" aria-label="즐겨찾기">
           <StarIcon size={11} />
         </span>
       )}
+      {name}
     </span>
   );
 }

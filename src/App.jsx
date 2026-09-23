@@ -43,6 +43,7 @@ import { isSearchActive } from "./lib/search";
 import { loadTheme, saveTheme } from "./lib/theme";
 import { BASE_TOOL_IDS, installedAddonIds, normalizeLayout } from "./lib/toolkit";
 import { isOptimizableFile, OPTIMIZE_LEVELS } from "./lib/optimize";
+import { withPreservedExtension } from "./lib/filename";
 import { dedupeStrings } from "./lib/dedupe";
 
 const TOAST_MS = 2000;
@@ -347,7 +348,7 @@ export default function App() {
       setRenameOpen(true);
       return;
     }
-    const nextItems = targets.map((it) => ({ id: it.id, name: valueFor(it) }));
+    const nextItems = targets.map((it) => ({ id: it.id, name: valueFor(it), originalName: it.name, mime: it.mime }));
     setRenameOpen(false);
     setRenameName("");
     setRenameTargetId(null);
@@ -378,7 +379,7 @@ export default function App() {
       setTagOpen(true);
       return;
     }
-    const nextItems = targets.map((it) => ({ id: it.id, tag: valueFor(it) }));
+    const nextItems = targets.map((it) => ({ id: it.id, tag: valueFor(it), name: it.name, mime: it.mime }));
     setTagOpen(false);
     setTagValue("");
     setTagTargetId(null);
@@ -420,7 +421,7 @@ export default function App() {
       setOptimizeOpen(true);
       return;
     }
-    const nextItems = targets.map((it) => ({ id: it.id, name: it.name, level: levelFor(it) }));
+    const nextItems = targets.map((it) => ({ id: it.id, name: it.name, mime: it.mime, level: levelFor(it) }));
     setOptimizeOpen(false);
     setOptimizeTargetId(null);
     setMultiOptimizeItems(nextItems);
@@ -713,7 +714,7 @@ export default function App() {
       setRenameOpen(true);
       return;
     }
-    setMultiRenameItems(targets.map((it) => ({ id: it.id, name: it.name })));
+    setMultiRenameItems(targets.map((it) => ({ id: it.id, name: it.name, originalName: it.name, mime: it.mime })));
     setMultiRenameIndex(0);
     setMultiRenameOpen(true);
   };
@@ -724,9 +725,12 @@ export default function App() {
     setRenameTargetId(null);
   };
 
-  // 하단 검색바가 확장돼 보여주는 이름 바꾸기 패널의 "확인" 버튼.
+  // 하단 검색바가 확장돼 보여주는 이름 바꾸기 패널의 "확인" 버튼. 새 이름에
+  // 확장자를 안 썼으면(예: "3.jpg"를 "5"로만 바꿔도) 원래 확장자를 자동으로
+  // 붙인다(withPreservedExtension).
   const confirmRename = async () => {
-    const name = renameName.trim();
+    const original = visibleItems.find((it) => it.id === renameTargetId);
+    const name = withPreservedExtension(renameName, original);
     if (!name || !renameTargetId) return;
     try {
       await renameFiles(session.token, [{ id: renameTargetId, name }]);
@@ -778,11 +782,16 @@ export default function App() {
     });
   };
 
-  // 확인을 누르는 순간 겹치는 이름에만 (1),(2),(3)…을 붙인다.
+  // 확인을 누르는 순간 겹치는 이름에만 (1),(2),(3)…을 붙인다. 각 항목마다
+  // 확장자를 안 썼으면 그 항목 원래 확장자를 먼저 자동으로 붙인 다음 겹침을
+  // 검사한다.
   const confirmMultiRename = async () => {
     if (!multiRenameItems.every((it) => it.name.trim().length > 0)) return;
     try {
-      const finalNames = dedupeStrings(multiRenameItems.map((it) => it.name.trim()));
+      const withExt = multiRenameItems.map((it) =>
+        withPreservedExtension(it.name, { name: it.originalName, mime: it.mime })
+      );
+      const finalNames = dedupeStrings(withExt);
       await renameFiles(session.token, multiRenameItems.map((it, i) => ({ id: it.id, name: finalNames[i] })));
       cancelMultiRename();
       setSelectedIds(new Set());
@@ -870,7 +879,7 @@ export default function App() {
       setTagOpen(true);
       return;
     }
-    setMultiTagItems(targets.map((it) => ({ id: it.id, tag: it.tag || "" })));
+    setMultiTagItems(targets.map((it) => ({ id: it.id, tag: it.tag || "", name: it.name, mime: it.mime })));
     setMultiTagIndex(0);
     setMultiTagOpen(true);
   };
@@ -965,7 +974,7 @@ export default function App() {
       setOptimizeOpen(true);
       return;
     }
-    setMultiOptimizeItems(targets.map((it) => ({ id: it.id, name: it.name, level: 1 })));
+    setMultiOptimizeItems(targets.map((it) => ({ id: it.id, name: it.name, mime: it.mime, level: 1 })));
     setMultiOptimizeIndex(0);
     setMultiOptimizeOpen(true);
   };

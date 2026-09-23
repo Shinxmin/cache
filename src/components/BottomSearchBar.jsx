@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BackIcon, ChevronRightIcon, FileIcon } from "./icons";
 import Spinner from "./Spinner";
 import { isOptimizableFile, OPTIMIZE_LEVELS, OPTIMIZE_LEVEL_LABELS } from "../lib/optimize";
+import { displayName } from "../lib/filename";
 import useSegmentDrag from "../hooks/useSegmentDrag";
 
 // 하단바 아이콘(단일 solid fill, currentColor)과 같은 방식으로 그린 돋보기 아이콘.
@@ -414,14 +415,13 @@ export default function BottomSearchBar({
                   ? onCancelMove
                   : onCancelDelete;
 
-  // 스크림이 화면 전체를 덮으면 그 밑에 있는 스튜디오 툴킷 아이콘 줄도
-  // 가려져서, 아이콘을 누르는 것도(패널 전환) 좌우로 드래그해 넘치는
-  // 아이콘을 보는 것도 안 됐다. 그래서 스크림을 통짜 사각형 하나 대신
-  // 툴킷 아이콘 줄의 실제 위치만큼 구멍을 낸 네 조각(위·아래·왼쪽·오른쪽)
-  // 으로 나눠 그린다 — 그 구멍 안에서는 스크림이 아예 존재하지 않으므로
-  // 클릭도 드래그 스크롤도 진짜 그 아이콘 줄(.studio-toolkit-icons)에 직접
-  // 닿는다. 나머지 자리(뒤로가기·더보기·설정·전체 선택 체크박스 포함)는
-  // 그대로 스크림이 덮어 취소로 처리된다.
+  // 스크림이 화면 전체를 덮으면 그 밑에 있는 스튜디오 툴킷 바(전체 선택
+  // 체크박스 + 기본 도구 1열 + 애드온 2열)도 가려져서 아이콘을 눌러 패널을
+  // 전환하는 것도 안 됐다. 그래서 스크림을 통짜 사각형 하나 대신 툴킷 바
+  // 전체의 실제 위치만큼 구멍을 낸 네 조각(위·아래·왼쪽·오른쪽)으로 나눠
+  // 그린다 — 그 구멍 안에서는 스크림이 아예 존재하지 않으므로 클릭이 진짜
+  // 그 바(.studio-toolkit)에 직접 닿는다. 나머지 자리(뒤로가기·더보기·
+  // 설정 버튼)는 그대로 스크림이 덮어 취소로 처리된다.
   const [scrimHole, setScrimHole] = useState(null);
   useEffect(() => {
     if (!panelOpen) {
@@ -429,7 +429,7 @@ export default function BottomSearchBar({
       return;
     }
     const measure = () => {
-      const el = document.querySelector(".studio-toolkit-icons");
+      const el = document.querySelector(".studio-toolkit");
       setScrimHole(el ? el.getBoundingClientRect() : null);
     };
     measure();
@@ -540,6 +540,15 @@ export default function BottomSearchBar({
                     </button>
                   </div>
                 </div>
+                {/* 다중 선택일 때만: 지금 이전·다음으로 넘겨 보고 있는 항목이
+                    실제로 어떤 파일인지 알 수 있도록 원래 이름을 본문 텍스트로
+                    보여준다(입력창은 편집 중인 값이라 원래 이름과 다를 수 있다). */}
+                <p className="search-bar-confirm-filename">
+                  {displayName({
+                    name: isMultiRename ? multiItems?.[multiIndex]?.originalName : multiItems?.[multiIndex]?.name,
+                    mime: multiItems?.[multiIndex]?.mime,
+                  })}
+                </p>
                 <div className="search-bar-confirm-bulk-actions">
                   <button
                     type="button"
@@ -592,6 +601,7 @@ export default function BottomSearchBar({
                         </button>
                       </div>
                     </div>
+                    <p className="search-bar-confirm-filename">{displayName(multiOptimizeCurrent)}</p>
                     <div className="search-bar-confirm-bulk-actions">
                       {/* 지금 보고 있는 항목의 품질을 자신과 뒤에 남은 항목에만
                           적용한다 — 앞서 따로 골라 둔 항목은 그대로 둔다. */}
