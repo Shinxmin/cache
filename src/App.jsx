@@ -10,7 +10,6 @@ import TagsPage from "./pages/TagsPage";
 import FileViewer from "./pages/FileViewer";
 import SplitCompareViewer from "./pages/SplitCompareViewer";
 import MoveModal from "./components/MoveModal";
-import OptimizeModal from "./components/OptimizeModal";
 import Toast from "./components/Toast";
 import AddonStorePage from "./pages/AddonStorePage";
 import {
@@ -43,7 +42,7 @@ import { isImage, isVideo } from "./lib/thumbnail";
 import { isSearchActive } from "./lib/search";
 import { loadTheme, saveTheme } from "./lib/theme";
 import { BASE_TOOL_IDS, installedAddonIds, normalizeLayout } from "./lib/toolkit";
-import { isOptimizableFile } from "./lib/optimize";
+import { isOptimizableFile, OPTIMIZE_LEVELS } from "./lib/optimize";
 import { dedupeStrings } from "./lib/dedupe";
 
 const TOAST_MS = 2000;
@@ -154,10 +153,14 @@ export default function App() {
   const [multiTagOpen, setMultiTagOpen] = useState(false);
   const [multiTagItems, setMultiTagItems] = useState([]);
   const [multiTagIndex, setMultiTagIndex] = useState(0);
-  // 스튜디오 툴킷의 용량 압축(원그래프) 아이콘으로 연 최적화 모달. null이면
-  // 닫힌 상태. 폴더나 이미지가 아닌 파일은 대상에서 빠진다(캔버스로 다시
-  // 인코딩할 수 있는 게 이미지뿐이라서).
-  const [optimizeTargets, setOptimizeTargets] = useState(null);
+  // 스튜디오 툴킷의 용량 압축(원그래프) 아이콘. 삭제 확인과 같은 방식으로
+  // 하단 검색바가 확장되는 패널을 쓴다. 폴더나 이미지가 아닌 파일은
+  // 대상에서 빠진다(캔버스로 다시 인코딩할 수 있는 게 이미지뿐이라서).
+  // 품질(압축 비율)은 개별 항목이 아니라 선택 전체에 공통으로 적용되므로
+  // 이름 바꾸기·태그처럼 단일/다중으로 나뉘지 않는다.
+  const [optimizeOpen, setOptimizeOpen] = useState(false);
+  const [optimizeItems, setOptimizeItems] = useState([]);
+  const [optimizeLevel, setOptimizeLevel] = useState(1);
   // 헤더 삼점 버튼의 "새 폴더". 별도 모달 대신 삭제 확인과 같은 방식으로
   // 하단 검색바가 위로 확장되며 그 자리에서 이름을 입력받는다(BottomSearchBar
   // 참고). 둘 다 같은 패널 자리를 쓰므로 동시에 열리지 않는다.
@@ -304,6 +307,14 @@ export default function App() {
       setMultiTagIndex(0);
     }
   }, [selectedIds, multiTagOpen]);
+  // 최적화 패널도 마찬가지.
+  useEffect(() => {
+    if (!optimizeOpen) return;
+    if (selectedIds.size === 0) {
+      setOptimizeOpen(false);
+      setOptimizeItems([]);
+    }
+  }, [selectedIds, optimizeOpen]);
 
   const handleSearch = (value) => {
     setSearchQuery(value);
@@ -638,9 +649,9 @@ export default function App() {
     }
   };
 
-  // 삭제 확인·새 폴더·단일/다중 이름 바꾸기·단일/다중 태그는 전부 검색바
-  // 위 같은 패널 자리를 공유한다 — 그중 하나를 열기 전에 항상 이걸 먼저
-  // 불러 나머지를 전부 닫는다.
+  // 삭제 확인·새 폴더·단일/다중 이름 바꾸기·단일/다중 태그·최적화는 전부
+  // 검색바 위 같은 패널 자리를 공유한다 — 그중 하나를 열기 전에 항상 이걸
+  // 먼저 불러 나머지를 전부 닫는다.
   const closeAllToolPanels = () => {
     setDeleteConfirmOpen(false);
     setNewFolderOpen(false);
@@ -648,6 +659,7 @@ export default function App() {
     cancelMultiRename();
     cancelTag();
     cancelMultiTag();
+    cancelOptimize();
   };
 
   // 선택된 항목으로 이동 모달을 연다. 폴더를 옮기면 하위 항목은 parent_id로
@@ -751,22 +763,34 @@ export default function App() {
     }
   };
 
-  // 선택된 항목 중 폴더만 뺀 파일들로 최적화 모달을 연다(폴더는 자체 용량이
+  // 선택된 항목 중 폴더만 뺀 파일들로 최적화 패널을 연다(폴더는 자체 용량이
   // 없어 대상이 아니다). 실제로 캔버스가 읽지 못하는 형식(이미지가 아니거나
   // 브라우저가 못 여는 포맷)은 압축 단계에서 그 파일만 건너뛴다 — mime
   // 문자열만으로 미리 걸러내면, 사진 형식에 따라 브라우저가 mime을 빈
-  // 문자열로 주는 경우(예: 일부 환경의 HEIC) 정작 열리는 이미지까지 모달 자체가
+  // 문자열로 주는 경우(예: 일부 환경의 HEIC) 정작 열리는 이미지까지 패널 자체가
   // 뜨지 않는 문제가 있었다.
   const handleOptimizeSelected = () => {
     const targets = visibleItems.filter((it) => selectedIds.has(it.id) && !it.is_folder);
     if (!targets.length) return;
-    setOptimizeTargets(targets);
+    closeAllToolPanels();
+    setOptimizeItems(targets);
+    setOptimizeLevel(1);
+    setOptimizeOpen(true);
   };
 
-  const handleOptimizeSubmit = async (ratioPercent) => {
+  const cancelOptimize = () => {
+    setOptimizeOpen(false);
+    setOptimizeItems([]);
+  };
+
+  // 최적화는 이름·태그와 달리 항목마다 다른 값을 받지 않고, 고른 품질
+  // 하나를 선택 전체에 그대로 적용한다. 확인 뒤에도 선택은 풀지 않는다
+  // (원래 모달 때부터 그랬다 — 압축 결과를 바로 이어서 볼 수 있게).
+  const confirmOptimize = async () => {
+    if (!optimizeItems.length || optimizeItems.some((it) => !isOptimizableFile(it.name))) return;
     try {
-      await optimizeFiles({ token: session.token, items: optimizeTargets, ratioPercent });
-      setOptimizeTargets(null);
+      await optimizeFiles({ token: session.token, items: optimizeItems, ratioPercent: OPTIMIZE_LEVELS[optimizeLevel] });
+      cancelOptimize();
       setRefreshKey((k) => k + 1);
     } catch {
       window.alert("용량을 줄이지 못했습니다");
@@ -1118,6 +1142,12 @@ export default function App() {
             onApplyAllMultiTag={applyAllMultiTag}
             onConfirmMultiTag={confirmMultiTag}
             onCancelMultiTag={cancelMultiTag}
+            optimizeOpen={optimizeOpen}
+            optimizeItems={optimizeItems}
+            optimizeLevel={optimizeLevel}
+            onChangeOptimizeLevel={setOptimizeLevel}
+            onConfirmOptimize={confirmOptimize}
+            onCancelOptimize={cancelOptimize}
           />
         </>
       )}
@@ -1136,9 +1166,6 @@ export default function App() {
           onClose={() => setMoveTargets(null)}
           onSubmit={handleMoveSubmit}
         />
-      )}
-      {optimizeTargets && (
-        <OptimizeModal items={optimizeTargets} onClose={() => setOptimizeTargets(null)} onSubmit={handleOptimizeSubmit} />
       )}
       {paletteViewerItem && (
         <FileViewer

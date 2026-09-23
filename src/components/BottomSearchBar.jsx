@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronRightIcon } from "./icons";
+import { ChevronRightIcon, FileIcon } from "./icons";
+import { isOptimizableFile, OPTIMIZE_LEVELS } from "../lib/optimize";
 
 // 하단바 아이콘(단일 solid fill, currentColor)과 같은 방식으로 그린 돋보기 아이콘.
 // 링은 두 원을 evenodd로 겹쳐 만든 진짜 구멍(반투명 색에서도 이중 톤이 생기지
@@ -55,17 +56,20 @@ function BookmarkIcon({ size = 18 }) {
 // 배경·블러·그림자·둥근 모서리는 전부 바깥 껍데기 하나(.search-dock)가
 // 맡는다 — 확인 문구(.search-bar-confirm-panel)와 검색창(.search-bar)은 그
 // 안의 내용일 뿐, 각자 따로 유리 재질을 두르지 않는다. 스튜디오 툴킷의
-// 삭제(휴지통)·이름 바꾸기(연필)·태그(#) 아이콘이나 헤더 삼점 버튼의 "새
-// 폴더"를 누르면 이 패널이 검색창 위로 확장되며 제목(과 삭제일 땐 안내
-// 문구, 다중 이름 바꾸기·다중 태그일 땐 이전·다음 화살표 + 일괄 처리
-// 버튼)을 보여준다 — 취소 버튼은 없고, 검색바를 뺀 화면 어디를 눌러도
-// 취소로 닫힌다(.search-bar-scrim). 확인 버튼은 패널이 아니라 검색바
-// 자신의 오른쪽 끝에 뜬다 — 새 폴더·이름 바꾸기·태그일 때는 검색바의
+// 삭제(휴지통)·이름 바꾸기(연필)·태그(#)·최적화(용량 압축) 아이콘이나
+// 헤더 삼점 버튼의 "새 폴더"를 누르면 이 패널이 검색창 위로 확장되며
+// 제목(과 삭제일 땐 안내 문구, 다중 이름 바꾸기·다중 태그일 땐 이전·다음
+// 화살표 + 일괄 처리 버튼, 최적화일 땐 대상 목록 + 품질 스테퍼)을
+// 보여준다 — 취소 버튼은 없고, 검색바를 뺀 화면 어디를 눌러도 취소로
+// 닫힌다(.search-bar-scrim). 확인 버튼은 패널이 아니라 검색바 자신의
+// 오른쪽 끝에 뜬다 — 새 폴더·이름 바꾸기·태그일 때는 검색바의
 // 돋보기·플레이스홀더도 아이콘(연필 또는 #)·"여기에 입력하세요"로 바뀌어
 // 그 입력창에 직접 값을 타이핑한다(별도 입력창을 새로 만들지 않는다).
 // 다중 이름 바꾸기·다중 태그도 같은 입력창 하나를 화살표로 넘기며
-// 재사용한다 — 그래서 몇 개를 고르든 패널 크기는 항상 같다. 여섯 개 상태
-// 중 둘 이상 동시에 열릴 수는 없으므로(App.jsx가 하나를 열 때 나머지를
+// 재사용한다 — 그래서 몇 개를 고르든 패널 크기는 항상 같다. 최적화는
+// 항목마다 값을 받는 게 아니라 고른 품질 하나를 선택 전체에 적용하므로
+// (삭제 확인처럼) 검색바 입력창을 전혀 쓰지 않는다. 일곱 개 상태 중
+// 둘 이상 동시에 열릴 수는 없으므로(App.jsx가 하나를 열 때 나머지를
 // 닫는다) 패널·검색바 내용물은 그때그때 하나만 그린다.
 export default function BottomSearchBar({
   searchQuery,
@@ -109,6 +113,12 @@ export default function BottomSearchBar({
   onApplyAllMultiTag,
   onConfirmMultiTag,
   onCancelMultiTag,
+  optimizeOpen,
+  optimizeItems,
+  optimizeLevel,
+  onChangeOptimizeLevel,
+  onConfirmOptimize,
+  onCancelOptimize,
 }) {
   const [busy, setBusy] = useState(false);
   const [folderBusy, setFolderBusy] = useState(false);
@@ -116,7 +126,9 @@ export default function BottomSearchBar({
   const [multiRenameBusy, setMultiRenameBusy] = useState(false);
   const [tagBusy, setTagBusy] = useState(false);
   const [multiTagBusy, setMultiTagBusy] = useState(false);
-  const panelOpen = confirmOpen || newFolderOpen || renameOpen || multiRenameOpen || tagOpen || multiTagOpen;
+  const [optimizeBusy, setOptimizeBusy] = useState(false);
+  const panelOpen =
+    confirmOpen || newFolderOpen || renameOpen || multiRenameOpen || tagOpen || multiTagOpen || optimizeOpen;
   // 검색바가 검색 대신 값을 입력받는 상태(새 폴더·이름 바꾸기·다중 이름
   // 바꾸기·태그·다중 태그 다섯 다 공통).
   const textEntryOpen = newFolderOpen || renameOpen || multiRenameOpen || tagOpen || multiTagOpen;
@@ -138,7 +150,9 @@ export default function BottomSearchBar({
             ? "tag"
             : multiTagOpen
               ? "multiTag"
-              : "confirm";
+              : optimizeOpen
+                ? "optimize"
+                : "confirm";
   const [displayMode, setDisplayMode] = useState(resolveMode);
   useEffect(() => {
     if (newFolderOpen) setDisplayMode("newFolder");
@@ -146,8 +160,9 @@ export default function BottomSearchBar({
     else if (multiRenameOpen) setDisplayMode("multiRename");
     else if (tagOpen) setDisplayMode("tag");
     else if (multiTagOpen) setDisplayMode("multiTag");
+    else if (optimizeOpen) setDisplayMode("optimize");
     else if (confirmOpen) setDisplayMode("confirm");
-  }, [newFolderOpen, renameOpen, multiRenameOpen, tagOpen, multiTagOpen, confirmOpen]);
+  }, [newFolderOpen, renameOpen, multiRenameOpen, tagOpen, multiTagOpen, optimizeOpen, confirmOpen]);
 
   const confirm = async () => {
     if (busy) return;
@@ -219,6 +234,22 @@ export default function BottomSearchBar({
     }
   };
 
+  // 최적화는 이름·태그처럼 항목마다 값을 받지 않고, 고른 품질 하나를
+  // 선택 전체에 적용한다 — 그래서 검색바 입력창을 전혀 쓰지 않는다(삭제
+  // 확인과 같은 부류). 캔버스로 못 읽는 확장자가 하나라도 섞여 있으면
+  // 일부만 압축되는 애매한 결과 대신 확인 버튼 자체를 막는다.
+  const hasUnsupportedOptimize = (optimizeItems ?? []).some((it) => !isOptimizableFile(it.name));
+  const canSubmitOptimize = Boolean(optimizeItems?.length) && !hasUnsupportedOptimize && !optimizeBusy;
+  const submitOptimize = async () => {
+    if (!canSubmitOptimize) return;
+    setOptimizeBusy(true);
+    try {
+      await onConfirmOptimize();
+    } finally {
+      setOptimizeBusy(false);
+    }
+  };
+
   // 다중 이름 바꾸기·다중 태그는 검색바 입력창 하나를 이전·다음 화살표로
   // 넘기며 재사용한다 — 아래는 둘 중 열려 있는 쪽 기준의 공통 값들.
   const isMultiRename = Boolean(multiRenameOpen);
@@ -277,7 +308,9 @@ export default function BottomSearchBar({
           ? onCancelTag
           : multiTagOpen
             ? onCancelMultiTag
-            : onCancelDelete;
+            : optimizeOpen
+              ? onCancelOptimize
+              : onCancelDelete;
 
   // 스크림이 화면 전체를 덮으면 그 밑에 있는 스튜디오 툴킷 아이콘 줄도
   // 가려져서, 아이콘을 누르는 것도(패널 전환) 좌우로 드래그해 넘치는
@@ -350,7 +383,10 @@ export default function BottomSearchBar({
         ))}
       <div className="bottom-search-wrap">
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
-          <div className={`search-bar-confirm-panel${panelOpen ? " is-open" : ""}`} aria-hidden={!panelOpen}>
+          <div
+            className={`search-bar-confirm-panel${displayMode === "optimize" ? " mode-optimize" : ""}${panelOpen ? " is-open" : ""}`}
+            aria-hidden={!panelOpen}
+          >
             {displayMode === "newFolder" ? (
               <p className="search-bar-confirm-title">새 폴더</p>
             ) : displayMode === "rename" ? (
@@ -407,6 +443,54 @@ export default function BottomSearchBar({
                   )}
                 </div>
               </>
+            ) : displayMode === "optimize" ? (
+              <>
+                <p className="search-bar-confirm-title">최적화</p>
+                <ul className="search-bar-confirm-optimize-list" data-scroll-lock-allow>
+                  {(optimizeItems ?? []).map((item) => {
+                    const supported = isOptimizableFile(item.name);
+                    return (
+                      <li className="rename-list-row" key={item.id}>
+                        <span className="rename-list-icon">
+                          <FileIcon size={16} />
+                        </span>
+                        <span className="rename-list-name">{item.name}</span>
+                        {!supported && <span className="optimize-warn">지원하지 않는 확장자</span>}
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="optimize-levels">
+                  <p className="optimize-quality-label">품질</p>
+                  <div className="optimize-bar" role="group" aria-label="압축 비율">
+                    {OPTIMIZE_LEVELS.flatMap((pct, i) => [
+                      i > 0 && (
+                        <span key={`line-${pct}`} className={`optimize-line${i <= optimizeLevel ? " filled" : ""}`} />
+                      ),
+                      <button
+                        key={pct}
+                        type="button"
+                        className={`optimize-dot${i <= optimizeLevel ? " filled" : ""}`}
+                        aria-label={`${pct}%`}
+                        aria-pressed={optimizeLevel === i}
+                        onClick={() => onChangeOptimizeLevel?.(i)}
+                      />,
+                    ])}
+                  </div>
+                  <div className="optimize-marks">
+                    {OPTIMIZE_LEVELS.map((pct, i) => (
+                      <button
+                        key={pct}
+                        type="button"
+                        className={`optimize-mark${optimizeLevel === i ? " active" : ""}`}
+                        onClick={() => onChangeOptimizeLevel?.(i)}
+                      >
+                        {pct}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
             ) : (
               <>
                 <p className="search-bar-confirm-title">선택한 파일을 삭제하시겠습니까?</p>
@@ -446,8 +530,8 @@ export default function BottomSearchBar({
               <button
                 type="button"
                 className="search-bar-inline-confirm"
-                onClick={confirmOpen ? confirm : submitText}
-                disabled={confirmOpen ? busy : !canSubmitText}
+                onClick={confirmOpen ? confirm : optimizeOpen ? submitOptimize : submitText}
+                disabled={confirmOpen ? busy : optimizeOpen ? !canSubmitOptimize : !canSubmitText}
               >
                 확인
               </button>

@@ -15,3 +15,8 @@ function extensionOf(name) {
 export function isOptimizableFile(name) {
   return SUPPORTED_EXTENSIONS.has(extensionOf(name));
 }
+
+// 최적화 패널의 압축 비율 3단계(25/50/75%). App.jsx(확인 시 실제 비율로
+// 변환)와 BottomSearchBar.jsx(점·눈금 렌더링) 둘 다 같은 값을 써야 해서
+// 여기 하나로 둔다.
+export const OPTIMIZE_LEVELS = [25, 50, 75];
