@@ -97,6 +97,45 @@ button {
   touch-action: manipulation;
 }
 
+/* ── 스플래시 화면: 첫 접속(새로고침 포함)마다 세션 확인·파일 목록의 첫
+   로딩이 끝날 때까지 화면 전체를 덮는다. 로그인 화면과 같은 원칙으로,
+   기기·앱의 실제 테마와 무관하게 항상 라이트 배경으로 고정한다 — 그래서
+   var(--bg)/var(--text) 대신 라이트 테마 색을 직접 못 박아 둔다(다크
+   모드로 열어도 이 화면만은 라이트로 보이게). ── */
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f7;
+}
+.splash-logo {
+  display: block;
+  width: 88px;
+  height: 88px;
+  border-radius: 20px;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+  animation: splash-breathe 1.6s ease-in-out infinite;
+}
+@keyframes splash-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash-logo {
+    animation: none;
+  }
+}
+
 /* ── 페이지 ──
    상단 제목 높이만큼 padding-top을 줘서 본문이 고정 헤더 밑에서 시작하게 한다.
    --header-h는 PageHeader가 실측해서 넣고, 값이 아직 없을 때의 폴백은 노치 없는
@@ -793,41 +832,6 @@ main.page {
   flex: none;
   cursor: pointer;
   color: var(--text-2);
-}
-/* 스튜디오 툴킷의 사용자 정렬(설정)·애드온 스토어의 "삭제" 버튼이 공유해
-   쓰는 아이콘 줄(.studio-toolkit-icons)은 그대로 남겨 둔다 — 실제 툴바는
-   이제 이 클래스를 쓰지 않지만(위 .studio-toolkit-row로 대체), 사용자
-   정렬 화면(ToolkitArranger)은 전체 도구를 한 그룹으로 두고 꾹 눌러
-   드래그로 순서를 바꿔야 해서 계속 이 구조를 쓴다. */
-.studio-toolkit-icons {
-  flex: 1 1 0%;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 10px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  color: var(--text-2);
-  cursor: grab;
-  touch-action: pan-x;
-  /* 화면 폭이 아이콘 폭의 정확한 배수가 아니면 스크롤이 어중간한 자리에서
-     멈춰 마지막 아이콘이 반쯤 잘려 보일 수 있다. 아이콘마다
-     scroll-snap-align: start를 줘서, 스크롤(드래그·스와이프 모두)이 끝나면
-     항상 어느 한 아이콘의 왼쪽 끝이 보이는 영역 시작에 딱 맞게 자리를
-     잡는다 — 잘릴 것 같은 아이콘은 자연히 다음 자리로 넘어간다.
-     proximity는 데스크탑 크로미움에서는 잘 맞지만, iOS 사파리는 관성
-     스크롤이 끝나는 지점이 스냅 지점과 조금만 멀어도 그냥 넘어가 버려
-     사실상 안 걸리는 경우가 많다(WebKit 알려진 동작) — mandatory로 바꿔
-     항상 걸리게 한다. */
-  scroll-snap-type: x mandatory;
-}
-.studio-toolkit-icons:active {
-  cursor: grabbing;
-}
-.studio-toolkit-icons::-webkit-scrollbar {
-  display: none;
 }
 /* 아이콘마다 실제 그려지는 폭이 달라도(예: 원형 그래프 vs 화살표) 버튼
    자체는 같은 폭(22px)을 차지하도록 고정해, grid 칸 가운데에서 간격이
@@ -2292,14 +2296,14 @@ main.page {
   border-bottom: 0;
   transition: none;
 }
-/* 사용자 정렬 화면은 실제 툴바와 달리 가로 슬라이드로 넘기지 않는다 —
-   드래그로 순서를 바꾸는 도중에 화면을 옆으로 밀어야 한다면 오히려
-   불편하므로, 여기서는 넘치는 아이콘이 다음 줄로 자연스레 내려가 전부
+/* 사용자 정렬 화면은 실제 툴바(1열은 화면 폭 전체로 유동적인 여백)와 달리
+   두 줄(기본 도구·애드온) 다 왼쪽부터 촘촘하게 모아 그린다 — 드래그로
+   순서를 바꾸는 동안 아이콘 사이 간격이 넓으면 자리가 어디쯤인지 가늠하기
+   어렵고, 넘치면 옆으로 슬라이드하는 대신 다음 줄로 자연스레 내려가 전부
    한 화면에 보이게 한다. */
-.toolkit-arranger-bar .studio-toolkit-icons {
+.toolkit-arranger-bar .studio-toolkit-row {
   flex-wrap: wrap;
   justify-content: flex-start;
-  overflow: visible;
   row-gap: 10px;
 }
 .toolkit-arranger-item {

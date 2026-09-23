@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import PageHeader from "./components/PageHeader";
 import BottomSearchBar from "./components/BottomSearchBar";
+import SplashScreen from "./components/SplashScreen";
 import AuthPage from "./pages/AuthPage";
 import SettingsPage from "./pages/SettingsPage";
 import FilesPage from "./pages/FilesPage";
@@ -76,6 +77,10 @@ export default function App() {
   // (로그인 화면이 잠깐 번쩍이는 것을 막기 위함).
   const [session, setSession] = useState(null);
   const [checkingSession, setCheckingSession] = useState(true);
+  // 세션 확인이 끝난 뒤에도, 파일 탭의 첫 목록을 실제로 다 받아 오기
+  // 전까지는 스플래시 화면을 계속 띄운다(아래 FilesPage의 onReady가 켠다).
+  // 새로고침할 때마다 이 상태도 처음(false)으로 돌아가므로 매번 다시 뜬다.
+  const [initialFilesReady, setInitialFilesReady] = useState(false);
 
   // 로그인 화면(AuthPage)은 기기·앱 설정과 무관하게 항상 라이트모드로
   // 고정한다 — session이 없는 동안은 아래에서 AuthPage만 그려지므로, 그
@@ -1215,7 +1220,7 @@ export default function App() {
     );
   };
 
-  if (checkingSession) return null;
+  if (checkingSession) return <SplashScreen />;
 
   if (!session) {
     return (
@@ -1301,6 +1306,10 @@ export default function App() {
 
   return (
     <>
+      {/* 이 화면(파일/즐겨찾기 탭)은 이미 마운트되어 뒤에서 첫 목록을 불러오는
+          중이다 — 스플래시는 그 위를 덮고 있다가 로딩이 끝나면(initialFilesReady)
+          사라지며 이미 준비된 화면으로 자연스럽게 전환된다. */}
+      {!initialFilesReady && <SplashScreen />}
       {showTransfers ? (
         <TransfersPage transfers={transfers} onBack={() => setShowTransfers(false)} onClearAll={() => setTransfers([])} />
       ) : (
@@ -1353,6 +1362,7 @@ export default function App() {
               onToggleSelect={toggleSelect}
               onLongPressItem={toggleSelect}
               onItemsChange={setVisibleItems}
+              onReady={() => setInitialFilesReady(true)}
             />
           </main>
           <BottomSearchBar

@@ -129,6 +129,7 @@ export default function FilesPage({
   onToggleSelect,
   onLongPressItem,
   onItemsChange,
+  onReady,
 }) {
   const [items, setItems] = useState([]);
   const [thumbs, setThumbs] = useState({});
@@ -177,6 +178,7 @@ export default function FilesPage({
         setItems(rows);
         setState("ready");
         onItemsChange?.(rows);
+        onReady?.();
 
         // 썸네일 URL은 만료되는 presigned URL이라 목록을 받은 뒤 한 번에
         // 발급받는다 — 다만 이미 받아 둔 키는 다시 요청하지 않는다. 같은
@@ -189,7 +191,10 @@ export default function FilesPage({
           if (!cancelled) setThumbs((prev) => ({ ...prev, ...urls }));
         }
       } catch {
-        if (!cancelled) setState("error");
+        if (!cancelled) {
+          setState("error");
+          onReady?.();
+        }
       }
     })();
 

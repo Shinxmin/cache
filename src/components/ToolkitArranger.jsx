@@ -9,11 +9,15 @@ const MOVE_SLOP = 8;
 // 설정 → "스튜디오 툴킷 사용자 정렬"을 펼치면 나오는 편집용 툴바. 실제
 // 툴킷과 똑같은 모양(.studio-toolkit)이지만 전체 선택 체크박스·글자 없이
 // 아이콘들만 있고, 그 아이콘들을 꾹 눌러(250ms) 끌어 순서를 바꿀 수 있다.
-// 끄는 동안 다른 아이콘 위를 지나가면 그 자리로 실시간으로 옮겨지고, 손을
-// 떼면 부모에 새 순서를 알린다(서버 저장·기록은 부모 몫). 툴바 밑에는
-// 약간의 여백을 두고 휴지통 아이콘이 있는 보이지 않는 드롭 존이 있어,
-// 애드온 아이콘을 거기로 끌어다 놓으면 그 애드온이 삭제된다(기본 도구는
-// 휴지통에 놓아도 원래 자리로 돌아간다).
+// 실제 툴바가 기본 도구(1열)와 애드온(2열)을 항상 따로 그리는 것과 똑같이
+// 이 편집용 미리보기도 두 줄로 나눠 그린다 — 그래서 드래그도 같은 줄
+// 안에서만 순서를 바꾼다(기본 도구를 애드온 줄로, 혹은 그 반대로 끌어도
+// 실제 화면에는 어차피 반영되지 않으므로, 애초에 다른 줄 위로는 자리를
+// 내주지 않는다). 끄는 동안 같은 줄의 다른 아이콘 위를 지나가면 그 자리로
+// 실시간으로 옮겨지고, 손을 떼면 부모에 새 순서를 알린다(서버 저장·기록은
+// 부모 몫). 툴바 밑에는 약간의 여백을 두고 휴지통 아이콘이 있는 보이지
+// 않는 드롭 존이 있어, 애드온 아이콘을 거기로 끌어다 놓으면 그 애드온이
+// 삭제된다(기본 도구는 휴지통에 놓아도 원래 자리로 돌아간다).
 export default function ToolkitArranger({ layout, viewMode, onChange }) {
   const [order, setOrder] = useState(layout);
   const [drag, setDrag] = useState(null); // { id, overTrash }
@@ -71,7 +75,10 @@ export default function ToolkitArranger({ layout, viewMode, onChange }) {
     const overTrash = Boolean(hit?.trash) && isAddonId(p.id);
     p.overTrash = overTrash;
     setDrag((d) => (d && d.overTrash !== overTrash ? { ...d, overTrash } : d));
-    if (!hit?.trash && hit?.id && hit.id !== p.id) {
+    // 다른 줄(기본 도구 ↔ 애드온)의 아이콘 위로는 자리를 내주지 않는다 —
+    // 실제 툴바는 어차피 두 그룹을 항상 따로 그리므로 그 자리바꿈은 아무
+    // 의미가 없다.
+    if (!hit?.trash && hit?.id && hit.id !== p.id && isAddonId(hit.id) === isAddonId(p.id)) {
       const cur = orderRef.current;
       const from = cur.indexOf(p.id);
       const to = cur.indexOf(hit.id);
@@ -139,29 +146,34 @@ export default function ToolkitArranger({ layout, viewMode, onChange }) {
     };
   }, [Boolean(drag)]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const baseIds = order.filter((id) => TOOL_META[id] && !isAddonId(id));
+  const addonIds = order.filter((id) => TOOL_META[id] && isAddonId(id));
+
+  const renderItem = (id) => {
+    const meta = TOOL_META[id];
+    const dragging = drag?.id === id;
+    return (
+      <button
+        key={id}
+        type="button"
+        data-tool-id={id}
+        className={`studio-toolkit-icon-btn toolkit-arranger-item${dragging ? " is-dragging" : ""}`}
+        aria-label={`${toolLabel(id, ctx)} (꾹 눌러 옮기기)`}
+        onPointerDown={onPointerDown(id)}
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        {meta.icon(ctx)}
+      </button>
+    );
+  };
+
   return (
     <div className="toolkit-arranger">
       <div className="studio-toolkit toolkit-arranger-bar">
-        <div className="studio-toolkit-icons">
-          {order.map((id) => {
-            const meta = TOOL_META[id];
-            if (!meta) return null;
-            const dragging = drag?.id === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                data-tool-id={id}
-                className={`studio-toolkit-icon-btn toolkit-arranger-item${dragging ? " is-dragging" : ""}`}
-                aria-label={`${toolLabel(id, ctx)} (꾹 눌러 옮기기)`}
-                onPointerDown={onPointerDown(id)}
-                onContextMenu={(e) => e.preventDefault()}
-              >
-                {meta.icon(ctx)}
-              </button>
-            );
-          })}
-        </div>
+        <div className="studio-toolkit-row studio-toolkit-row-base">{baseIds.map(renderItem)}</div>
+        {addonIds.length > 0 && (
+          <div className="studio-toolkit-row studio-toolkit-row-addons">{addonIds.map(renderItem)}</div>
+        )}
       </div>
       <div
         className={`toolkit-arranger-trash${drag ? " is-visible" : ""}${drag?.overTrash ? " is-over" : ""}`}
