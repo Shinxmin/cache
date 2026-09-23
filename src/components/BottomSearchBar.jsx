@@ -279,21 +279,28 @@ export default function BottomSearchBar({
             ? onCancelMultiTag
             : onCancelDelete;
 
-  // 스크림이 화면 전체를 덮고 있어도, 그 밑에 실제로 스튜디오 툴킷
-  // 아이콘(예: 삭제 확인 패널이 열린 채로 이름 바꾸기를 누르는 경우)이
-  // 있다면 취소 대신 그 아이콘을 대신 눌러준다 — 그러면 App.jsx가 이미
-  // 갖고 있는 "한쪽을 열 때 나머지를 닫는" 로직이 그대로 이어받아 자연
-  // 스럽게 패널을 전환한다. 헤더의 다른 버튼(뒤로가기·더보기·설정)은
-  // 그대로 취소로 처리된다 — 대상은 툴킷 도구 아이콘뿐이다.
-  const handleScrimClick = (e) => {
-    const stack = document.elementsFromPoint(e.clientX, e.clientY);
-    const toolkitBtn = stack.find((el) => el.classList?.contains("studio-toolkit-icon-btn"));
-    if (toolkitBtn) {
-      toolkitBtn.click();
+  // 스크림이 화면 전체를 덮으면 그 밑에 있는 스튜디오 툴킷 아이콘 줄도
+  // 가려져서, 아이콘을 누르는 것도(패널 전환) 좌우로 드래그해 넘치는
+  // 아이콘을 보는 것도 안 됐다. 그래서 스크림을 통짜 사각형 하나 대신
+  // 툴킷 아이콘 줄의 실제 위치만큼 구멍을 낸 네 조각(위·아래·왼쪽·오른쪽)
+  // 으로 나눠 그린다 — 그 구멍 안에서는 스크림이 아예 존재하지 않으므로
+  // 클릭도 드래그 스크롤도 진짜 그 아이콘 줄(.studio-toolkit-icons)에 직접
+  // 닿는다. 나머지 자리(뒤로가기·더보기·설정·전체 선택 체크박스 포함)는
+  // 그대로 스크림이 덮어 취소로 처리된다.
+  const [scrimHole, setScrimHole] = useState(null);
+  useEffect(() => {
+    if (!panelOpen) {
+      setScrimHole(null);
       return;
     }
-    onCancelScrim?.();
-  };
+    const measure = () => {
+      const el = document.querySelector(".studio-toolkit-icons");
+      setScrimHole(el ? el.getBoundingClientRect() : null);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [panelOpen]);
 
   // 검색바 아이콘은 삭제 패널만 빼고, 그 패널을 연 툴킷 아이콘과 똑같은
   // 모양으로 바뀐다(새 폴더→폴더, 이름 바꾸기→연필, 태그→북마크).
@@ -310,7 +317,37 @@ export default function BottomSearchBar({
 
   return (
     <>
-      {panelOpen && <div className="search-bar-scrim" onClick={handleScrimClick} />}
+      {panelOpen &&
+        (scrimHole ? (
+          <>
+            {scrimHole.top > 0 && (
+              <div
+                className="search-bar-scrim"
+                style={{ top: 0, left: 0, right: 0, bottom: "auto", height: scrimHole.top }}
+                onClick={onCancelScrim}
+              />
+            )}
+            <div
+              className="search-bar-scrim"
+              style={{ top: scrimHole.bottom, left: 0, right: 0, bottom: 0, height: "auto" }}
+              onClick={onCancelScrim}
+            />
+            {scrimHole.left > 0 && (
+              <div
+                className="search-bar-scrim"
+                style={{ top: scrimHole.top, left: 0, right: "auto", bottom: "auto", width: scrimHole.left, height: scrimHole.bottom - scrimHole.top }}
+                onClick={onCancelScrim}
+              />
+            )}
+            <div
+              className="search-bar-scrim"
+              style={{ top: scrimHole.top, left: scrimHole.right, right: 0, bottom: "auto", height: scrimHole.bottom - scrimHole.top }}
+              onClick={onCancelScrim}
+            />
+          </>
+        ) : (
+          <div className="search-bar-scrim" onClick={onCancelScrim} />
+        ))}
       <div className="bottom-search-wrap">
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
           <div className={`search-bar-confirm-panel${panelOpen ? " is-open" : ""}`} aria-hidden={!panelOpen}>
