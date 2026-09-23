@@ -244,8 +244,9 @@ export default function App() {
     setSelectedIds(new Set());
   }, [parentId, searchQuery, showFavorites]);
 
-  // 삭제 확인 패널이 열려 있는 동안 선택이 실시간으로 바뀔 수 있다(다른
-  // 항목을 추가로 선택하거나 해제). 대상이 전부 선택 해제되면 패널을 닫는다.
+  // 삭제 확인 패널이 열려 있는 동안 검색바에 검색어를 입력하면(패널이 열려
+  // 있어도 검색바 자체는 계속 눌린다) 폴더/검색 결과가 바뀌어 선택이 통째로
+  // 풀릴 수 있다 — 그러면 확인 대상 자체가 없어진 것이므로 패널도 닫는다.
   useEffect(() => {
     if (!deleteConfirmOpen) return;
     if (selectedIds.size === 0) setDeleteConfirmOpen(false);
