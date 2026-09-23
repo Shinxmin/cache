@@ -17,6 +17,9 @@ export function isOptimizableFile(name) {
 }
 
 // 최적화 패널의 압축 비율 3단계(25/50/75%). App.jsx(확인 시 실제 비율로
-// 변환)와 BottomSearchBar.jsx(점·눈금 렌더링) 둘 다 같은 값을 써야 해서
+// 변환)와 BottomSearchBar.jsx(세그먼트 렌더링) 둘 다 같은 값을 써야 해서
 // 여기 하나로 둔다.
 export const OPTIMIZE_LEVELS = [25, 50, 75];
+
+// 위 배열과 같은 순서의 화면 표시용 라벨(퍼센트 대신 체감 강도로 보여준다).
+export const OPTIMIZE_LEVEL_LABELS = ["낮음", "중간", "높음"];
