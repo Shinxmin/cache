@@ -430,6 +430,9 @@ main.page {
   flex: none;
   height: 32px;
   padding: 0 14px;
+  /* 검색바 오른쪽 패딩 안쪽에 딱 붙지 않고 조금 더 오른쪽으로 붙게 살짝
+     당긴다. */
+  margin-right: -6px;
   border-radius: 999px;
   background: rgba(128, 128, 128, 0.2);
   color: var(--text);
@@ -470,7 +473,8 @@ main.page {
   max-height: 130px;
   opacity: 1;
   pointer-events: auto;
-  padding: 28px 16px;
+  /* 제목·본문을 조금 위로 올리도록 위쪽 여백만 줄인다(아래쪽은 그대로). */
+  padding: 18px 16px 28px;
 }
 .search-bar-confirm-title {
   margin: 0;
