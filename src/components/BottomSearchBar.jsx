@@ -266,11 +266,27 @@ export default function BottomSearchBar({
             ? onCancelMultiTag
             : onCancelDelete;
 
+  // 스크림이 화면 전체를 덮고 있어도, 그 밑에 실제로 스튜디오 툴킷
+  // 아이콘(예: 삭제 확인 패널이 열린 채로 이름 바꾸기를 누르는 경우)이
+  // 있다면 취소 대신 그 아이콘을 대신 눌러준다 — 그러면 App.jsx가 이미
+  // 갖고 있는 "한쪽을 열 때 나머지를 닫는" 로직이 그대로 이어받아 자연
+  // 스럽게 패널을 전환한다. 헤더의 다른 버튼(뒤로가기·더보기·설정)은
+  // 그대로 취소로 처리된다 — 대상은 툴킷 도구 아이콘뿐이다.
+  const handleScrimClick = (e) => {
+    const stack = document.elementsFromPoint(e.clientX, e.clientY);
+    const toolkitBtn = stack.find((el) => el.classList?.contains("studio-toolkit-icon-btn"));
+    if (toolkitBtn) {
+      toolkitBtn.click();
+      return;
+    }
+    onCancelScrim?.();
+  };
+
   const showHashIcon = tagOpen || multiTagOpen;
 
   return (
     <>
-      {panelOpen && <div className="search-bar-scrim" onClick={onCancelScrim} />}
+      {panelOpen && <div className="search-bar-scrim" onClick={handleScrimClick} />}
       <div className="bottom-search-wrap">
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
           <div className={`search-bar-confirm-panel${panelOpen ? " is-open" : ""}`} aria-hidden={!panelOpen}>
