@@ -149,12 +149,6 @@ export default function BottomSearchBar({
     else if (confirmOpen) setDisplayMode("confirm");
   }, [newFolderOpen, renameOpen, multiRenameOpen, tagOpen, multiTagOpen, confirmOpen]);
 
-  // 검색바 입력창은 늘 같은 DOM 노드라 textEntryOpen이 켜질 때 autoFocus는
-  // 다시 발동하지 않는다(마운트 시 한 번뿐) — 그래서 열릴 때마다 직접 포커스한다.
-  useEffect(() => {
-    if (textEntryOpen) inputRef.current?.focus();
-  }, [textEntryOpen]);
-
   const confirm = async () => {
     if (busy) return;
     setBusy(true);
@@ -385,6 +379,9 @@ export default function BottomSearchBar({
           </div>
           <div className="search-bar">
             <span className="search-bar-icon">{searchBarIcon}</span>
+            {/* 패널이 열릴 때 여기에 자동으로 포커스를 주지 않는다 — 모바일에서
+                패널이 뜨자마자 키패드까지 같이 올라오는 걸 막기 위해서다. 직접
+                입력창을 탭해야 키패드가 뜬다. */}
             <input
               ref={inputRef}
               className="search-bar-input"
