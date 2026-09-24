@@ -578,6 +578,12 @@ main.page {
   /* 제목·본문을 조금 위로 올리도록 위쪽 여백만 줄인다(아래쪽은 그대로). */
   padding: 18px 16px 28px;
 }
+/* 일괄 적용·일괄 지우기 같은 부가 기능 줄이 있는 패널은 그 줄 자체가
+   바로 밑 검색바와의 여백을 갖게 되므로, 패널 고정 아래쪽 여백은 줄여
+   부가 기능 줄이 검색바 확인 버튼 바로 위에 맞닿도록 한다. */
+.search-bar-confirm-panel.has-extras.is-open {
+  padding-bottom: 0;
+}
 /* 최적화 패널(단일·다중)은 항목에 따라 경고 문구·다중 전용 이전/다음
    화살표·파일명·전체 적용 버튼이 오갈 수 있어, 다른 패널처럼 세로 가운데
    정렬 대신 위에서부터 순서대로 쌓는다. 품질을 실제로 고르는 세그먼트는
@@ -1639,15 +1645,19 @@ main.page {
   color: var(--danger);
   text-align: left;
 }
-/* 일괄 적용·일괄 지우기·번호 붙이기 같은 부가 기능. 패널 맨 아래, 바로
-   밑에 있는 검색바의 확인 버튼 쪽으로 붙도록 오른쪽 정렬한다. 항목이
-   없는 패널에서는 아예 렌더링되지 않는다. */
+/* 일괄 적용·일괄 지우기·번호 붙이기 같은 부가 기능. 패널(세로 가운데
+   정렬 flex 컨테이너) 안에서 margin-top: auto로 남는 공간을 전부 위쪽에
+   떠안겨, 이 줄만 패널 맨 아래 — 바로 밑 검색바의 확인 버튼과 맞닿는
+   자리 — 에 붙게 고정한다(그 위 제목·본문 등은 자연히 위로 뭉친다).
+   가로로는 확인 버튼 쪽인 오른쪽에 정렬한다. 항목이 없는 패널에서는
+   아예 렌더링되지 않는다. */
 .search-bar-confirm-extras {
   display: flex;
   justify-content: flex-end;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 8px;
+  margin-top: auto;
+  padding: 8px 0 10px;
 }
 .search-bar-confirm-extras-btn {
   flex: none;
