@@ -485,7 +485,7 @@ export default function BottomSearchBar({
 
   const studioSectionIcon =
     studioSection === "tag" ? <BookmarkIcon size={16} /> : studioSection === "quality" ? <ZipFolderIcon size={16} /> : <EditIcon size={16} />;
-  const studioSectionLabel = studioSection === "tag" ? "태그" : studioSection === "quality" ? "압축" : "이름 바꾸기";
+  const studioSectionLabel = studioSection === "tag" ? "태그" : studioSection === "quality" ? "최적화" : "이름 바꾸기";
 
   return (
     <>
@@ -597,7 +597,7 @@ export default function BottomSearchBar({
                         <button
                           type="button"
                           className="search-bar-studio-icon-btn"
-                          aria-label="압축"
+                          aria-label="최적화"
                           onClick={() => setStudioSection("quality")}
                         >
                           <ZipFolderIcon size={16} />
