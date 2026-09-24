@@ -584,18 +584,15 @@ main.page {
 .search-bar-confirm-panel.has-extras.is-open {
   padding-bottom: 0;
 }
-/* 최적화 패널(단일·다중)은 항목에 따라 경고 문구·다중 전용 이전/다음
-   화살표·파일명·전체 적용 버튼이 오갈 수 있어, 다른 패널처럼 세로 가운데
-   정렬 대신 위에서부터 순서대로 쌓는다. 품질을 실제로 고르는 세그먼트는
-   패널이 아니라 검색바 쪽에 있고(.search-bar-optimize-seg-group) 그 자리에
-   낮음/중간/높음 글자까지 직접 담으므로, 패널 자체에는 품질 관련 줄이
-   없지만, 다중일 때 파일명 줄+전체 적용 버튼+경고 문구가 한꺼번에 뜰 수
-   있어 기본 최대 높이보다 조금 더 여유를 둔다. */
-.search-bar-confirm-panel.mode-optimize {
+/* Studio(이름·태그·압축 통합) 패널은 제목 아래 구분선 + 이름/태그/압축
+   이동 탭 + 세 섹션이 쌓이므로, 다른 패널처럼 세로 가운데 정렬 대신
+   위에서부터 순서대로 쌓는다. 섹션이 셋이라 기본 최대 높이보다 훨씬 더
+   여유(200px)를 둔다. */
+.search-bar-confirm-panel.mode-studio {
   justify-content: flex-start;
 }
-.search-bar-confirm-panel.mode-optimize.is-open {
-  max-height: 160px;
+.search-bar-confirm-panel.mode-studio.is-open {
+  max-height: 200px;
 }
 /* 이동 패널은 경로 표시줄 + 스크롤되는 폴더 목록까지 들어가 가장 길다. */
 .search-bar-confirm-panel.mode-move {
@@ -610,6 +607,69 @@ main.page {
   font-weight: 700;
   color: var(--text);
   text-align: left;
+}
+/* Studio 패널 제목만 다른 패널보다 살짝 더 크게 — 이름·태그·압축 세
+   기능을 한 아이콘으로 묶은 만큼 제목의 존재감도 조금 더 준다. */
+.search-bar-confirm-title--studio {
+  font-size: 17px;
+}
+/* Studio 패널 제목(과 다중일 땐 이전·다음 화살표) 바로 밑, 이름/태그/압축
+   섹션이 시작되기 전에 긋는 구분선. */
+.search-bar-studio-divider {
+  flex: none;
+  height: 1px;
+  margin: 10px 0 8px;
+  background: var(--glass-border);
+}
+/* 이름/태그/압축 이동 탭 — 섹션을 숨기고 보이는 게 아니라, 눌렀을 때 그
+   섹션으로 스크롤만 시켜주는 내비게이션 텍스트다. */
+.search-bar-studio-tabs {
+  flex: none;
+  display: flex;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.search-bar-studio-tab {
+  flex: none;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.search-bar-studio-tab:active {
+  color: var(--text);
+}
+/* 이름·태그·압축 세 섹션을 구분선 밑에 원래 레이아웃대로 쌓아 두는
+   스크롤 컨테이너 — 패널 자체는 max-height로 고정돼 있어, 셋을 다 넣으면
+   넘치는 만큼은 이 안에서만 스크롤된다. */
+.search-bar-studio-sections {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.search-bar-studio-section {
+  flex: none;
+}
+/* 이름·태그 섹션의 전용 입력창 — 검색바 입력창(.search-bar-input)과 같은
+   높이·글자 크기를 쓰지만, Studio는 이름·태그를 동시에 보여줘야 해서 검색바
+   입력창을 공유하지 않고 패널 본문에 따로 둔다. */
+.search-bar-studio-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(128, 128, 128, 0.12);
+  outline: none;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--text);
+}
+.search-bar-studio-input::placeholder {
+  color: var(--text-2);
 }
 /* 삭제 확인 보조 설명(고정 문구). 제목과의 간격을 조금 더 줄여 본문을
    살짝 위로 올린다. */
