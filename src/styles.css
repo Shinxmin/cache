@@ -623,6 +623,11 @@ main.page {
   margin: 3px 0;
   background: var(--glass-border);
 }
+/* 제목 바로 밑 첫 구분선만 위쪽 여백을 조금 더 준다 — 제목과 구분선
+   사이가 답답해 보이지 않게. */
+.search-bar-confirm-title--studio + .search-bar-studio-divider {
+  margin-top: 8px;
+}
 /* 두 구분선 사이의 기능 선택 줄. 아이콘 줄(.search-bar-studio-icon-list)과
    기능 화면(.search-bar-studio-detail)이 같은 자리에 절대 위치로 겹쳐
    있다가, data-mode에 따라 옆으로 밀려나며 접히듯 서로 자리를 바꾼다. */
@@ -664,8 +669,8 @@ main.page {
 }
 .search-bar-studio-icon-btn {
   flex: none;
-  width: 45px;
-  height: 30px;
+  width: 40px;
+  height: 27px;
   display: flex;
   align-items: center;
   justify-content: center;
