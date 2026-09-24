@@ -709,6 +709,12 @@ main.page {
 .search-bar-studio-icon-btn:active {
   transform: scale(0.9);
 }
+/* 최적화 아이콘은 선택된 항목이 전부 압축 가능할 때만 눌리고, 그렇지
+   않으면(폴더·미지원 파일이 섞여 있으면) 이렇게 흐리게 보이기만 한다 —
+   자리는 그대로 차지한다. */
+.search-bar-studio-icon-btn:disabled {
+  opacity: 0.35;
+}
 .search-bar-studio-detail {
   gap: 8px;
 }
@@ -1756,18 +1762,6 @@ main.page {
 }
 .rename-input::placeholder {
   color: var(--text-2);
-}
-/* 최적화 패널의 대상 요약. 삭제 확인 패널의 보조 설명과 같은 자리·같은
-   스타일을 쓴다(제목 바로 밑, 살짝 옅은 색) — "파일명 외 N개 파일" 형태로
-   한 줄 요약만 보여주고, 개별 파일 목록은 그리지 않는다. */
-/* 캔버스로 못 읽는 확장자가 선택에 하나라도 섞여 있을 때 요약 바로 밑에
-   뜨는 경고. 하나라도 있으면 확인 버튼이 비활성화된다(BottomSearchBar.jsx
-   참고). */
-.search-bar-confirm-optimize-warn {
-  margin: 5px 0 0;
-  font-size: 13px;
-  color: var(--danger);
-  text-align: left;
 }
 /* 일괄 적용·일괄 지우기·번호 붙이기 같은 부가 기능. 패널(세로 가운데
    정렬 flex 컨테이너) 안에서 margin-top: auto로 남는 공간을 전부 위쪽에
