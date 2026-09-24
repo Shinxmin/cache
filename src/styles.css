@@ -586,15 +586,15 @@ main.page {
 }
 /* 스튜디오(이름·태그·압축 통합) 패널은 제목 아래 구분선 + 기능 선택 줄
    (아이콘 줄/기능 화면) + 구분선 + 파일명이 쌓이므로, 다른 패널처럼 세로
-   가운데 정렬 대신 위에서부터 순서대로 쌓는다. 높이(220px)는 아이콘
+   가운데 정렬 대신 위에서부터 순서대로 쌓는다. 높이(200px)는 아이콘
    줄이든 이름·태그·압축 상세 화면이든, 단일이든 다중이든 모든 상황에서
    공통으로 적용된다(상태에 따라 흔들리지 않는다). */
 .search-bar-confirm-panel.mode-studio {
   justify-content: flex-start;
 }
 .search-bar-confirm-panel.mode-studio.is-open {
-  max-height: 220px;
-  min-height: 220px;
+  max-height: 200px;
+  min-height: 200px;
 }
 /* 이동 패널은 경로 표시줄 + 스크롤되는 폴더 목록까지 들어가 가장 길다. */
 .search-bar-confirm-panel.mode-move {
@@ -664,7 +664,7 @@ main.page {
 }
 .search-bar-studio-icon-btn {
   flex: none;
-  width: 38px;
+  width: 45px;
   height: 30px;
   display: flex;
   align-items: center;
