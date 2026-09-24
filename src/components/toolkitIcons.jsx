@@ -12,20 +12,6 @@ function EyeIcon() {
   );
 }
 
-// 스튜디오(이름 바꾸기·태그·용량 압축 통합) 애드온: 슬라이더 세 개가
-// 서로 다른 위치에 놓인 이퀄라이저/믹서 모양 — 한 아이콘 안에 여러 값을
-// 동시에 다룬다는 은유다.
-export function StudioIcon({ size = 18 }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
-      <path d="M3 6.2h18v1.6H3zM3 11.2h18v1.6H3zM3 16.2h18v1.6H3z" />
-      <circle cx="8" cy="7" r="2.4" />
-      <circle cx="16" cy="12" r="2.4" />
-      <circle cx="10" cy="17" r="2.4" />
-    </svg>
-  );
-}
-
 // 즐겨찾기 별. 툴킷 아이콘(18px)과 파일 이름 옆 표시(작게)에 같이 쓴다.
 export function StarIcon({ size = 18 }) {
   return (
@@ -94,7 +80,6 @@ export const TOOL_META = {
   },
   blur: { label: "선택한 썸네일 블러", needsSelection: true, icon: () => <EyeIcon /> },
   favorite: { label: "즐겨찾기", needsSelection: true, icon: () => <StarIcon /> },
-  studio: { label: "스튜디오", needsSelection: true, icon: () => <StudioIcon /> },
   // 애드온
   palette: { label: "팔레트 추출", needsSelection: true, icon: () => <PaletteIcon /> },
   split: { label: "스플릿 비교", needsSelection: true, icon: () => <SplitIcon /> },

@@ -23,6 +23,19 @@ function SearchIcon({ size = 18 }) {
   );
 }
 
+// 구글 머티리얼 디자인의 "레이어(layers)" 아이콘 — 겹쳐 쌓인 마름모 세
+// 개로 이름·태그·압축을 한데 묶은 스튜디오를 상징한다. 검색바 오른쪽
+// 끝의 원형 버튼(패널이 닫혀 있을 때만 뜬다)에 쓰인다.
+function LayersIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M12 2 2 8l10 6 10-6-10-6z" />
+      <path d="M2 12l10 6 10-6-2.2-1.3L12 15.8 4.2 10.7 2 12z" />
+      <path d="M2 16l10 6 10-6-2.2-1.3L12 19.8 4.2 14.7 2 16z" />
+    </svg>
+  );
+}
+
 // 스튜디오의 이름 바꾸기(연필) 기능 아이콘. 이름 섹션이 열려 검색바가
 // 입력창으로 바뀌는 동안 돋보기 대신 이걸 보여주고, 스튜디오 패널의
 // 기능 선택 아이콘 줄에서도 같은 모양을 쓴다.
@@ -79,12 +92,13 @@ function ZipFolderIcon({ size = 18 }) {
 // 배경·블러·그림자·둥근 모서리는 전부 바깥 껍데기 하나(.search-dock)가
 // 맡는다 — 확인 문구(.search-bar-confirm-panel)와 검색창(.search-bar)은 그
 // 안의 내용일 뿐, 각자 따로 유리 재질을 두르지 않는다. 스튜디오 툴킷의
-// 삭제(휴지통)·스튜디오(이름·태그·압축 통합)·이동 아이콘이나 헤더 삼점
-// 버튼의 "새 폴더"를 누르면 이 패널이 검색창 위로 확장되며 제목(과 삭제·
-// 이동일 땐 안내 문구, 다중 스튜디오일 땐 이전·다음 화살표, 이동일 땐 폴더
-// 목록)을 보여준다 — 취소 버튼은 없고, 검색바를 뺀 화면 어디를 눌러도
-// 취소로 닫힌다(.search-bar-scrim). 확인 버튼은 패널이 아니라 검색바
-// 자신의 오른쪽 끝에 뜬다.
+// 삭제(휴지통)·이동 아이콘이나 헤더 삼점 버튼의 "새 폴더", 또는 검색바
+// 오른쪽 끝의 레이어 아이콘(스튜디오 전용 버튼, 패널이 닫혀 있을 때만
+// 뜬다)을 누르면 이 패널이 검색창 위로 확장되며 제목(과 삭제·이동일 땐
+// 안내 문구, 다중 스튜디오일 땐 이전·다음 화살표, 이동일 땐 폴더 목록)을
+// 보여준다 — 취소 버튼은 없고, 검색바를 뺀 화면 어디를 눌러도 취소로
+// 닫힌다(.search-bar-scrim). 확인 버튼은 패널이 아니라 검색바 자신의
+// 오른쪽 끝에 뜬다.
 //
 // 스튜디오 패널은 열리면 먼저 이름·태그·압축 세 기능을 아이콘만으로 늘어
 // 놓은 줄(제목 밑 구분선 두 개 사이)을 보여준다 — 압축은 선택된 항목 중
@@ -112,6 +126,7 @@ export default function BottomSearchBar({
   onChangeNewFolderName,
   onConfirmNewFolder,
   onCancelNewFolder,
+  onOpenStudio,
   studioOpen,
   studioTargetName,
   studioTargetMime,
@@ -824,6 +839,22 @@ export default function BottomSearchBar({
                 e.currentTarget.blur();
               }}
             />
+            {/* 스튜디오를 여는 전용 버튼 — 검색바 오른쪽 끝 원형 버튼으로,
+                다른 패널이 하나도 열려 있지 않을 때만 뜬다(패널이 열리면
+                그 자리를 확인 버튼이나 품질 세그먼트가 대신 차지한다). 선택된
+                항목이 없으면 onOpenStudio가 조용히 아무 것도 하지 않는다
+                (다른 스튜디오 진입 동작과 같은 규칙). 닫을 땐 버튼이 아니라
+                빈 화면(스크림)을 눌러 닫는다. */}
+            {!panelOpen && (
+              <button
+                type="button"
+                className="search-bar-open-studio-btn"
+                aria-label="스튜디오 열기"
+                onClick={onOpenStudio}
+              >
+                <LayersIcon size={18} />
+              </button>
+            )}
             {/* 압축 섹션이 열려 있을 때만 확인 버튼 바로 왼쪽에 품질 세그먼트가
                 뜬다 — 패널 본문이 아니라 검색바 쪽에 있던 예전 최적화 패널
                 자리 그대로다. */}
