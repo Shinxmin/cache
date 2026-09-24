@@ -52,17 +52,6 @@ function BookmarkIcon({ size = 18 }) {
   );
 }
 
-// 헤더 더 보기 버튼(HeaderMoreButton)의 삼점과 같은 모양.
-function DotsIcon({ size = 16 }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
-      <circle cx="5.5" cy="12" r="2.2" />
-      <circle cx="12" cy="12" r="2.2" />
-      <circle cx="18.5" cy="12" r="2.2" />
-    </svg>
-  );
-}
-
 // 예전 하단 내비바가 있던 자리에 고정된 검색바. position:fixed라 스크롤을
 // 아무리 올리고 내려도 그 자리에서 전혀 움직이지 않는다. 파일 화면(과 그
 // 안에서 연 즐겨찾기 화면)에서 항상 떠 있다 — "검색바 항상 활성화" 설정은
@@ -192,11 +181,6 @@ export default function BottomSearchBar({
   const [moveBusy, setMoveBusy] = useState(false);
   const [thumbnailBusy, setThumbnailBusy] = useState(false);
   const [multiThumbnailBusy, setMultiThumbnailBusy] = useState(false);
-  // 각 패널의 "일괄 적용·일괄 지우기·번호 붙이기·지우기" 같은 부가 기능은
-  // 패널 본문이 아니라 검색바의 확인 버튼 왼쪽, 헤더의 더 보기 버튼과 같은
-  // 삼점 버튼 뒤에 모아 둔다. 패널이 바뀌면 열려 있던 채로 새 패널의 다른
-  // 기능이 노출되지 않도록 닫는다.
-  const [extrasOpen, setExtrasOpen] = useState(false);
   const panelOpen =
     confirmOpen ||
     newFolderOpen ||
@@ -271,12 +255,6 @@ export default function BottomSearchBar({
     multiThumbnailOpen,
     confirmOpen,
   ]);
-
-  // 패널이 바뀌면(이전 패널의 부가 기능 목록이 지금 패널과 다를 수 있으니)
-  // 열려 있던 부가 기능 메뉴를 닫는다.
-  useEffect(() => {
-    setExtrasOpen(false);
-  }, [displayMode]);
 
   const confirm = async () => {
     if (busy) return;
@@ -897,6 +875,24 @@ export default function BottomSearchBar({
                 <p className="search-bar-confirm-desc">해당 항목은 휴지통에서 복구 및 삭제할 수 있습니다</p>
               </>
             )}
+            {/* 일괄 적용·일괄 지우기·번호 붙이기 같은 부가 기능은 패널 맨
+                아래, 바로 밑 검색바의 확인 버튼 쪽으로 붙여 오른쪽 정렬해
+                둔다 — 항목이 없는 패널(이름 바꾸기·태그 단일, 이동, 삭제
+                확인 등)에서는 아무것도 뜨지 않는다. */}
+            {extraActions.length > 0 && (
+              <div className="search-bar-confirm-extras">
+                {extraActions.map((action) => (
+                  <button
+                    key={action.key}
+                    type="button"
+                    className="search-bar-confirm-extras-btn"
+                    onClick={action.onClick}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="search-bar">
             <span className="search-bar-icon">{searchBarIcon}</span>
@@ -940,36 +936,6 @@ export default function BottomSearchBar({
                     {OPTIMIZE_LEVEL_LABELS[i]}
                   </button>
                 ))}
-              </div>
-            )}
-            {extraActions.length > 0 && (
-              <div className={`search-bar-extras${extrasOpen ? " open" : ""}`}>
-                <div className="search-bar-extras-inner">
-                  {extraActions.map((action) => (
-                    <button
-                      key={action.key}
-                      type="button"
-                      className="search-bar-extras-item"
-                      tabIndex={extrasOpen ? 0 : -1}
-                      aria-hidden={!extrasOpen}
-                      onClick={() => {
-                        action.onClick?.();
-                        setExtrasOpen(false);
-                      }}
-                    >
-                      {action.label}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    className="search-bar-extras-toggle"
-                    aria-label={extrasOpen ? "닫기" : "더 보기"}
-                    aria-expanded={extrasOpen}
-                    onClick={() => setExtrasOpen((v) => !v)}
-                  >
-                    <DotsIcon />
-                  </button>
-                </div>
               </div>
             )}
             {panelOpen && (
