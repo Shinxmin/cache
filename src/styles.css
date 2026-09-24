@@ -613,7 +613,7 @@ main.page {
 /* 스튜디오 패널 제목만 다른 패널보다 살짝 더 크게 — 이름·태그·압축 세
    기능을 한 아이콘으로 묶은 만큼 제목의 존재감도 조금 더 준다. */
 .search-bar-confirm-title--studio {
-  font-size: 17px;
+  font-size: 19px;
 }
 /* 스튜디오 제목 밑, 그리고 기능 선택 줄(아이콘 줄/기능 화면) 밑에 긋는
    구분선 두 개 — 그 사이에 기능 선택 줄이 낀 샌드위치 모양이다. */
@@ -1755,6 +1755,11 @@ main.page {
   gap: 6px;
   margin-top: auto;
   padding: 8px 0 10px;
+}
+/* 스튜디오 패널의 일괄 적용·일괄 지우기·번호 붙이기 줄만 왼쪽 정렬한다
+   (다른 패널의 부가 기능 줄은 계속 확인 버튼 쪽인 오른쪽 정렬을 쓴다). */
+.search-bar-confirm-panel.mode-studio .search-bar-confirm-extras {
+  justify-content: flex-start;
 }
 .search-bar-confirm-extras-btn {
   flex: none;
