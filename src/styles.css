@@ -457,7 +457,7 @@ main.page {
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 48px;
+  height: 55px;
   padding: 0 16px;
   color: var(--text-2);
 }
@@ -510,20 +510,25 @@ main.page {
 .search-bar-inline-confirm:disabled {
   opacity: 0.6;
 }
-/* 스튜디오를 여는 전용 버튼 — 검색바 오른쪽 끝 원형 버튼. 다른 패널이
-   하나도 열려 있지 않을 때만 뜨고(그 자리는 패널이 열리면 확인 버튼이나
-   품질 세그먼트가 대신 차지한다), 닫을 때는 버튼이 아니라 빈 화면(스크림)을
-   눌러 닫는다. */
+/* 스튜디오를 여는 전용 버튼 — 검색바 오른쪽 끝의 알약 버튼. 확인 버튼과
+   똑같은 높이·안쪽 여백·둥근 정도를 써서 크기를 맞췄다(내용이 텍스트 대신
+   아이콘 하나뿐이라 자연히 확인 버튼보다 살짝 좁은 알약이 된다). 다른
+   패널이 하나도 열려 있지 않을 때만 뜨고(그 자리는 패널이 열리면 확인
+   버튼이나 품질 세그먼트가 대신 차지한다), 닫을 때는 버튼이 아니라 빈
+   화면(스크림)을 눌러 닫는다. 아이콘 색은 툴킷 아이콘 줄(.studio-toolkit-row)이
+   실제로 쓰는 var(--text-2)와 맞춘다 — var(--text)는 100% 불투명한
+   진한 색이라 56% 불투명한 툴킷 아이콘보다 훨씬 진하게 보였다. */
 .search-bar-open-studio-btn {
   flex: none;
-  width: 32px;
   height: 32px;
+  padding: 0 14px;
+  margin-right: -6px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
   background: rgba(128, 128, 128, 0.2);
-  color: var(--text);
+  color: var(--text-2);
   transition: transform 0.35s var(--spring);
 }
 .search-bar-open-studio-btn:active {
@@ -610,6 +615,9 @@ main.page {
    공통으로 적용된다(상태에 따라 흔들리지 않는다). */
 .search-bar-confirm-panel.mode-studio {
   justify-content: flex-start;
+  /* 스튜디오 패널만 다른 패널보다 살짝 천천히 열리게(그리고 닫히게)
+     기본 트랜지션(0.35s/0.35s/0.25s/0.35s)보다 조금 늘린다. */
+  transition-duration: 0.5s, 0.5s, 0.3s, 0.5s;
 }
 .search-bar-confirm-panel.mode-studio.is-open {
   max-height: 170px;
