@@ -510,6 +510,59 @@ main.page {
 .search-bar-inline-confirm:disabled {
   opacity: 0.6;
 }
+/* 패널 본문에 흩어져 있던 "일괄 적용·일괄 지우기·번호 붙이기·지우기" 같은
+   부가 기능을 확인 버튼 바로 왼쪽에 모아 둔 원형 삼점 버튼 — 헤더의 더
+   보기 버튼(HeaderMoreButton)과 똑같은 방식이다: 평소엔 삼점만 있는
+   원(확인 버튼과 같은 32px 높이)이고, 누르면 오른쪽 끝(삼점)은 그대로 둔
+   채 왼쪽으로 자라나 부가 기능이 작은 글자 버튼으로 드러난다. 안쪽 행이
+   항상 justify-content: flex-end라 닫힌 상태(너비 = 삼점 하나)에서는
+   창 너머로 삼점만 보인다. 항목 개수가 패널마다 달라(1~3개) 정확한 너비
+   대신 max-width를 넉넉히 열어 두는 방식을 쓴다. */
+.search-bar-extras {
+  position: relative;
+  isolation: isolate;
+  flex: none;
+  overflow: hidden;
+  height: 32px;
+  max-width: 32px;
+  border-radius: 999px;
+  background: rgba(128, 128, 128, 0.2);
+  transition: max-width 0.35s var(--spring);
+}
+.search-bar-extras.open {
+  max-width: 280px;
+}
+.search-bar-extras-inner {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.search-bar-extras-item {
+  flex: none;
+  height: 100%;
+  padding: 0 10px;
+  color: var(--text-2);
+  font-size: 12px;
+  white-space: nowrap;
+  transition: transform 0.35s var(--spring);
+}
+.search-bar-extras-item:active {
+  transform: scale(0.92);
+}
+.search-bar-extras-toggle {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  transition: transform 0.35s var(--spring);
+}
+.search-bar-extras-toggle:active {
+  transform: scale(0.94);
+}
 /* 최적화(단일·다중) 패널이 열려 있을 때만 확인 버튼 바로 왼쪽에 뜨는 품질
    세그먼트. 예전엔 칸마다 선택 여부만 보여주는 작은 점이었는데, 그 점 자리에
    낮음/중간/높음 글자를 직접 넣어 값을 바로 읽을 수 있게 했다 — 그래서 패널
@@ -665,29 +718,6 @@ main.page {
   color: var(--text-2);
   text-align: center;
 }
-/* 전체 지우기·전체 적용·번호 붙이기 — 항목을 하나씩 보며 확인할 필요
-   없이 눌린 즉시 전체에 적용된다. 삭제·확인 버튼과 같은 옅은 회색 알약
-   모양이되, 보조 동작이라 한 단계 더 옅고 작게 뒀다. */
-.search-bar-confirm-bulk-actions {
-  display: flex;
-  gap: 6px;
-  margin-top: 8px;
-}
-.search-bar-confirm-bulk-btn {
-  flex: none;
-  height: 26px;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: rgba(128, 128, 128, 0.15);
-  color: var(--text-2);
-  font-size: 12px;
-  font-weight: 400;
-  transition: transform 0.35s var(--spring);
-}
-.search-bar-confirm-bulk-btn:active {
-  transform: scale(0.9);
-}
-
 /* ── 체크박스: 네이티브 input은 투명 처리해 접근성/토글 동작만 맡기고, 시각
    표현은 형제 요소(.checkbox-box)가 담당한다. 체크 시 text/bg 색을 서로
    뒤바꿔 채워서 라이트·다크 어느 테마에서도 또렷하게 보인다. ── */
@@ -1692,8 +1722,9 @@ main.page {
 .optimize-result-row {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
+  /* 오른쪽 끝에 붙는 정렬이 아니라, 라벨 바로 뒤에 띄어쓰기 대여섯 칸 정도
+     간격만 두고 값이 이어지는 한 줄짜리 표기다. */
+  gap: 18px;
   font-size: 13px;
 }
 .optimize-result-label {
@@ -1703,7 +1734,6 @@ main.page {
 .optimize-result-value {
   color: var(--text);
   font-weight: 600;
-  text-align: right;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
