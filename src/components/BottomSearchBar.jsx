@@ -619,7 +619,7 @@ export default function BottomSearchBar({
       <div className="bottom-search-wrap">
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
           <div
-            className={`search-bar-confirm-panel${displayMode === "optimize" || displayMode === "multiOptimize" ? " mode-optimize" : ""}${displayMode === "move" || displayMode === "thumbnail" || displayMode === "multiThumbnail" ? " mode-move" : ""}${panelOpen ? " is-open" : ""}`}
+            className={`search-bar-confirm-panel${displayMode === "optimize" || displayMode === "multiOptimize" ? " mode-optimize" : ""}${displayMode === "move" || displayMode === "thumbnail" || displayMode === "multiThumbnail" ? " mode-move" : ""}${extraActions.length > 0 ? " has-extras" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
           >
             {displayMode === "newFolder" ? (
