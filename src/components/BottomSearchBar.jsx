@@ -52,6 +52,17 @@ function BookmarkIcon({ size = 18 }) {
   );
 }
 
+// 헤더 더 보기 버튼(HeaderMoreButton)의 삼점과 같은 모양.
+function DotsIcon({ size = 16 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <circle cx="5.5" cy="12" r="2.2" />
+      <circle cx="12" cy="12" r="2.2" />
+      <circle cx="18.5" cy="12" r="2.2" />
+    </svg>
+  );
+}
+
 // 예전 하단 내비바가 있던 자리에 고정된 검색바. position:fixed라 스크롤을
 // 아무리 올리고 내려도 그 자리에서 전혀 움직이지 않는다. 파일 화면(과 그
 // 안에서 연 즐겨찾기 화면)에서 항상 떠 있다 — "검색바 항상 활성화" 설정은
@@ -181,6 +192,11 @@ export default function BottomSearchBar({
   const [moveBusy, setMoveBusy] = useState(false);
   const [thumbnailBusy, setThumbnailBusy] = useState(false);
   const [multiThumbnailBusy, setMultiThumbnailBusy] = useState(false);
+  // 각 패널의 "일괄 적용·일괄 지우기·번호 붙이기·지우기" 같은 부가 기능은
+  // 패널 본문이 아니라 검색바의 확인 버튼 왼쪽, 헤더의 더 보기 버튼과 같은
+  // 삼점 버튼 뒤에 모아 둔다. 패널이 바뀌면 열려 있던 채로 새 패널의 다른
+  // 기능이 노출되지 않도록 닫는다.
+  const [extrasOpen, setExtrasOpen] = useState(false);
   const panelOpen =
     confirmOpen ||
     newFolderOpen ||
@@ -255,6 +271,12 @@ export default function BottomSearchBar({
     multiThumbnailOpen,
     confirmOpen,
   ]);
+
+  // 패널이 바뀌면(이전 패널의 부가 기능 목록이 지금 패널과 다를 수 있으니)
+  // 열려 있던 부가 기능 메뉴를 닫는다.
+  useEffect(() => {
+    setExtrasOpen(false);
+  }, [displayMode]);
 
   const confirm = async () => {
     if (busy) return;
@@ -348,9 +370,16 @@ export default function BottomSearchBar({
   // 품질 세그먼트를 탭뿐 아니라 마우스 드래그·손가락 슬라이드로도 고를 수
   // 있게 한다.
   const optimizeSegDrag = useSegmentDrag(OPTIMIZE_LEVELS.length, changeCurrentOptimizeLevel);
+  // 처리 중(진행 바)이거나 결과가 이미 떠 있으면 품질 세그먼트는 숨긴다 —
+  // 다만 결과 화면에서는 확인 버튼 자체는 막지 않는다(그 상태에서 누르면
+  // 재실행이 아니라 그냥 패널을 닫는 걸로 쓴다).
   const optimizeRunning = Boolean(optimizeProgress) || Boolean(optimizeResult);
-  const canSubmitOptimize = Boolean(optimizeTargetName) && !hasUnsupportedOptimize && !optimizeBusy && !optimizeRunning;
+  const canSubmitOptimize = Boolean(optimizeTargetName) && !hasUnsupportedOptimize && !optimizeBusy;
   const submitOptimize = async () => {
+    if (optimizeResult) {
+      onCancelOptimize?.();
+      return;
+    }
     if (!canSubmitOptimize) return;
     setOptimizeBusy(true);
     try {
@@ -359,9 +388,12 @@ export default function BottomSearchBar({
       setOptimizeBusy(false);
     }
   };
-  const canSubmitMultiOptimize =
-    Boolean(multiOptimizeItems?.length) && !hasUnsupportedOptimize && !multiOptimizeBusy && !optimizeRunning;
+  const canSubmitMultiOptimize = Boolean(multiOptimizeItems?.length) && !hasUnsupportedOptimize && !multiOptimizeBusy;
   const submitMultiOptimize = async () => {
+    if (optimizeResult) {
+      onCancelMultiOptimize?.();
+      return;
+    }
     if (!canSubmitMultiOptimize) return;
     setMultiOptimizeBusy(true);
     try {
@@ -545,6 +577,34 @@ export default function BottomSearchBar({
     <EditIcon />
   );
 
+  // 패널 본문에 따로 두던 "일괄 적용·일괄 지우기·번호 붙이기·지우기" 부가
+  // 버튼들을 지금 열린 패널에 맞춰 여기 하나로 모은다 — 검색바의 삼점
+  // 버튼을 누르면 이 목록이 작은 글자 버튼으로 펼쳐진다. 하나도 없는
+  // 패널(새 폴더·이름 바꾸기·태그·이동·삭제 확인 등)에서는 삼점 버튼 자체가
+  // 뜨지 않는다.
+  const extraActions =
+    displayMode === "multiRename"
+      ? [
+          { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiRename },
+          { key: "applyAll", label: "일괄 적용", onClick: onApplyAllMultiRename },
+          { key: "numbers", label: "번호 붙이기", onClick: onAttachNumbersMultiRename },
+        ]
+      : displayMode === "multiTag"
+        ? [
+            { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiTag },
+            { key: "applyAll", label: "일괄 적용", onClick: onApplyAllMultiTag },
+          ]
+        : displayMode === "multiOptimize" && !optimizeRunning
+          ? [{ key: "applyAll", label: "일괄 적용", onClick: onApplyAllMultiOptimize }]
+          : displayMode === "thumbnail"
+            ? [{ key: "clear", label: "지우기", onClick: onClearThumbnail }]
+            : displayMode === "multiThumbnail"
+              ? [
+                  { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiThumbnail },
+                  { key: "clear", label: "지우기", onClick: onClearCurrentMultiThumbnail },
+                ]
+              : [];
+
   return (
     <>
       {panelOpen &&
@@ -627,27 +687,6 @@ export default function BottomSearchBar({
                     mime: multiItems?.[multiIndex]?.mime,
                   })}
                 </p>
-                <div className="search-bar-confirm-bulk-actions">
-                  <button
-                    type="button"
-                    className="search-bar-confirm-bulk-btn"
-                    onClick={displayMode === "multiRename" ? onClearAllMultiRename : onClearAllMultiTag}
-                  >
-                    전체 지우기
-                  </button>
-                  <button
-                    type="button"
-                    className="search-bar-confirm-bulk-btn"
-                    onClick={displayMode === "multiRename" ? onApplyAllMultiRename : onApplyAllMultiTag}
-                  >
-                    전체 적용
-                  </button>
-                  {displayMode === "multiRename" && (
-                    <button type="button" className="search-bar-confirm-bulk-btn" onClick={onAttachNumbersMultiRename}>
-                      번호 붙이기
-                    </button>
-                  )}
-                </div>
               </>
             ) : displayMode === "optimize" || displayMode === "multiOptimize" ? (
               optimizeResult ? (
@@ -722,13 +761,6 @@ export default function BottomSearchBar({
                         </div>
                       </div>
                       <p className="search-bar-confirm-filename">{displayName(multiOptimizeCurrent)}</p>
-                      <div className="search-bar-confirm-bulk-actions">
-                        {/* 지금 보고 있는 항목의 품질을 자신과 뒤에 남은 항목에만
-                            적용한다 — 앞서 따로 골라 둔 항목은 그대로 둔다. */}
-                        <button type="button" className="search-bar-confirm-bulk-btn" onClick={onApplyAllMultiOptimize}>
-                          전체 적용
-                        </button>
-                      </div>
                     </>
                   ) : (
                     <p className="search-bar-confirm-title">최적화</p>
@@ -813,20 +845,6 @@ export default function BottomSearchBar({
                 <p className="search-bar-confirm-filename">
                   {displayMode === "multiThumbnail" ? multiThumbnailCurrent?.name : thumbnailTargetName}
                 </p>
-                <div className="search-bar-confirm-bulk-actions">
-                  {displayMode === "multiThumbnail" && (
-                    <button type="button" className="search-bar-confirm-bulk-btn" onClick={onClearAllMultiThumbnail}>
-                      전체 지우기
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className="search-bar-confirm-bulk-btn"
-                    onClick={displayMode === "multiThumbnail" ? onClearCurrentMultiThumbnail : onClearThumbnail}
-                  >
-                    지우기
-                  </button>
-                </div>
                 {thumbnailPath.length > 0 && (
                   <div className="move-path">
                     <button type="button" className="move-path-back" aria-label="상위 폴더로" onClick={onThumbnailBack}>
@@ -922,6 +940,36 @@ export default function BottomSearchBar({
                     {OPTIMIZE_LEVEL_LABELS[i]}
                   </button>
                 ))}
+              </div>
+            )}
+            {extraActions.length > 0 && (
+              <div className={`search-bar-extras${extrasOpen ? " open" : ""}`}>
+                <div className="search-bar-extras-inner">
+                  {extraActions.map((action) => (
+                    <button
+                      key={action.key}
+                      type="button"
+                      className="search-bar-extras-item"
+                      tabIndex={extrasOpen ? 0 : -1}
+                      aria-hidden={!extrasOpen}
+                      onClick={() => {
+                        action.onClick?.();
+                        setExtrasOpen(false);
+                      }}
+                    >
+                      {action.label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className="search-bar-extras-toggle"
+                    aria-label={extrasOpen ? "닫기" : "더 보기"}
+                    aria-expanded={extrasOpen}
+                    onClick={() => setExtrasOpen((v) => !v)}
+                  >
+                    <DotsIcon />
+                  </button>
+                </div>
               </div>
             )}
             {panelOpen && (
