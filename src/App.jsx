@@ -137,17 +137,27 @@ export default function App() {
   // 모달 대신 하단 검색바가 위로 확장되며 그 자리에서 확인을 받는다
   // (BottomSearchBar 참고) — 다른 삭제·복원 확인은 전부 그대로 ConfirmModal.
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  // 스튜디오 툴킷의 편집(연필) 아이콘으로 연 이름 바꾸기. 삭제 확인·새 폴더와
-  // 같은 방식으로 하단 검색바가 확장되는 패널을 쓴다. 단일 선택이면
-  // 이름 하나만 편집하는 renameOpen을, 여러 개 선택이면 이전·다음 화살표로
-  // 하나씩 넘기며 편집하는(검색바 입력창 하나를 계속 재사용) multiRenameOpen을
-  // 쓴다 — 패널 자체는 항상 같은 크기를 유지한다.
-  const [renameOpen, setRenameOpen] = useState(false);
-  const [renameName, setRenameName] = useState("");
-  const [renameTargetId, setRenameTargetId] = useState(null);
-  const [multiRenameOpen, setMultiRenameOpen] = useState(false);
-  const [multiRenameItems, setMultiRenameItems] = useState([]);
-  const [multiRenameIndex, setMultiRenameIndex] = useState(0);
+  // 스튜디오 툴킷의 Studio 아이콘 — 이름 바꾸기·태그·용량 압축을 한 패널로
+  // 합친 것. 단일 선택이면 studioOpen 하나, 여러 개 선택이면 이전·다음
+  // 화살표로 하나씩 넘기며 편집하는 multiStudioOpen을 쓴다(패널 자체는
+  // 항상 같은 크기). 품질(압축)은 사용자가 실제로 세그먼트를 눌러야만
+  // (levelTouched) 확인 시 재압축한다 — 이름만 바꾸려고 확인을 눌렀는데
+  // 매번 손실 압축이 다시 걸리면 안 되기 때문이다. 이름·태그는 원래
+  // 이름 바꾸기·태그 패널처럼 값이 같든 다르든 확인 시 그대로 저장한다.
+  const [studioOpen, setStudioOpen] = useState(false);
+  const [studioTargetId, setStudioTargetId] = useState(null);
+  const [studioName, setStudioName] = useState("");
+  const [studioTag, setStudioTag] = useState("");
+  const [studioLevel, setStudioLevel] = useState(1);
+  const [studioLevelTouched, setStudioLevelTouched] = useState(false);
+  const [multiStudioOpen, setMultiStudioOpen] = useState(false);
+  const [multiStudioItems, setMultiStudioItems] = useState([]); // [{id,name,originalName,tag,level,levelTouched,mime,is_folder}]
+  const [multiStudioIndex, setMultiStudioIndex] = useState(0);
+  // 확인을 누른 뒤 압축이 실제로 걸리면(levelTouched) 처리 중(진행률
+  // 표시)과 완료(결과 요약) 두 화면을 보여준다. 단일·다중 공통.
+  const [studioProgress, setStudioProgress] = useState(null); // { done, total } | null
+  const [studioResult, setStudioResult] = useState(null); // { total, totalOriginal, totalCompressed, elapsedMs } | null
+  const studioStatsRef = useRef({ done: 0, totalOriginal: 0, totalCompressed: 0 });
   // 스튜디오 툴킷의 이동(→) 아이콘. 삭제 확인과 같은 방식으로 하단 검색바가
   // 확장되는 패널을 쓴다. 패널 안에서 드라이브를 폴더별로 눌러 내려가다가
   // 확인을 누르면 지금 들어와 있는 폴더로 옮긴다(movePath가 빈 배열이면
@@ -156,31 +166,6 @@ export default function App() {
   const [movePath, setMovePath] = useState([]); // [{ id, name }]
   const [moveRows, setMoveRows] = useState([]);
   const [moveRowsState, setMoveRowsState] = useState("loading"); // loading | ready | error
-  // 스튜디오 툴킷의 태그(#) 아이콘. 이름 바꾸기와 똑같은 구조로 단일/다중
-  // 패널로 나뉜다 — 다만 태그는 비어 있어도 되고(전부 지우는 것도 유효한
-  // 값) 값이 같아도 되므로 확인 버튼이 빈 값이라고 비활성화되지 않고,
-  // 다중 패널에도 "번호 붙이기"는 없다(전체 지우기·전체 적용만 있다).
-  const [tagOpen, setTagOpen] = useState(false);
-  const [tagValue, setTagValue] = useState("");
-  const [tagTargetId, setTagTargetId] = useState(null);
-  const [multiTagOpen, setMultiTagOpen] = useState(false);
-  const [multiTagItems, setMultiTagItems] = useState([]);
-  const [multiTagIndex, setMultiTagIndex] = useState(0);
-  // 스튜디오 툴킷의 용량 압축(원그래프) 아이콘. 이름 바꾸기·태그와 똑같은
-  // 단일/다중 구조를 쓴다 — 다만 편집하는 값이 이름이나 태그 문자열이
-  // 아니라 품질 단계(0=낮음/1=중간/2=높음)다. 폴더나 이미지가 아닌 파일은
-  // 대상에서 빠진다(캔버스로 다시 인코딩할 수 있는 게 이미지뿐이라서).
-  const [optimizeOpen, setOptimizeOpen] = useState(false);
-  const [optimizeTargetId, setOptimizeTargetId] = useState(null);
-  const [optimizeLevel, setOptimizeLevel] = useState(1);
-  const [multiOptimizeOpen, setMultiOptimizeOpen] = useState(false);
-  const [multiOptimizeItems, setMultiOptimizeItems] = useState([]); // [{ id, name, level }]
-  const [multiOptimizeIndex, setMultiOptimizeIndex] = useState(0);
-  // 확인을 누른 뒤 처리 중(진행률 표시)과 완료(결과 요약) 두 화면을 위한
-  // 상태. 단일·다중 공통이며, 새로 패널을 열거나 취소하면 둘 다 비운다.
-  const [optimizeProgress, setOptimizeProgress] = useState(null); // { done, total } | null
-  const [optimizeResult, setOptimizeResult] = useState(null); // { total, totalOriginal, totalCompressed, elapsedMs } | null
-  const optimizeStatsRef = useRef({ done: 0, totalOriginal: 0, totalCompressed: 0 });
   // 폴더 썸네일 애드온(인물 아이콘). 이동 패널과 같은 폴더 탐색 UI를 재사용해,
   // 그 안에서 이미지·움짤·동영상 파일 하나를 골라 지금 선택된 폴더의 대표
   // 썸네일로 지정한다. 이름 바꾸기·태그·최적화와 같은 단일/다중 구조를
@@ -305,161 +290,69 @@ export default function App() {
     if (selectedIds.size === 0) setDeleteConfirmOpen(false);
   }, [selectedIds, deleteConfirmOpen]);
 
-  // 단일 이름 바꾸기 패널도 대상 선택이 통째로 사라지면 같은 이유로 닫는다.
-  useEffect(() => {
-    if (!renameOpen) return;
-    if (selectedIds.size === 0) {
-      setRenameOpen(false);
-      setRenameName("");
-      setRenameTargetId(null);
-    }
-  }, [selectedIds, renameOpen]);
-
-  // 다중 이름 바꾸기 패널도 마찬가지.
-  useEffect(() => {
-    if (!multiRenameOpen) return;
-    if (selectedIds.size === 0) {
-      setMultiRenameOpen(false);
-      setMultiRenameItems([]);
-      setMultiRenameIndex(0);
-    }
-  }, [selectedIds, multiRenameOpen]);
-
-  // 단일/다중 태그 패널도 마찬가지.
-  useEffect(() => {
-    if (!tagOpen) return;
-    if (selectedIds.size === 0) {
-      setTagOpen(false);
-      setTagValue("");
-      setTagTargetId(null);
-    }
-  }, [selectedIds, tagOpen]);
-  useEffect(() => {
-    if (!multiTagOpen) return;
-    if (selectedIds.size === 0) {
-      setMultiTagOpen(false);
-      setMultiTagItems([]);
-      setMultiTagIndex(0);
-    }
-  }, [selectedIds, multiTagOpen]);
-  // 최적화 패널은 폴더가 대상에서 빠지므로(용량 압축은 이미지 파일만
-  // 가능하다) "선택이 0개"가 아니라 "폴더를 뺀 대상이 0개"일 때 닫아야
-  // 한다 — 그래서 아래 재계산 효과 안에서 함께 처리한다(단독 효과 없음).
-
-  // 이름 바꾸기 패널이 열린 채로도 다른 파일을 탭해 선택을 더하거나 뺄 수
+  // Studio 패널이 열린 채로도 다른 파일을 탭해 선택을 더하거나 뺄 수
   // 있다(빈 화면 스크림에 뚫린 구멍을 통해 타일 클릭이 그대로 전달된다).
-  // 그러면 이 효과가 선택이 바뀔 때마다 편집 중인 항목을 다시 계산한다 —
-  // 이미 입력해 둔 값(단일 칸이든 다중 배열의 항목이든)은 그대로 이어가고,
-  // 새로 추가된 항목은 파일의 원래 이름을 기본값으로 채운다. 선택이 1개로
-  // 줄면 단일 패널로, 2개 이상이면 다중 패널로 자동 전환된다. 선택이
-  // 0개가 되는 경우는 위 두 효과가 이미 처리하므로 여기서는 손대지 않는다.
+  // 그러면 이 효과가 선택이 바뀔 때마다 편집 중인 값(이름·태그·품질)을
+  // 다시 계산한다 — 이미 입력해 둔 값은 그대로 이어가고, 새로 추가된
+  // 항목은 원래 이름·태그·기본 품질(중간, 안 만짐)로 채운다. 선택이 1개로
+  // 줄면 단일 패널로, 2개 이상이면 다중 패널로, 0개가 되면 패널을 닫는다.
   useEffect(() => {
-    if (!renameOpen && !multiRenameOpen) return;
+    if (!studioOpen && !multiStudioOpen) return;
+    // 선택이 바뀌면 지금 보여주던 압축 진행률·결과 화면은 더 이상 이
+    // 선택을 대표하지 않으니 지운다.
+    if (studioProgress || studioResult) {
+      setStudioProgress(null);
+      setStudioResult(null);
+    }
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
-    if (targets.length === 0) return;
-    const valueFor = (it) => {
-      const fromMulti = multiRenameItems.find((x) => x.id === it.id);
-      if (fromMulti) return fromMulti.name;
-      if (renameOpen && renameTargetId === it.id) return renameName;
-      return it.name;
-    };
-    if (targets.length === 1) {
-      const only = targets[0];
-      const nextName = valueFor(only);
-      setMultiRenameOpen(false);
-      setMultiRenameItems([]);
-      setMultiRenameIndex(0);
-      setRenameTargetId(only.id);
-      setRenameName(nextName);
-      setRenameOpen(true);
-      return;
-    }
-    const nextItems = targets.map((it) => ({ id: it.id, name: valueFor(it), originalName: it.name, mime: it.mime }));
-    setRenameOpen(false);
-    setRenameName("");
-    setRenameTargetId(null);
-    setMultiRenameItems(nextItems);
-    setMultiRenameIndex((i) => Math.min(i, nextItems.length - 1));
-    setMultiRenameOpen(true);
-  }, [selectedIds]);
-
-  // 태그 패널도 같은 방식으로 선택 변화에 맞춰 다시 계산한다.
-  useEffect(() => {
-    if (!tagOpen && !multiTagOpen) return;
-    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
-    if (targets.length === 0) return;
-    const valueFor = (it) => {
-      const fromMulti = multiTagItems.find((x) => x.id === it.id);
-      if (fromMulti) return fromMulti.tag;
-      if (tagOpen && tagTargetId === it.id) return tagValue;
-      return it.tag || "";
-    };
-    if (targets.length === 1) {
-      const only = targets[0];
-      const nextValue = valueFor(only);
-      setMultiTagOpen(false);
-      setMultiTagItems([]);
-      setMultiTagIndex(0);
-      setTagTargetId(only.id);
-      setTagValue(nextValue);
-      setTagOpen(true);
-      return;
-    }
-    const nextItems = targets.map((it) => ({ id: it.id, tag: valueFor(it), name: it.name, mime: it.mime }));
-    setTagOpen(false);
-    setTagValue("");
-    setTagTargetId(null);
-    setMultiTagItems(nextItems);
-    setMultiTagIndex((i) => Math.min(i, nextItems.length - 1));
-    setMultiTagOpen(true);
-  }, [selectedIds]);
-
-  // 최적화 패널도 같은 방식으로 선택 변화에 맞춰 다시 계산한다 — 다만
-  // 폴더는 애초에 대상이 아니므로 걸러내고, 대상이 하나도 안 남으면(선택은
-  // 남아 있어도 전부 폴더뿐이면) 패널을 직접 닫는다(다른 두 효과처럼 별도
-  // "0개면 닫기" 효과에 기대지 않는다 — selectedIds.size는 0이 아닐 수
-  // 있어서다).
-  useEffect(() => {
-    if (!optimizeOpen && !multiOptimizeOpen) return;
-    // 선택이 바뀌면 지금 보여주던 진행률·결과 화면은 더 이상 이 선택을
-    // 대표하지 않으니 지운다(패널을 열어 둔 채 대상만 바뀐 것이라 확인을
-    // 다시 눌러야 새로 시작한다).
-    if (optimizeProgress || optimizeResult) {
-      setOptimizeProgress(null);
-      setOptimizeResult(null);
-    }
-    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && !it.is_folder);
     if (targets.length === 0) {
-      setOptimizeOpen(false);
-      setOptimizeTargetId(null);
-      setMultiOptimizeOpen(false);
-      setMultiOptimizeItems([]);
-      setMultiOptimizeIndex(0);
+      setStudioOpen(false);
+      setStudioTargetId(null);
+      setMultiStudioOpen(false);
+      setMultiStudioItems([]);
+      setMultiStudioIndex(0);
       return;
     }
-    const levelFor = (it) => {
-      const fromMulti = multiOptimizeItems.find((x) => x.id === it.id);
-      if (fromMulti) return fromMulti.level;
-      if (optimizeOpen && optimizeTargetId === it.id) return optimizeLevel;
-      return 1;
+    const fieldsFor = (it) => {
+      const fromMulti = multiStudioItems.find((x) => x.id === it.id);
+      if (fromMulti) return { name: fromMulti.name, tag: fromMulti.tag, level: fromMulti.level, levelTouched: fromMulti.levelTouched };
+      if (studioOpen && studioTargetId === it.id) {
+        return { name: studioName, tag: studioTag, level: studioLevel, levelTouched: studioLevelTouched };
+      }
+      return { name: it.name, tag: it.tag || "", level: 1, levelTouched: false };
     };
     if (targets.length === 1) {
       const only = targets[0];
-      const nextLevel = levelFor(only);
-      setMultiOptimizeOpen(false);
-      setMultiOptimizeItems([]);
-      setMultiOptimizeIndex(0);
-      setOptimizeTargetId(only.id);
-      setOptimizeLevel(nextLevel);
-      setOptimizeOpen(true);
+      const f = fieldsFor(only);
+      setMultiStudioOpen(false);
+      setMultiStudioItems([]);
+      setMultiStudioIndex(0);
+      setStudioTargetId(only.id);
+      setStudioName(f.name);
+      setStudioTag(f.tag);
+      setStudioLevel(f.level);
+      setStudioLevelTouched(f.levelTouched);
+      setStudioOpen(true);
       return;
     }
-    const nextItems = targets.map((it) => ({ id: it.id, name: it.name, mime: it.mime, level: levelFor(it) }));
-    setOptimizeOpen(false);
-    setOptimizeTargetId(null);
-    setMultiOptimizeItems(nextItems);
-    setMultiOptimizeIndex((i) => Math.min(i, nextItems.length - 1));
-    setMultiOptimizeOpen(true);
+    const nextItems = targets.map((it) => {
+      const f = fieldsFor(it);
+      return {
+        id: it.id,
+        name: f.name,
+        originalName: it.name,
+        tag: f.tag,
+        level: f.level,
+        levelTouched: f.levelTouched,
+        mime: it.mime,
+        is_folder: it.is_folder,
+      };
+    });
+    setStudioOpen(false);
+    setStudioTargetId(null);
+    setMultiStudioItems(nextItems);
+    setMultiStudioIndex((i) => Math.min(i, nextItems.length - 1));
+    setMultiStudioOpen(true);
   }, [selectedIds]);
 
   // 폴더 썸네일 패널도 같은 방식으로 선택 변화에 맞춰 다시 계산한다 — 다만
@@ -795,14 +688,14 @@ export default function App() {
     setDeleteConfirmOpen(false);
   };
 
-  // 선택된 항목으로 이름을 바꾼다. 단일 선택이면 이름 하나만 편집하는
-  // renameOpen 패널을, 여러 개면 이전·다음 화살표로 하나씩 넘기며 편집하는
-  // multiRenameOpen 패널을 연다.
-  const handleEditSelected = () => {
-    // 이미 이름 바꾸기 패널(단일이든 다중이든)이 열려 있는 채로 같은
-    // 아이콘을 다시 누르면 여는 대신 닫는다 — 빈 화면을 눌러 취소하는
-    // 것과 같은 처리다.
-    if (renameOpen || multiRenameOpen) {
+  // 선택된 항목으로 Studio(이름·태그·압축 통합) 패널을 연다. 단일 선택이면
+  // studioOpen 하나를, 여러 개면 이전·다음 화살표로 하나씩 넘기며 편집하는
+  // multiStudioOpen을 연다.
+  const handleStudioSelected = () => {
+    // 이미 Studio 패널(단일이든 다중이든)이 열려 있는 채로 같은 아이콘을
+    // 다시 누르면 여는 대신 닫는다 — 빈 화면을 눌러 취소하는 것과 같은
+    // 처리다.
+    if (studioOpen || multiStudioOpen) {
       closeAllToolPanels();
       return;
     }
@@ -810,106 +703,235 @@ export default function App() {
     if (!targets.length) return;
     closeAllToolPanels();
     if (targets.length === 1) {
-      setRenameTargetId(targets[0].id);
-      setRenameName(targets[0].name);
-      setRenameOpen(true);
+      const only = targets[0];
+      setStudioTargetId(only.id);
+      setStudioName(only.name);
+      setStudioTag(only.tag || "");
+      setStudioLevel(1);
+      setStudioLevelTouched(false);
+      setStudioOpen(true);
       return;
     }
-    setMultiRenameItems(targets.map((it) => ({ id: it.id, name: it.name, originalName: it.name, mime: it.mime })));
-    setMultiRenameIndex(0);
-    setMultiRenameOpen(true);
+    setMultiStudioItems(
+      targets.map((it) => ({
+        id: it.id,
+        name: it.name,
+        originalName: it.name,
+        tag: it.tag || "",
+        level: 1,
+        levelTouched: false,
+        mime: it.mime,
+        is_folder: it.is_folder,
+      }))
+    );
+    setMultiStudioIndex(0);
+    setMultiStudioOpen(true);
   };
 
-  const cancelRename = () => {
-    setRenameOpen(false);
-    setRenameName("");
-    setRenameTargetId(null);
+  const cancelStudio = () => {
+    setStudioOpen(false);
+    setStudioTargetId(null);
+    setStudioName("");
+    setStudioTag("");
+    setStudioLevel(1);
+    setStudioLevelTouched(false);
+    setStudioProgress(null);
+    setStudioResult(null);
   };
 
-  // 하단 검색바가 확장돼 보여주는 이름 바꾸기 패널의 "확인" 버튼. 입력한
-  // 그대로 저장한다 — 확장자를 지우고 싶어서 "1"처럼 확장자 없이 쳤는데
-  // 마음대로 "1.jpg"로 되돌리면 안 되므로, 자동으로 덧붙이지 않는다.
-  const confirmRename = async () => {
-    const name = renameName.trim();
-    if (!name || !renameTargetId) return;
-    try {
-      await renameFiles(session.token, [{ id: renameTargetId, name }]);
-      cancelRename();
-      setSelectedIds(new Set());
-      setRefreshKey((k) => k + 1);
-    } catch {
-      window.alert("이름을 바꾸지 못했습니다");
+  const cancelMultiStudio = () => {
+    setMultiStudioOpen(false);
+    setMultiStudioItems([]);
+    setMultiStudioIndex(0);
+    setStudioProgress(null);
+    setStudioResult(null);
+  };
+
+  const changeStudioName = (value) => {
+    if (studioOpen) setStudioName(value);
+    else if (multiStudioOpen) {
+      setMultiStudioItems((prev) => prev.map((it, i) => (i === multiStudioIndex ? { ...it, name: value } : it)));
     }
   };
 
-  const cancelMultiRename = () => {
-    setMultiRenameOpen(false);
-    setMultiRenameItems([]);
-    setMultiRenameIndex(0);
+  const changeStudioTag = (value) => {
+    if (studioOpen) setStudioTag(value);
+    else if (multiStudioOpen) {
+      setMultiStudioItems((prev) => prev.map((it, i) => (i === multiStudioIndex ? { ...it, tag: value } : it)));
+    }
   };
 
-  // 지금 보고 있는(multiRenameIndex번째) 항목의 이름만 바꾼다 — 검색바
-  // 입력창 하나를 화살표로 넘기며 재사용하는 방식이라, 다른 항목의 값은
-  // 건드리지 않는다.
-  const changeMultiRenameName = (value) => {
-    setMultiRenameItems((prev) => prev.map((it, i) => (i === multiRenameIndex ? { ...it, name: value } : it)));
+  // 품질 세그먼트를 실제로 누른 항목만 확인 시 압축한다(levelTouched).
+  const changeStudioLevel = (level) => {
+    if (studioOpen) {
+      setStudioLevel(level);
+      setStudioLevelTouched(true);
+    } else if (multiStudioOpen) {
+      setMultiStudioItems((prev) =>
+        prev.map((it, i) => (i === multiStudioIndex ? { ...it, level, levelTouched: true } : it))
+      );
+    }
   };
 
-  const prevMultiRename = () => setMultiRenameIndex((i) => Math.max(0, i - 1));
-  const nextMultiRename = () => setMultiRenameIndex((i) => Math.min(multiRenameItems.length - 1, i + 1));
+  const prevMultiStudio = () => setMultiStudioIndex((i) => Math.max(0, i - 1));
+  const nextMultiStudio = () => setMultiStudioIndex((i) => Math.min(multiStudioItems.length - 1, i + 1));
 
-  // 첫 번째 항목의 값을 모두에게 그대로 적용한다.
-  const applyAllMultiRename = () => {
-    setMultiRenameItems((prev) => {
-      const first = prev[0]?.name ?? "";
-      return prev.map((it) => ({ ...it, name: first }));
+  const applyAllMultiStudioName = () => {
+    setMultiStudioItems((prev) => {
+      const first = prev[multiStudioIndex]?.name ?? "";
+      return prev.map((it, i) => (i >= multiStudioIndex ? { ...it, name: first } : it));
     });
   };
-
-  const clearAllMultiRename = () => {
-    setMultiRenameItems((prev) => prev.map((it) => ({ ...it, name: "" })));
+  const clearAllMultiStudioName = () => {
+    setMultiStudioItems((prev) => prev.map((it) => ({ ...it, name: "" })));
   };
-
-  // 첫 번째 항목의 값을 기준점으로 삼는다: 끝에 붙은 숫자를 뽑아 그 숫자부터
-  // 순서대로 이어 붙인다.
-  const attachNumbersMultiRename = () => {
-    setMultiRenameItems((prev) => {
-      const first = prev[0]?.name || "";
+  // 지금 보고 있는 항목의 이름 끝에 붙은 숫자를 뽑아 그 숫자부터 순서대로
+  // 이어 붙인다.
+  const attachNumbersMultiStudio = () => {
+    setMultiStudioItems((prev) => {
+      const first = prev[multiStudioIndex]?.name || "";
       const match = first.match(/^(.*?)(\d+)$/);
       const prefix = match ? match[1] : first;
       const base = match ? parseInt(match[2], 10) : 1;
-      return prev.map((it, i) => ({ ...it, name: `${prefix}${base + i}` }));
+      return prev.map((it, i) =>
+        i >= multiStudioIndex ? { ...it, name: `${prefix}${base + (i - multiStudioIndex)}` } : it
+      );
+    });
+  };
+  const applyAllMultiStudioTag = () => {
+    setMultiStudioItems((prev) => {
+      const first = prev[multiStudioIndex]?.tag ?? "";
+      return prev.map((it, i) => (i >= multiStudioIndex ? { ...it, tag: first } : it));
+    });
+  };
+  const clearAllMultiStudioTag = () => {
+    setMultiStudioItems((prev) => prev.map((it) => ({ ...it, tag: "" })));
+  };
+  const applyAllMultiStudioLevel = () => {
+    setMultiStudioItems((prev) => {
+      const current = prev[multiStudioIndex];
+      if (!current) return prev;
+      return prev.map((it, i) => (i >= multiStudioIndex ? { ...it, level: current.level, levelTouched: true } : it));
     });
   };
 
-  // 확인을 누르는 순간 겹치는 이름에만 (1),(2),(3)…을 붙인다. 입력한 이름을
-  // 그대로 쓰며, 확장자를 자동으로 덧붙이지 않는다.
-  const confirmMultiRename = async () => {
-    if (!multiRenameItems.every((it) => it.name.trim().length > 0)) return;
+  // 확인을 누르면 그룹(품질 단계)별로 optimizeFiles를 병렬로 돌리되, 파일
+  // 하나가 끝날 때마다 공통 진행률(진행 바 + "148 / 200")을 갱신하고, 전부
+  // 끝나면 처리 시간·용량 변화로 바뀐 결과 화면을 보여준다. 압축이 없는
+  // 확인(이름·태그만 바뀐 경우)에서는 이 함수를 부르지 않는다.
+  const runStudioOptimizeGroups = async (groups) => {
+    const total = groups.reduce((sum, g) => sum + g.files.length, 0);
+    if (!total) return;
+    studioStatsRef.current = { done: 0, totalOriginal: 0, totalCompressed: 0 };
+    setStudioResult(null);
+    setStudioProgress({ done: 0, total });
+    const startedAt = performance.now();
+    const onFileDone = ({ originalSize, compressedSize }) => {
+      const s = studioStatsRef.current;
+      s.done += 1;
+      if (originalSize) s.totalOriginal += originalSize;
+      if (compressedSize) s.totalCompressed += compressedSize;
+      setStudioProgress({ done: s.done, total });
+    };
     try {
-      const finalNames = dedupeStrings(multiRenameItems.map((it) => it.name.trim()));
-      await renameFiles(session.token, multiRenameItems.map((it, i) => ({ id: it.id, name: finalNames[i] })));
-      cancelMultiRename();
-      setSelectedIds(new Set());
+      await Promise.all(
+        groups.map((g) => optimizeFiles({ token: session.token, items: g.files, ratioPercent: g.ratioPercent, onFileDone }))
+      );
+      const elapsedMs = performance.now() - startedAt;
+      setStudioProgress(null);
+      setStudioResult({
+        total,
+        totalOriginal: studioStatsRef.current.totalOriginal,
+        totalCompressed: studioStatsRef.current.totalCompressed,
+        elapsedMs,
+      });
       setRefreshKey((k) => k + 1);
     } catch {
-      window.alert("이름을 바꾸지 못했습니다");
+      setStudioProgress(null);
+      window.alert("용량을 줄이지 못했습니다");
     }
   };
 
-  // 삭제 확인·새 폴더·이동·단일/다중 이름 바꾸기·단일/다중 태그·단일/다중
-  // 최적화는 전부 검색바 위 같은 패널 자리를 공유한다 — 그중 하나를 열기
-  // 전에 항상 이걸 먼저 불러 나머지를 전부 닫는다.
+  // 이름·태그는 원래 두 패널처럼 값이 바뀌었든 아니든 현재 값을 그대로
+  // 저장한다. 압축은 사용자가 세그먼트를 실제로 눌렀을 때만(levelTouched),
+  // 그리고 그 파일이 실제로 압축 가능할 때만 실행한다 — 폴더나 지원하지
+  // 않는 형식이면 조용히 건너뛴다.
+  const confirmStudio = async () => {
+    if (studioResult) {
+      cancelStudio();
+      return;
+    }
+    const target = visibleItems.find((it) => it.id === studioTargetId);
+    if (!target) return;
+    const name = studioName.trim();
+    if (!name) return;
+    try {
+      await Promise.all([
+        renameFiles(session.token, [{ id: target.id, name }]),
+        setTag(session.token, [target.id], studioTag.trim()),
+      ]);
+    } catch {
+      window.alert("저장하지 못했습니다");
+      return;
+    }
+    const optimizable = !target.is_folder && isOptimizableFile(name, target.mime);
+    if (studioLevelTouched && optimizable) {
+      await runStudioOptimizeGroups([{ files: [{ ...target, name }], ratioPercent: OPTIMIZE_LEVELS[studioLevel] }]);
+      return;
+    }
+    cancelStudio();
+    setSelectedIds(new Set());
+    setRefreshKey((k) => k + 1);
+  };
+
+  const confirmMultiStudio = async () => {
+    if (studioResult) {
+      cancelMultiStudio();
+      return;
+    }
+    if (!multiStudioItems.every((it) => it.name.trim().length > 0)) return;
+    try {
+      const finalNames = dedupeStrings(multiStudioItems.map((it) => it.name.trim()));
+      await renameFiles(session.token, multiStudioItems.map((it, i) => ({ id: it.id, name: finalNames[i] })));
+      const tagGroups = new Map();
+      for (const it of multiStudioItems) {
+        const key = it.tag || "";
+        if (!tagGroups.has(key)) tagGroups.set(key, []);
+        tagGroups.get(key).push(it.id);
+      }
+      await Promise.all([...tagGroups.entries()].map(([tag, ids]) => setTag(session.token, ids, tag)));
+    } catch {
+      window.alert("저장하지 못했습니다");
+      return;
+    }
+    const optimizeTargets = multiStudioItems.filter(
+      (it) => it.levelTouched && !it.is_folder && isOptimizableFile(it.name, it.mime)
+    );
+    if (optimizeTargets.length) {
+      const groups = new Map();
+      for (const it of optimizeTargets) {
+        const file = visibleItems.find((v) => v.id === it.id);
+        if (!file) continue;
+        if (!groups.has(it.level)) groups.set(it.level, []);
+        groups.get(it.level).push({ ...file, name: it.name });
+      }
+      await runStudioOptimizeGroups([...groups.entries()].map(([level, files]) => ({ files, ratioPercent: OPTIMIZE_LEVELS[level] })));
+      return;
+    }
+    cancelMultiStudio();
+    setSelectedIds(new Set());
+    setRefreshKey((k) => k + 1);
+  };
+
+  // 삭제 확인·새 폴더·이동·Studio(단일/다중)·폴더 썸네일(단일/다중)은 전부
+  // 검색바 위 같은 패널 자리를 공유한다 — 그중 하나를 열기 전에 항상 이걸
+  // 먼저 불러 나머지를 전부 닫는다.
   const closeAllToolPanels = () => {
     setDeleteConfirmOpen(false);
     setNewFolderOpen(false);
     cancelMove();
-    cancelRename();
-    cancelMultiRename();
-    cancelTag();
-    cancelMultiTag();
-    cancelOptimize();
-    cancelMultiOptimize();
+    cancelStudio();
+    cancelMultiStudio();
     cancelThumbnail();
     cancelMultiThumbnail();
   };
@@ -1093,220 +1115,6 @@ export default function App() {
     }
   };
 
-  // 선택된 항목으로 태그를 단다. 단일 선택이면 이름 하나만 편집하는
-  // tagOpen 패널을, 여러 개면 이전·다음 화살표로 하나씩 넘기며 편집하는
-  // multiTagOpen 패널을 연다(이름 바꾸기와 똑같은 구조).
-  const handleTagSelected = () => {
-    // 이미 태그 패널(단일이든 다중이든)이 열려 있는 채로 같은 아이콘을
-    // 다시 누르면 여는 대신 닫는다 — 빈 화면을 눌러 취소하는 것과 같은
-    // 처리다.
-    if (tagOpen || multiTagOpen) {
-      closeAllToolPanels();
-      return;
-    }
-    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
-    if (!targets.length) return;
-    closeAllToolPanels();
-    if (targets.length === 1) {
-      setTagTargetId(targets[0].id);
-      setTagValue(targets[0].tag || "");
-      setTagOpen(true);
-      return;
-    }
-    setMultiTagItems(targets.map((it) => ({ id: it.id, tag: it.tag || "", name: it.name, mime: it.mime })));
-    setMultiTagIndex(0);
-    setMultiTagOpen(true);
-  };
-
-  const cancelTag = () => {
-    setTagOpen(false);
-    setTagValue("");
-    setTagTargetId(null);
-  };
-
-  // 태그는 이름과 달리 비어 있어도 유효한 값이라(태그를 지우는 것) 값이
-  // 없다고 확인을 막지 않는다.
-  const confirmTag = async () => {
-    if (!tagTargetId) return;
-    try {
-      await setTag(session.token, [tagTargetId], tagValue.trim());
-      cancelTag();
-      setSelectedIds(new Set());
-      setRefreshKey((k) => k + 1);
-    } catch {
-      window.alert("태그를 저장하지 못했습니다");
-    }
-  };
-
-  const cancelMultiTag = () => {
-    setMultiTagOpen(false);
-    setMultiTagItems([]);
-    setMultiTagIndex(0);
-  };
-
-  const changeMultiTagValue = (value) => {
-    setMultiTagItems((prev) => prev.map((it, i) => (i === multiTagIndex ? { ...it, tag: value } : it)));
-  };
-
-  const prevMultiTag = () => setMultiTagIndex((i) => Math.max(0, i - 1));
-  const nextMultiTag = () => setMultiTagIndex((i) => Math.min(multiTagItems.length - 1, i + 1));
-
-  const applyAllMultiTag = () => {
-    setMultiTagItems((prev) => {
-      const first = prev[0]?.tag ?? "";
-      return prev.map((it) => ({ ...it, tag: first }));
-    });
-  };
-
-  const clearAllMultiTag = () => {
-    setMultiTagItems((prev) => prev.map((it) => ({ ...it, tag: "" })));
-  };
-
-  // 태그는 이름과 달리 여러 항목이 같은 값이어도 되므로(오히려 그게 태그의
-  // 쓰임이다) 중복 방지 번호를 붙이지 않는다. 같은 태그 값끼리 묶어 그룹별로
-  // 한 번씩만 호출한다(서버 RPC가 여러 id에 같은 태그 하나만 받는다).
-  const confirmMultiTag = async () => {
-    try {
-      const groups = new Map();
-      for (const { id, tag } of multiTagItems) {
-        const key = tag || "";
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key).push(id);
-      }
-      await Promise.all([...groups.entries()].map(([tag, ids]) => setTag(session.token, ids, tag)));
-      cancelMultiTag();
-      setSelectedIds(new Set());
-      setRefreshKey((k) => k + 1);
-    } catch {
-      window.alert("태그를 저장하지 못했습니다");
-    }
-  };
-
-  // 선택된 항목 중 폴더만 뺀 파일들로 최적화 패널을 연다(폴더는 자체 용량이
-  // 없어 대상이 아니다). 단일 선택이면 품질 하나만 고르는 optimizeOpen을,
-  // 여러 개면 이전·다음 화살표로 하나씩 넘기며 항목마다 다른 품질을 고를
-  // 수 있는 multiOptimizeOpen을 연다(이름 바꾸기와 똑같은 구조). 기본값은
-  // 둘 다 "중간"(인덱스 1)이다. 실제로 캔버스가 읽지 못하는 형식(이미지가
-  // 아니거나 브라우저가 못 여는 포맷)은 압축 단계에서 그 파일만 건너뛴다 —
-  // mime 문자열만으로 미리 걸러내면, 사진 형식에 따라 브라우저가 mime을
-  // 빈 문자열로 주는 경우(예: 일부 환경의 HEIC) 정작 열리는 이미지까지
-  // 패널 자체가 뜨지 않는 문제가 있었다.
-  const handleOptimizeSelected = () => {
-    // 이미 최적화 패널(단일이든 다중이든)이 열려 있는 채로 같은 아이콘을
-    // 다시 누르면 여는 대신 닫는다 — 빈 화면을 눌러 취소하는 것과 같은
-    // 처리다.
-    if (optimizeOpen || multiOptimizeOpen) {
-      closeAllToolPanels();
-      return;
-    }
-    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && !it.is_folder);
-    if (!targets.length) return;
-    closeAllToolPanels();
-    if (targets.length === 1) {
-      setOptimizeTargetId(targets[0].id);
-      setOptimizeLevel(1);
-      setOptimizeOpen(true);
-      return;
-    }
-    setMultiOptimizeItems(targets.map((it) => ({ id: it.id, name: it.name, mime: it.mime, level: 1 })));
-    setMultiOptimizeIndex(0);
-    setMultiOptimizeOpen(true);
-  };
-
-  const cancelOptimize = () => {
-    setOptimizeOpen(false);
-    setOptimizeTargetId(null);
-    setOptimizeProgress(null);
-    setOptimizeResult(null);
-  };
-
-  const cancelMultiOptimize = () => {
-    setMultiOptimizeOpen(false);
-    setMultiOptimizeItems([]);
-    setMultiOptimizeIndex(0);
-    setOptimizeProgress(null);
-    setOptimizeResult(null);
-  };
-
-  // 확인을 누르면 그룹(품질 단계)별로 optimizeFiles를 병렬로 돌리되, 파일
-  // 하나가 끝날 때마다 공통 진행률(진행 바 + "148 / 200")을 갱신하고, 전부
-  // 끝나면 처리 시간·용량 변화로 바뀐 결과 화면을 보여준다. 확인 뒤에도
-  // 선택은 풀지 않는다(원래 모달 때부터 그랬다 — 압축 결과를 바로 이어서
-  // 볼 수 있게). 패널은 결과를 본 뒤 사용자가 직접 닫아야 한다(스크림을
-  // 누르거나 아이콘을 다시 누르면 닫힌다) — 그래야 "148/200"이 뜨자마자
-  // 사라지지 않는다.
-  const runOptimizeGroups = async (groups) => {
-    const total = groups.reduce((sum, g) => sum + g.files.length, 0);
-    if (!total) return;
-    optimizeStatsRef.current = { done: 0, totalOriginal: 0, totalCompressed: 0 };
-    setOptimizeResult(null);
-    setOptimizeProgress({ done: 0, total });
-    const startedAt = performance.now();
-    const onFileDone = ({ originalSize, compressedSize }) => {
-      const s = optimizeStatsRef.current;
-      s.done += 1;
-      if (originalSize) s.totalOriginal += originalSize;
-      if (compressedSize) s.totalCompressed += compressedSize;
-      setOptimizeProgress({ done: s.done, total });
-    };
-    try {
-      await Promise.all(
-        groups.map((g) => optimizeFiles({ token: session.token, items: g.files, ratioPercent: g.ratioPercent, onFileDone }))
-      );
-      const elapsedMs = performance.now() - startedAt;
-      setOptimizeProgress(null);
-      setOptimizeResult({
-        total,
-        totalOriginal: optimizeStatsRef.current.totalOriginal,
-        totalCompressed: optimizeStatsRef.current.totalCompressed,
-        elapsedMs,
-      });
-      setRefreshKey((k) => k + 1);
-    } catch {
-      setOptimizeProgress(null);
-      window.alert("용량을 줄이지 못했습니다");
-    }
-  };
-
-  const confirmOptimize = async () => {
-    const target = visibleItems.find((it) => it.id === optimizeTargetId);
-    if (!target || !isOptimizableFile(target.name, target.mime)) return;
-    await runOptimizeGroups([{ files: [target], ratioPercent: OPTIMIZE_LEVELS[optimizeLevel] }]);
-  };
-
-  const changeMultiOptimizeLevel = (level) => {
-    setMultiOptimizeItems((prev) => prev.map((it, i) => (i === multiOptimizeIndex ? { ...it, level } : it)));
-  };
-
-  // 이름 바꾸기·태그의 "전체 적용"과 달리, 첫 항목이 아니라 지금 보고 있는
-  // 항목의 값을 기준으로 삼는다 — 그 값을 자신과 그 뒤로 남은 항목에만
-  // 적용한다(앞서 이미 따로 정해 둔 항목은 건드리지 않는다).
-  const applyAllMultiOptimize = () => {
-    setMultiOptimizeItems((prev) => {
-      const level = prev[multiOptimizeIndex]?.level ?? 1;
-      return prev.map((it, i) => (i >= multiOptimizeIndex ? { ...it, level } : it));
-    });
-  };
-
-  const prevMultiOptimize = () => setMultiOptimizeIndex((i) => Math.max(0, i - 1));
-  const nextMultiOptimize = () => setMultiOptimizeIndex((i) => Math.min(multiOptimizeItems.length - 1, i + 1));
-
-  // 태그와 같은 방식으로, 같은 품질 값끼리 묶어 그룹별로 한 번씩만
-  // optimizeFiles를 호출한다. 진행률·결과 집계는 runOptimizeGroups가
-  // 그룹을 합쳐 하나로 보여준다.
-  const confirmMultiOptimize = async () => {
-    const targets = multiOptimizeItems
-      .map((it) => ({ level: it.level, file: visibleItems.find((v) => v.id === it.id) }))
-      .filter((it) => it.file);
-    if (!targets.length || targets.some((it) => !isOptimizableFile(it.file.name, it.file.mime))) return;
-    const groups = new Map();
-    for (const { level, file } of targets) {
-      if (!groups.has(level)) groups.set(level, []);
-      groups.get(level).push(file);
-    }
-    await runOptimizeGroups([...groups.entries()].map(([level, files]) => ({ files, ratioPercent: OPTIMIZE_LEVELS[level] })));
-  };
-
   // 선택된 파일·폴더의 즐겨찾기를 토글한다. 블러와 같은 "일부면 켜는 쪽으로"
   // 방식이다 — 전부 즐겨찾기면 풀고, 아니면 전부 즐겨찾기한다.
   const handleFavoriteSelected = async () => {
@@ -1421,14 +1229,10 @@ export default function App() {
         return setViewMode((v) => (v === "gallery" ? "list" : "gallery"));
       case "blur":
         return handleBlurSelected();
-      case "optimize":
-        return handleOptimizeSelected();
       case "favorite":
         return handleFavoriteSelected();
-      case "tag":
-        return handleTagSelected();
-      case "rename":
-        return handleEditSelected();
+      case "studio":
+        return handleStudioSelected();
       case "palette":
         return handlePaletteSelected();
       case "split":
@@ -1615,55 +1419,34 @@ export default function App() {
             onChangeNewFolderName={setNewFolderName}
             onConfirmNewFolder={confirmNewFolder}
             onCancelNewFolder={cancelNewFolder}
-            renameOpen={renameOpen}
-            renameName={renameName}
-            onChangeRenameName={setRenameName}
-            onConfirmRename={confirmRename}
-            onCancelRename={cancelRename}
-            multiRenameOpen={multiRenameOpen}
-            multiRenameItems={multiRenameItems}
-            multiRenameIndex={multiRenameIndex}
-            onChangeMultiRenameName={changeMultiRenameName}
-            onPrevMultiRename={prevMultiRename}
-            onNextMultiRename={nextMultiRename}
-            onClearAllMultiRename={clearAllMultiRename}
-            onApplyAllMultiRename={applyAllMultiRename}
-            onAttachNumbersMultiRename={attachNumbersMultiRename}
-            onConfirmMultiRename={confirmMultiRename}
-            onCancelMultiRename={cancelMultiRename}
-            tagOpen={tagOpen}
-            tagValue={tagValue}
-            onChangeTagValue={setTagValue}
-            onConfirmTag={confirmTag}
-            onCancelTag={cancelTag}
-            multiTagOpen={multiTagOpen}
-            multiTagItems={multiTagItems}
-            multiTagIndex={multiTagIndex}
-            onChangeMultiTagValue={changeMultiTagValue}
-            onPrevMultiTag={prevMultiTag}
-            onNextMultiTag={nextMultiTag}
-            onClearAllMultiTag={clearAllMultiTag}
-            onApplyAllMultiTag={applyAllMultiTag}
-            onConfirmMultiTag={confirmMultiTag}
-            onCancelMultiTag={cancelMultiTag}
-            optimizeOpen={optimizeOpen}
-            optimizeTargetName={visibleItems.find((it) => it.id === optimizeTargetId)?.name ?? ""}
-            optimizeTargetMime={visibleItems.find((it) => it.id === optimizeTargetId)?.mime ?? ""}
-            optimizeLevel={optimizeLevel}
-            optimizeProgress={optimizeProgress}
-            optimizeResult={optimizeResult}
-            onChangeOptimizeLevel={setOptimizeLevel}
-            onConfirmOptimize={confirmOptimize}
-            onCancelOptimize={cancelOptimize}
-            multiOptimizeOpen={multiOptimizeOpen}
-            multiOptimizeItems={multiOptimizeItems}
-            multiOptimizeIndex={multiOptimizeIndex}
-            onChangeMultiOptimizeLevel={changeMultiOptimizeLevel}
-            onApplyAllMultiOptimize={applyAllMultiOptimize}
-            onPrevMultiOptimize={prevMultiOptimize}
-            onNextMultiOptimize={nextMultiOptimize}
-            onConfirmMultiOptimize={confirmMultiOptimize}
-            onCancelMultiOptimize={cancelMultiOptimize}
+            studioOpen={studioOpen}
+            studioTargetName={visibleItems.find((it) => it.id === studioTargetId)?.name ?? ""}
+            studioTargetMime={visibleItems.find((it) => it.id === studioTargetId)?.mime ?? ""}
+            studioTargetIsFolder={visibleItems.find((it) => it.id === studioTargetId)?.is_folder ?? false}
+            studioName={studioName}
+            studioTag={studioTag}
+            studioLevel={studioLevel}
+            studioLevelTouched={studioLevelTouched}
+            studioProgress={studioProgress}
+            studioResult={studioResult}
+            onChangeStudioName={changeStudioName}
+            onChangeStudioTag={changeStudioTag}
+            onChangeStudioLevel={changeStudioLevel}
+            onConfirmStudio={confirmStudio}
+            onCancelStudio={cancelStudio}
+            multiStudioOpen={multiStudioOpen}
+            multiStudioItems={multiStudioItems}
+            multiStudioIndex={multiStudioIndex}
+            onPrevMultiStudio={prevMultiStudio}
+            onNextMultiStudio={nextMultiStudio}
+            onApplyAllMultiStudioName={applyAllMultiStudioName}
+            onClearAllMultiStudioName={clearAllMultiStudioName}
+            onAttachNumbersMultiStudio={attachNumbersMultiStudio}
+            onApplyAllMultiStudioTag={applyAllMultiStudioTag}
+            onClearAllMultiStudioTag={clearAllMultiStudioTag}
+            onApplyAllMultiStudioLevel={applyAllMultiStudioLevel}
+            onConfirmMultiStudio={confirmMultiStudio}
+            onCancelMultiStudio={cancelMultiStudio}
             moveOpen={moveOpen}
             moveItemCount={selectedIds.size}
             movePath={movePath}

@@ -23,31 +23,11 @@ function SearchIcon({ size = 18 }) {
   );
 }
 
-// 스튜디오 툴킷의 이름 바꾸기(연필) 아이콘과 같은 모양. 이름 바꾸기·다중
-// 이름 바꾸기 패널이 열려 검색바가 입력창으로 바뀌는 동안 돋보기 대신
-// 이걸 보여준다.
-function EditIcon({ size = 18 }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
-      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
-    </svg>
-  );
-}
-
 // 헤더 삼점 버튼의 "새 폴더" 아이콘과 같은 모양.
 function FolderIcon({ size = 18 }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
       <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
-    </svg>
-  );
-}
-
-// 스튜디오 툴킷의 태그(북마크) 아이콘과 같은 모양.
-function BookmarkIcon({ size = 18 }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
-      <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
     </svg>
   );
 }
@@ -60,24 +40,19 @@ function BookmarkIcon({ size = 18 }) {
 // 배경·블러·그림자·둥근 모서리는 전부 바깥 껍데기 하나(.search-dock)가
 // 맡는다 — 확인 문구(.search-bar-confirm-panel)와 검색창(.search-bar)은 그
 // 안의 내용일 뿐, 각자 따로 유리 재질을 두르지 않는다. 스튜디오 툴킷의
-// 삭제(휴지통)·이름 바꾸기(연필)·태그(#)·최적화(용량 압축)·이동 아이콘이나
-// 헤더 삼점 버튼의 "새 폴더"를 누르면 이 패널이 검색창 위로 확장되며
-// 제목(과 삭제·이동일 땐 안내 문구, 다중 이름 바꾸기·다중 태그·다중
-// 최적화일 땐 이전·다음 화살표, 이동일 땐 폴더 목록)을 보여준다 — 취소
-// 버튼은 없고, 검색바를 뺀 화면 어디를 눌러도 취소로 닫힌다
+// 삭제(휴지통)·Studio(이름·태그·압축 통합)·이동 아이콘이나 헤더 삼점 버튼의
+// "새 폴더"를 누르면 이 패널이 검색창 위로 확장되며 제목(과 삭제·이동일 땐
+// 안내 문구, 다중 Studio일 땐 이전·다음 화살표, 이동일 땐 폴더 목록)을
+// 보여준다 — 취소 버튼은 없고, 검색바를 뺀 화면 어디를 눌러도 취소로 닫힌다
 // (.search-bar-scrim). 확인 버튼은 패널이 아니라 검색바 자신의 오른쪽
-// 끝에 뜬다 — 새 폴더·이름 바꾸기·태그일 때는 검색바의 돋보기·
-// 플레이스홀더도 아이콘(연필 또는 #)·"여기에 입력하세요"로 바뀌어 그
-// 입력창에 직접 값을 타이핑하고(별도 입력창을 새로 만들지 않는다), 삭제·
-// 이동·최적화처럼 그 입력창을 쓰지 않는 패널이 열려 있을 땐 검색을 아예
-// 막도록 입력창 자체를 비활성화한다. 다중 이름 바꾸기·다중 태그도 같은
-// 입력창 하나를 화살표로 넘기며 재사용한다 — 그래서 몇 개를 고르든 패널
-// 크기는 항상 같다. 최적화의 품질(낮음/중간/높음) 세그먼트는 패널이 아니라
-// 검색바 자신의 확인 버튼 바로 왼쪽에 뜬다 — 단일이든 다중이든 항목마다
-// 따로 고를 수 있고(다중은 이전·다음으로 넘기며), 검색바 입력창 자체는
-// 쓰지 않는다. 여러 상태 중 둘 이상 동시에 열릴 수는 없으므로(App.jsx가
-// 하나를 열 때 나머지를 닫는다) 패널·검색바 내용물은 그때그때 하나만
-// 그린다.
+// 끝에 뜬다 — 새 폴더일 때는 검색바의 돋보기·플레이스홀더도 폴더 아이콘·
+// "여기에 입력하세요"로 바뀌어 그 입력창에 직접 값을 타이핑하고, 삭제·
+// 이동·Studio처럼 그 입력창을 쓰지 않는 패널이 열려 있을 땐 검색을 아예
+// 막도록 입력창 자체를 비활성화한다. Studio는 이름·태그를 동시에 보여줘야
+// 해서 검색바 입력창 하나를 공유하지 않고, 패널 본문에 이름·태그 입력칸을
+// 따로 두고 있다(다중이면 이전·다음 화살표로 항목을 넘긴다). 여러 상태 중
+// 둘 이상 동시에 열릴 수는 없으므로(App.jsx가 하나를 열 때 나머지를 닫는다)
+// 패널·검색바 내용물은 그때그때 하나만 그린다.
 export default function BottomSearchBar({
   searchQuery,
   onSearch,
@@ -89,55 +64,34 @@ export default function BottomSearchBar({
   onChangeNewFolderName,
   onConfirmNewFolder,
   onCancelNewFolder,
-  renameOpen,
-  renameName,
-  onChangeRenameName,
-  onConfirmRename,
-  onCancelRename,
-  multiRenameOpen,
-  multiRenameItems,
-  multiRenameIndex,
-  onChangeMultiRenameName,
-  onPrevMultiRename,
-  onNextMultiRename,
-  onClearAllMultiRename,
-  onApplyAllMultiRename,
-  onAttachNumbersMultiRename,
-  onConfirmMultiRename,
-  onCancelMultiRename,
-  tagOpen,
-  tagValue,
-  onChangeTagValue,
-  onConfirmTag,
-  onCancelTag,
-  multiTagOpen,
-  multiTagItems,
-  multiTagIndex,
-  onChangeMultiTagValue,
-  onPrevMultiTag,
-  onNextMultiTag,
-  onClearAllMultiTag,
-  onApplyAllMultiTag,
-  onConfirmMultiTag,
-  onCancelMultiTag,
-  optimizeOpen,
-  optimizeTargetName,
-  optimizeTargetMime,
-  optimizeLevel,
-  optimizeProgress,
-  optimizeResult,
-  onChangeOptimizeLevel,
-  onConfirmOptimize,
-  onCancelOptimize,
-  multiOptimizeOpen,
-  multiOptimizeItems,
-  multiOptimizeIndex,
-  onChangeMultiOptimizeLevel,
-  onApplyAllMultiOptimize,
-  onPrevMultiOptimize,
-  onNextMultiOptimize,
-  onConfirmMultiOptimize,
-  onCancelMultiOptimize,
+  studioOpen,
+  studioTargetName,
+  studioTargetMime,
+  studioTargetIsFolder,
+  studioName,
+  studioTag,
+  studioLevel,
+  studioLevelTouched,
+  studioProgress,
+  studioResult,
+  onChangeStudioName,
+  onChangeStudioTag,
+  onChangeStudioLevel,
+  onConfirmStudio,
+  onCancelStudio,
+  multiStudioOpen,
+  multiStudioItems,
+  multiStudioIndex,
+  onPrevMultiStudio,
+  onNextMultiStudio,
+  onApplyAllMultiStudioName,
+  onClearAllMultiStudioName,
+  onAttachNumbersMultiStudio,
+  onApplyAllMultiStudioTag,
+  onClearAllMultiStudioTag,
+  onApplyAllMultiStudioLevel,
+  onConfirmMultiStudio,
+  onCancelMultiStudio,
   moveOpen,
   moveItemCount,
   movePath,
@@ -172,31 +126,23 @@ export default function BottomSearchBar({
 }) {
   const [busy, setBusy] = useState(false);
   const [folderBusy, setFolderBusy] = useState(false);
-  const [renameBusy, setRenameBusy] = useState(false);
-  const [multiRenameBusy, setMultiRenameBusy] = useState(false);
-  const [tagBusy, setTagBusy] = useState(false);
-  const [multiTagBusy, setMultiTagBusy] = useState(false);
-  const [optimizeBusy, setOptimizeBusy] = useState(false);
-  const [multiOptimizeBusy, setMultiOptimizeBusy] = useState(false);
+  const [studioBusy, setStudioBusy] = useState(false);
+  const [multiStudioBusy, setMultiStudioBusy] = useState(false);
   const [moveBusy, setMoveBusy] = useState(false);
   const [thumbnailBusy, setThumbnailBusy] = useState(false);
   const [multiThumbnailBusy, setMultiThumbnailBusy] = useState(false);
   const panelOpen =
     confirmOpen ||
     newFolderOpen ||
-    renameOpen ||
-    multiRenameOpen ||
-    tagOpen ||
-    multiTagOpen ||
-    optimizeOpen ||
-    multiOptimizeOpen ||
+    studioOpen ||
+    multiStudioOpen ||
     moveOpen ||
     thumbnailOpen ||
     multiThumbnailOpen;
-  // 검색바가 검색 대신 값을 입력받는 상태(새 폴더·이름 바꾸기·다중 이름
-  // 바꾸기·태그·다중 태그 다섯 다 공통).
-  const textEntryOpen = newFolderOpen || renameOpen || multiRenameOpen || tagOpen || multiTagOpen;
-  // 입력창을 쓰지 않는 패널(삭제 확인·이동·최적화)이 열려 있을 때는 검색바
+  // 검색바가 검색 대신 값을 입력받는 상태(지금은 새 폴더뿐 — Studio는 이름·
+  // 태그를 패널 본문의 전용 입력칸에서 다루므로 검색바 입력창을 쓰지 않는다).
+  const textEntryOpen = newFolderOpen;
+  // 입력창을 쓰지 않는 패널(삭제 확인·이동·Studio)이 열려 있을 때는 검색바
   // 입력을 아예 비활성화한다 — 패널이 열려 있는 동안 검색어를 바꿔 지금
   // 폴더 목록 자체가 통째로 달라지는 걸 막기 위해서다.
   const inputDisabled = panelOpen && !textEntryOpen;
@@ -210,51 +156,27 @@ export default function BottomSearchBar({
   const resolveMode = () =>
     newFolderOpen
       ? "newFolder"
-      : renameOpen
-        ? "rename"
-        : multiRenameOpen
-          ? "multiRename"
-          : tagOpen
-            ? "tag"
-            : multiTagOpen
-              ? "multiTag"
-              : optimizeOpen
-                ? "optimize"
-                : multiOptimizeOpen
-                  ? "multiOptimize"
-                  : moveOpen
-                    ? "move"
-                    : thumbnailOpen
-                      ? "thumbnail"
-                      : multiThumbnailOpen
-                        ? "multiThumbnail"
-                        : "confirm";
+      : studioOpen
+        ? "studio"
+        : multiStudioOpen
+          ? "multiStudio"
+          : moveOpen
+            ? "move"
+            : thumbnailOpen
+              ? "thumbnail"
+              : multiThumbnailOpen
+                ? "multiThumbnail"
+                : "confirm";
   const [displayMode, setDisplayMode] = useState(resolveMode);
   useEffect(() => {
     if (newFolderOpen) setDisplayMode("newFolder");
-    else if (renameOpen) setDisplayMode("rename");
-    else if (multiRenameOpen) setDisplayMode("multiRename");
-    else if (tagOpen) setDisplayMode("tag");
-    else if (multiTagOpen) setDisplayMode("multiTag");
-    else if (optimizeOpen) setDisplayMode("optimize");
-    else if (multiOptimizeOpen) setDisplayMode("multiOptimize");
+    else if (studioOpen) setDisplayMode("studio");
+    else if (multiStudioOpen) setDisplayMode("multiStudio");
     else if (moveOpen) setDisplayMode("move");
     else if (thumbnailOpen) setDisplayMode("thumbnail");
     else if (multiThumbnailOpen) setDisplayMode("multiThumbnail");
     else if (confirmOpen) setDisplayMode("confirm");
-  }, [
-    newFolderOpen,
-    renameOpen,
-    multiRenameOpen,
-    tagOpen,
-    multiTagOpen,
-    optimizeOpen,
-    multiOptimizeOpen,
-    moveOpen,
-    thumbnailOpen,
-    multiThumbnailOpen,
-    confirmOpen,
-  ]);
+  }, [newFolderOpen, studioOpen, multiStudioOpen, moveOpen, thumbnailOpen, multiThumbnailOpen, confirmOpen]);
 
   const confirm = async () => {
     if (busy) return;
@@ -277,108 +199,69 @@ export default function BottomSearchBar({
     }
   };
 
-  const canSubmitRename = Boolean(renameName?.trim()) && !renameBusy;
-  const submitRename = async () => {
-    if (!canSubmitRename) return;
-    setRenameBusy(true);
-    try {
-      await onConfirmRename();
-    } finally {
-      setRenameBusy(false);
-    }
-  };
-
-  const multiRenameCurrent = multiRenameItems?.[multiRenameIndex]?.name ?? "";
-  const canSubmitMultiRename =
-    Boolean(multiRenameItems?.length) && multiRenameItems.every((it) => it.name.trim().length > 0) && !multiRenameBusy;
-  const submitMultiRename = async () => {
-    if (!canSubmitMultiRename) return;
-    setMultiRenameBusy(true);
-    try {
-      await onConfirmMultiRename();
-    } finally {
-      setMultiRenameBusy(false);
-    }
-  };
-
-  // 태그는 이름과 달리 비어 있어도 유효한 값(태그를 지운다는 뜻)이라
-  // 값이 없다고 확인을 막지 않는다.
-  const canSubmitTag = !tagBusy;
-  const submitTag = async () => {
-    if (!canSubmitTag) return;
-    setTagBusy(true);
-    try {
-      await onConfirmTag();
-    } finally {
-      setTagBusy(false);
-    }
-  };
-
-  const multiTagCurrent = multiTagItems?.[multiTagIndex]?.tag ?? "";
-  const canSubmitMultiTag = Boolean(multiTagItems?.length) && !multiTagBusy;
-  const submitMultiTag = async () => {
-    if (!canSubmitMultiTag) return;
-    setMultiTagBusy(true);
-    try {
-      await onConfirmMultiTag();
-    } finally {
-      setMultiTagBusy(false);
-    }
-  };
-
-  // 최적화는 이름·태그와 똑같은 단일/다중 구조를 쓴다 — 다만 고르는 값이
-  // 품질 단계(낮음/중간/높음)라 검색바 입력창은 쓰지 않는다(삭제·이동과
-  // 같은 부류). 캔버스로 못 읽는 확장자가 있으면 그 항목의 품질을 뭘로
-  // 고르든 일부만 압축되는 애매한 결과라 확인 버튼 자체를 막는다.
-  const isMultiOptimize = Boolean(multiOptimizeOpen);
-  const multiOptimizeCurrent = multiOptimizeItems?.[multiOptimizeIndex];
-  const hasUnsupportedOptimize = optimizeOpen
-    ? Boolean(optimizeTargetName) && !isOptimizableFile(optimizeTargetName, optimizeTargetMime)
-    : isMultiOptimize
-      ? (multiOptimizeItems ?? []).some((it) => !isOptimizableFile(it.name, it.mime))
+  // Studio(이름·태그·압축 통합)는 단일이면 studioOpen 하나를, 여러 개면
+  // multiStudioOpen을 이전·다음 화살표로 하나씩 넘기며 편집한다 — 아래는 둘
+  // 중 열려 있는 쪽 기준의 공통 값들.
+  const isMultiStudio = Boolean(multiStudioOpen);
+  const multiStudioCurrent = multiStudioItems?.[multiStudioIndex];
+  const isLastMultiStudio = multiStudioIndex >= (multiStudioItems?.length ?? 1) - 1;
+  const currentStudioName = studioOpen ? studioName : isMultiStudio ? multiStudioCurrent?.name ?? "" : "";
+  const currentStudioTag = studioOpen ? studioTag : isMultiStudio ? multiStudioCurrent?.tag ?? "" : "";
+  const currentStudioLevel = studioOpen ? studioLevel : isMultiStudio ? multiStudioCurrent?.level ?? 1 : 1;
+  const currentStudioMime = studioOpen ? studioTargetMime : isMultiStudio ? multiStudioCurrent?.mime ?? "" : "";
+  const currentStudioIsFolder = studioOpen
+    ? studioTargetIsFolder
+    : isMultiStudio
+      ? multiStudioCurrent?.is_folder ?? false
       : false;
-  // 검색바 옆으로 옮긴 품질 세그먼트가 지금 반영해야 하는 값·바꾸는 방법 —
-  // 단일이면 optimizeLevel 하나, 다중이면 지금 보고 있는(multiOptimizeIndex
-  // 번째) 항목의 값이다.
-  const currentOptimizeLevel = optimizeOpen ? optimizeLevel : isMultiOptimize ? (multiOptimizeCurrent?.level ?? 1) : 1;
-  const changeCurrentOptimizeLevel = (level) => {
-    if (optimizeOpen) onChangeOptimizeLevel?.(level);
-    else if (isMultiOptimize) onChangeMultiOptimizeLevel?.(level);
-  };
+  const currentStudioOriginalName = studioOpen
+    ? studioTargetName
+    : isMultiStudio
+      ? multiStudioCurrent?.originalName ?? ""
+      : "";
+  // 폴더거나 캔버스로 못 읽는 확장자면 압축 섹션·탭 자체를 보여주지 않는다.
+  const studioOptimizable =
+    !currentStudioIsFolder && isOptimizableFile(currentStudioName || currentStudioOriginalName, currentStudioMime);
+  // 처리 중(진행 바)이거나 결과가 이미 떠 있으면 이름·태그·압축 섹션 대신
+  // 그 화면을 보여준다.
+  const studioRunning = Boolean(studioProgress) || Boolean(studioResult);
   // 품질 세그먼트를 탭뿐 아니라 마우스 드래그·손가락 슬라이드로도 고를 수
-  // 있게 한다.
-  const optimizeSegDrag = useSegmentDrag(OPTIMIZE_LEVELS.length, changeCurrentOptimizeLevel);
-  // 처리 중(진행 바)이거나 결과가 이미 떠 있으면 품질 세그먼트는 숨긴다 —
-  // 다만 결과 화면에서는 확인 버튼 자체는 막지 않는다(그 상태에서 누르면
-  // 재실행이 아니라 그냥 패널을 닫는 걸로 쓴다).
-  const optimizeRunning = Boolean(optimizeProgress) || Boolean(optimizeResult);
-  const canSubmitOptimize = Boolean(optimizeTargetName) && !hasUnsupportedOptimize && !optimizeBusy;
-  const submitOptimize = async () => {
-    if (optimizeResult) {
-      onCancelOptimize?.();
-      return;
-    }
-    if (!canSubmitOptimize) return;
-    setOptimizeBusy(true);
+  // 있게 한다. onChangeStudioLevel은 App.jsx에서 단일/다중 여부를 이미
+  // 스스로 판단하므로 여기서는 그대로 전달만 한다.
+  const studioSegDrag = useSegmentDrag(OPTIMIZE_LEVELS.length, (level) => onChangeStudioLevel?.(level));
+
+  const canSubmitStudio = studioResult ? true : Boolean(studioName?.trim()) && !studioBusy;
+  const submitStudio = async () => {
+    if (studioBusy) return;
+    setStudioBusy(true);
     try {
-      await onConfirmOptimize();
+      await onConfirmStudio();
     } finally {
-      setOptimizeBusy(false);
+      setStudioBusy(false);
     }
   };
-  const canSubmitMultiOptimize = Boolean(multiOptimizeItems?.length) && !hasUnsupportedOptimize && !multiOptimizeBusy;
-  const submitMultiOptimize = async () => {
-    if (optimizeResult) {
-      onCancelMultiOptimize?.();
-      return;
-    }
-    if (!canSubmitMultiOptimize) return;
-    setMultiOptimizeBusy(true);
+  const canSubmitMultiStudio = studioResult
+    ? true
+    : Boolean(multiStudioItems?.length) && multiStudioItems.every((it) => it.name.trim().length > 0) && !multiStudioBusy;
+  const submitMultiStudio = async () => {
+    if (multiStudioBusy) return;
+    setMultiStudioBusy(true);
     try {
-      await onConfirmMultiOptimize();
+      await onConfirmMultiStudio();
     } finally {
-      setMultiOptimizeBusy(false);
+      setMultiStudioBusy(false);
     }
+  };
+
+  // 패널 본문의 이름·태그·압축 세 섹션은 늘 함께 쌓여 있고, "이름/태그/압축"
+  // 탭은 그 중 하나로 스크롤만 시켜준다(탭이 섹션을 숨기고 보이지는 않는다).
+  const studioSectionsRef = useRef(null);
+  const studioNameSectionRef = useRef(null);
+  const studioTagSectionRef = useRef(null);
+  const studioQualitySectionRef = useRef(null);
+  const scrollToStudioSection = (which) => {
+    const ref = which === "name" ? studioNameSectionRef : which === "tag" ? studioTagSectionRef : studioQualitySectionRef;
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
 
   // 이동은 태그처럼 비어 있어도(최상위로 옮기는 것도 유효한 목적지라)
@@ -433,75 +316,29 @@ export default function BottomSearchBar({
     }
   };
 
-  // 다중 이름 바꾸기·다중 태그는 검색바 입력창 하나를 이전·다음 화살표로
-  // 넘기며 재사용한다 — 아래는 둘 중 열려 있는 쪽 기준의 공통 값들.
-  const isMultiRename = Boolean(multiRenameOpen);
-  const isMultiTag = Boolean(multiTagOpen);
-  const multiIndex = isMultiRename ? multiRenameIndex : isMultiTag ? multiTagIndex : 0;
-  const multiItems = isMultiRename ? multiRenameItems : isMultiTag ? multiTagItems : [];
-  const isLastMultiItem = multiIndex >= (multiItems?.length ?? 1) - 1;
-  const onPrevMulti = isMultiRename ? onPrevMultiRename : onPrevMultiTag;
-  const onNextMulti = isMultiRename ? onNextMultiRename : onNextMultiTag;
-
-  const textValue = newFolderOpen
-    ? newFolderName
-    : renameOpen
-      ? renameName
-      : multiRenameOpen
-        ? multiRenameCurrent
-        : tagOpen
-          ? tagValue
-          : multiTagOpen
-            ? multiTagCurrent
-            : searchQuery;
+  const textValue = newFolderOpen ? newFolderName : searchQuery;
   const onTextChange = (value) => {
     if (newFolderOpen) onChangeNewFolderName?.(value);
-    else if (renameOpen) onChangeRenameName?.(value);
-    else if (multiRenameOpen) onChangeMultiRenameName?.(value);
-    else if (tagOpen) onChangeTagValue?.(value);
-    else if (multiTagOpen) onChangeMultiTagValue?.(value);
     else onSearch?.(value);
   };
-  const canSubmitText = newFolderOpen
-    ? canSubmitFolder
-    : renameOpen
-      ? canSubmitRename
-      : multiRenameOpen
-        ? canSubmitMultiRename
-        : tagOpen
-          ? canSubmitTag
-          : multiTagOpen
-            ? canSubmitMultiTag
-            : true;
+  const canSubmitText = newFolderOpen ? canSubmitFolder : true;
   const submitText = () => {
     if (newFolderOpen) return submitFolder();
-    if (renameOpen) return submitRename();
-    if (multiRenameOpen) return submitMultiRename();
-    if (tagOpen) return submitTag();
-    if (multiTagOpen) return submitMultiTag();
     return confirm();
   };
   const onCancelScrim = newFolderOpen
     ? onCancelNewFolder
-    : renameOpen
-      ? onCancelRename
-      : multiRenameOpen
-        ? onCancelMultiRename
-        : tagOpen
-          ? onCancelTag
-          : multiTagOpen
-            ? onCancelMultiTag
-            : optimizeOpen
-              ? onCancelOptimize
-              : multiOptimizeOpen
-                ? onCancelMultiOptimize
-                : moveOpen
-                  ? onCancelMove
-                  : thumbnailOpen
-                    ? onCancelThumbnail
-                    : multiThumbnailOpen
-                      ? onCancelMultiThumbnail
-                      : onCancelDelete;
+    : studioOpen
+      ? onCancelStudio
+      : multiStudioOpen
+        ? onCancelMultiStudio
+        : moveOpen
+          ? onCancelMove
+          : thumbnailOpen
+            ? onCancelThumbnail
+            : multiThumbnailOpen
+              ? onCancelMultiThumbnail
+              : onCancelDelete;
 
   // 스크림이 화면 전체를 덮으면 그 밑에 있는 스튜디오 툴킷 바(전체 선택
   // 체크박스 + 기본 도구 1열 + 애드온 2열)도 가려져서 아이콘을 눌러 패널을
@@ -543,45 +380,32 @@ export default function BottomSearchBar({
   };
 
   // 검색바 아이콘은 삭제 패널만 빼고, 그 패널을 연 툴킷 아이콘과 똑같은
-  // 모양으로 바뀐다(새 폴더→폴더, 이름 바꾸기→연필, 태그→북마크).
-  const isTagMode = tagOpen || multiTagOpen;
-  const searchBarIcon = !textEntryOpen ? (
-    <SearchIcon />
-  ) : newFolderOpen ? (
-    <FolderIcon />
-  ) : isTagMode ? (
-    <BookmarkIcon />
-  ) : (
-    <EditIcon />
-  );
+  // 모양으로 바뀐다(새 폴더→폴더). Studio는 검색바 입력창을 쓰지 않으므로
+  // textEntryOpen 상태에 들어가지 않는다.
+  const searchBarIcon = textEntryOpen ? <FolderIcon /> : <SearchIcon />;
 
   // 패널 본문에 따로 두던 "일괄 적용·일괄 지우기·번호 붙이기·지우기" 부가
   // 버튼들을 지금 열린 패널에 맞춰 여기 하나로 모은다 — 검색바의 삼점
   // 버튼을 누르면 이 목록이 작은 글자 버튼으로 펼쳐진다. 하나도 없는
-  // 패널(새 폴더·이름 바꾸기·태그·이동·삭제 확인 등)에서는 삼점 버튼 자체가
-  // 뜨지 않는다.
+  // 패널(새 폴더·이동·삭제 확인 등)에서는 삼점 버튼 자체가 뜨지 않는다.
   const extraActions =
-    displayMode === "multiRename"
+    displayMode === "multiStudio" && !studioRunning
       ? [
-          { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiRename },
-          { key: "applyAll", label: "일괄 적용", onClick: onApplyAllMultiRename },
-          { key: "numbers", label: "번호 붙이기", onClick: onAttachNumbersMultiRename },
+          { key: "nameApplyAll", label: "이름 일괄 적용", onClick: onApplyAllMultiStudioName },
+          { key: "nameClearAll", label: "이름 일괄 지우기", onClick: onClearAllMultiStudioName },
+          { key: "nameNumbers", label: "번호 붙이기", onClick: onAttachNumbersMultiStudio },
+          { key: "tagApplyAll", label: "태그 일괄 적용", onClick: onApplyAllMultiStudioTag },
+          { key: "tagClearAll", label: "태그 일괄 지우기", onClick: onClearAllMultiStudioTag },
+          ...(studioOptimizable ? [{ key: "levelApplyAll", label: "압축 일괄 적용", onClick: onApplyAllMultiStudioLevel }] : []),
         ]
-      : displayMode === "multiTag"
-        ? [
-            { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiTag },
-            { key: "applyAll", label: "일괄 적용", onClick: onApplyAllMultiTag },
-          ]
-        : displayMode === "multiOptimize" && !optimizeRunning
-          ? [{ key: "applyAll", label: "일괄 적용", onClick: onApplyAllMultiOptimize }]
-          : displayMode === "thumbnail"
-            ? [{ key: "clear", label: "지우기", onClick: onClearThumbnail }]
-            : displayMode === "multiThumbnail"
-              ? [
-                  { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiThumbnail },
-                  { key: "clear", label: "지우기", onClick: onClearCurrentMultiThumbnail },
-                ]
-              : [];
+      : displayMode === "thumbnail"
+        ? [{ key: "clear", label: "지우기", onClick: onClearThumbnail }]
+        : displayMode === "multiThumbnail"
+          ? [
+              { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiThumbnail },
+              { key: "clear", label: "지우기", onClick: onClearCurrentMultiThumbnail },
+            ]
+          : [];
 
   return (
     <>
@@ -619,133 +443,147 @@ export default function BottomSearchBar({
       <div className="bottom-search-wrap">
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
           <div
-            className={`search-bar-confirm-panel${displayMode === "optimize" || displayMode === "multiOptimize" ? " mode-optimize" : ""}${displayMode === "move" || displayMode === "thumbnail" || displayMode === "multiThumbnail" ? " mode-move" : ""}${extraActions.length > 0 ? " has-extras" : ""}${panelOpen ? " is-open" : ""}`}
+            className={`search-bar-confirm-panel${displayMode === "studio" || displayMode === "multiStudio" ? " mode-studio" : ""}${displayMode === "move" || displayMode === "thumbnail" || displayMode === "multiThumbnail" ? " mode-move" : ""}${extraActions.length > 0 ? " has-extras" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
           >
             {displayMode === "newFolder" ? (
               <p className="search-bar-confirm-title">새 폴더</p>
-            ) : displayMode === "rename" ? (
-              <p className="search-bar-confirm-title">이름 바꾸기</p>
-            ) : displayMode === "tag" ? (
-              <p className="search-bar-confirm-title">태그</p>
-            ) : displayMode === "multiRename" || displayMode === "multiTag" ? (
-              <>
-                <div className="search-bar-confirm-title-row">
-                  <p className="search-bar-confirm-title">{displayMode === "multiRename" ? "이름 바꾸기" : "태그"}</p>
-                  <div className="search-bar-confirm-nav">
-                    <button
-                      type="button"
-                      className="search-bar-confirm-nav-btn search-bar-confirm-nav-btn--prev"
-                      aria-label="이전 항목"
-                      onClick={onPrevMulti}
-                      disabled={multiIndex <= 0}
-                    >
-                      <ChevronRightIcon size={14} />
-                    </button>
-                    <span className="search-bar-confirm-nav-count">
-                      {multiIndex + 1}/{multiItems?.length ?? 0}
-                    </span>
-                    <button
-                      type="button"
-                      className="search-bar-confirm-nav-btn"
-                      aria-label="다음 항목"
-                      onClick={onNextMulti}
-                      disabled={isLastMultiItem}
-                    >
-                      <ChevronRightIcon size={14} />
-                    </button>
-                  </div>
-                </div>
-                {/* 다중 선택일 때만: 지금 이전·다음으로 넘겨 보고 있는 항목이
-                    실제로 어떤 파일인지 알 수 있도록 원래 이름을 본문 텍스트로
-                    보여준다(입력창은 편집 중인 값이라 원래 이름과 다를 수 있다). */}
-                <p className="search-bar-confirm-filename">
-                  {displayName({
-                    name: isMultiRename ? multiItems?.[multiIndex]?.originalName : multiItems?.[multiIndex]?.name,
-                    mime: multiItems?.[multiIndex]?.mime,
-                  })}
-                </p>
-              </>
-            ) : displayMode === "optimize" || displayMode === "multiOptimize" ? (
-              optimizeResult ? (
-                // 확인 후 전부 끝났을 때: 단일·다중 공통으로 처리 시간·용량
-                // 변화·절약한 용량을 보여준다. 패널은 스크림을 누르거나
-                // 아이콘을 다시 눌러야 닫힌다(결과를 본 뒤 사용자가 직접).
+            ) : displayMode === "studio" || displayMode === "multiStudio" ? (
+              studioResult ? (
+                // 확인 후 압축까지 전부 끝났을 때: 단일·다중 공통으로 처리
+                // 시간·용량 변화·절약한 용량을 보여준다. 패널은 스크림을
+                // 누르거나 아이콘을 다시 눌러야 닫힌다(결과를 본 뒤 사용자가
+                // 직접).
                 <>
-                  <p className="search-bar-confirm-title">최적화</p>
-                  <p className="search-bar-confirm-desc">{optimizeResult.total}개 파일 처리 완료</p>
+                  <p className="search-bar-confirm-title search-bar-confirm-title--studio">Studio</p>
+                  <p className="search-bar-confirm-desc">{studioResult.total}개 파일 처리 완료</p>
                   <div className="optimize-result-stats">
                     <div className="optimize-result-row">
                       <span className="optimize-result-label">처리 시간</span>
-                      <span className="optimize-result-value">{(optimizeResult.elapsedMs / 1000).toFixed(1)}초</span>
+                      <span className="optimize-result-value">{(studioResult.elapsedMs / 1000).toFixed(1)}초</span>
                     </div>
                     <div className="optimize-result-row">
                       <span className="optimize-result-label">용량 변화</span>
                       <span className="optimize-result-value">
-                        {formatBytes(optimizeResult.totalOriginal)} → {formatBytes(optimizeResult.totalCompressed)}
+                        {formatBytes(studioResult.totalOriginal)} → {formatBytes(studioResult.totalCompressed)}
                       </span>
                     </div>
                     <div className="optimize-result-row">
                       <span className="optimize-result-label">절약한 용량</span>
                       <span className="optimize-result-value">
-                        {formatBytes(Math.max(0, optimizeResult.totalOriginal - optimizeResult.totalCompressed))}
+                        {formatBytes(Math.max(0, studioResult.totalOriginal - studioResult.totalCompressed))}
                       </span>
                     </div>
                   </div>
                 </>
-              ) : optimizeProgress ? (
-                // 확인을 누른 직후부터 전부 끝나기 전까지: 파일 하나가 끝날
-                // 때마다 채워지는 진행 바 + "148 / 200" 카운트만 보여준다.
+              ) : studioProgress ? (
+                // 확인을 누른 직후부터 압축이 전부 끝나기 전까지: 파일 하나가
+                // 끝날 때마다 채워지는 진행 바 + "148 / 200" 카운트만 보여준다.
                 <>
-                  <p className="search-bar-confirm-title">최적화</p>
+                  <p className="search-bar-confirm-title search-bar-confirm-title--studio">Studio</p>
                   <div className="optimize-progress-track">
                     <div
                       className="optimize-progress-fill"
-                      style={{ width: `${Math.round((optimizeProgress.done / optimizeProgress.total) * 100)}%` }}
+                      style={{ width: `${Math.round((studioProgress.done / studioProgress.total) * 100)}%` }}
                     />
                   </div>
                   <p className="optimize-progress-count">
-                    {optimizeProgress.done} / {optimizeProgress.total}
+                    {studioProgress.done} / {studioProgress.total}
                   </p>
                 </>
               ) : (
                 <>
-                  {displayMode === "multiOptimize" ? (
-                    <>
-                      <div className="search-bar-confirm-title-row">
-                        <p className="search-bar-confirm-title">최적화</p>
-                        <div className="search-bar-confirm-nav">
-                          <button
-                            type="button"
-                            className="search-bar-confirm-nav-btn search-bar-confirm-nav-btn--prev"
-                            aria-label="이전 항목"
-                            onClick={onPrevMultiOptimize}
-                            disabled={multiOptimizeIndex <= 0}
-                          >
-                            <ChevronRightIcon size={14} />
-                          </button>
-                          <span className="search-bar-confirm-nav-count">
-                            {multiOptimizeIndex + 1}/{multiOptimizeItems?.length ?? 0}
-                          </span>
-                          <button
-                            type="button"
-                            className="search-bar-confirm-nav-btn"
-                            aria-label="다음 항목"
-                            onClick={onNextMultiOptimize}
-                            disabled={multiOptimizeIndex >= (multiOptimizeItems?.length ?? 1) - 1}
-                          >
-                            <ChevronRightIcon size={14} />
-                          </button>
+                  {isMultiStudio ? (
+                    <div className="search-bar-confirm-title-row">
+                      <p className="search-bar-confirm-title search-bar-confirm-title--studio">Studio</p>
+                      <div className="search-bar-confirm-nav">
+                        <button
+                          type="button"
+                          className="search-bar-confirm-nav-btn search-bar-confirm-nav-btn--prev"
+                          aria-label="이전 항목"
+                          onClick={onPrevMultiStudio}
+                          disabled={multiStudioIndex <= 0}
+                        >
+                          <ChevronRightIcon size={14} />
+                        </button>
+                        <span className="search-bar-confirm-nav-count">
+                          {multiStudioIndex + 1}/{multiStudioItems?.length ?? 0}
+                        </span>
+                        <button
+                          type="button"
+                          className="search-bar-confirm-nav-btn"
+                          aria-label="다음 항목"
+                          onClick={onNextMultiStudio}
+                          disabled={isLastMultiStudio}
+                        >
+                          <ChevronRightIcon size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="search-bar-confirm-title search-bar-confirm-title--studio">Studio</p>
+                  )}
+                  {isMultiStudio && (
+                    <p className="search-bar-confirm-filename">
+                      {displayName({ name: currentStudioOriginalName, mime: currentStudioMime })}
+                    </p>
+                  )}
+                  <div className="search-bar-studio-divider" />
+                  <div className="search-bar-studio-tabs">
+                    <button type="button" className="search-bar-studio-tab" onClick={() => scrollToStudioSection("name")}>
+                      이름
+                    </button>
+                    <button type="button" className="search-bar-studio-tab" onClick={() => scrollToStudioSection("tag")}>
+                      태그
+                    </button>
+                    {studioOptimizable && (
+                      <button
+                        type="button"
+                        className="search-bar-studio-tab"
+                        onClick={() => scrollToStudioSection("quality")}
+                      >
+                        압축
+                      </button>
+                    )}
+                  </div>
+                  <div className="search-bar-studio-sections" ref={studioSectionsRef}>
+                    <div className="search-bar-studio-section" ref={studioNameSectionRef}>
+                      <input
+                        className="search-bar-studio-input"
+                        type="text"
+                        placeholder="이름"
+                        value={currentStudioName}
+                        onChange={(e) => onChangeStudioName?.(e.target.value)}
+                      />
+                    </div>
+                    <div className="search-bar-studio-section" ref={studioTagSectionRef}>
+                      <input
+                        className="search-bar-studio-input"
+                        type="text"
+                        placeholder="태그"
+                        maxLength={24}
+                        value={currentStudioTag}
+                        onChange={(e) => onChangeStudioTag?.(e.target.value)}
+                      />
+                    </div>
+                    {studioOptimizable && (
+                      <div className="search-bar-studio-section" ref={studioQualitySectionRef}>
+                        <div className="search-bar-optimize-seg-group" role="group" aria-label="압축 비율" {...studioSegDrag}>
+                          {OPTIMIZE_LEVELS.map((pct, i) => (
+                            <button
+                              key={pct}
+                              type="button"
+                              className={`search-bar-optimize-seg${currentStudioLevel === i ? " active" : ""}`}
+                              aria-pressed={currentStudioLevel === i}
+                              onClick={() => onChangeStudioLevel?.(i)}
+                            >
+                              {OPTIMIZE_LEVEL_LABELS[i]}
+                            </button>
+                          ))}
                         </div>
                       </div>
-                      <p className="search-bar-confirm-filename">{displayName(multiOptimizeCurrent)}</p>
-                    </>
-                  ) : (
-                    <p className="search-bar-confirm-title">최적화</p>
-                  )}
-                  {hasUnsupportedOptimize && (
-                    <p className="search-bar-confirm-optimize-warn">지원하지 않는 확장자를 가진 파일이 있습니다</p>
-                  )}
+                    )}
+                  </div>
                 </>
               )
             ) : displayMode === "move" ? (
@@ -877,7 +715,7 @@ export default function BottomSearchBar({
             )}
             {/* 일괄 적용·일괄 지우기·번호 붙이기 같은 부가 기능은 패널 맨
                 아래, 바로 밑 검색바의 확인 버튼 쪽으로 붙여 오른쪽 정렬해
-                둔다 — 항목이 없는 패널(이름 바꾸기·태그 단일, 이동, 삭제
+                둔다 — 항목이 없는 패널(새 폴더, Studio 단일, 이동, 삭제
                 확인 등)에서는 아무것도 뜨지 않는다. */}
             {extraActions.length > 0 && (
               <div className="search-bar-confirm-extras">
@@ -906,38 +744,16 @@ export default function BottomSearchBar({
               inputMode={textEntryOpen ? "text" : "search"}
               enterKeyHint={textEntryOpen ? "done" : "search"}
               placeholder={textEntryOpen ? "여기에 입력하세요" : "검색"}
-              maxLength={isTagMode ? 24 : undefined}
               value={textValue}
               disabled={inputDisabled}
               onChange={(e) => onTextChange(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key !== "Enter") return;
-                // 다중 이름 바꾸기·다중 태그는 엔터로 다음 항목으로 넘어가고,
-                // 마지막 항목에서만 엔터가 곧 확인이 된다.
-                if ((isMultiRename || isMultiTag) && !isLastMultiItem) {
-                  onNextMulti?.();
-                  return;
-                }
                 // 모바일 키보드의 "검색"/"완료" 확인 버튼도 엔터와 동일한 keydown을 발생시킨다.
                 if (textEntryOpen) submitText();
                 e.currentTarget.blur();
               }}
             />
-            {(optimizeOpen || multiOptimizeOpen) && !optimizeRunning && (
-              <div className="search-bar-optimize-seg-group" role="group" aria-label="압축 비율" {...optimizeSegDrag}>
-                {OPTIMIZE_LEVELS.map((pct, i) => (
-                  <button
-                    key={pct}
-                    type="button"
-                    className={`search-bar-optimize-seg${currentOptimizeLevel === i ? " active" : ""}`}
-                    aria-pressed={currentOptimizeLevel === i}
-                    onClick={() => changeCurrentOptimizeLevel(i)}
-                  >
-                    {OPTIMIZE_LEVEL_LABELS[i]}
-                  </button>
-                ))}
-              </div>
-            )}
             {panelOpen && (
               <button
                 type="button"
@@ -945,10 +761,10 @@ export default function BottomSearchBar({
                 onClick={
                   confirmOpen
                     ? confirm
-                    : optimizeOpen
-                      ? submitOptimize
-                      : multiOptimizeOpen
-                        ? submitMultiOptimize
+                    : studioOpen
+                      ? submitStudio
+                      : multiStudioOpen
+                        ? submitMultiStudio
                         : moveOpen
                           ? submitMove
                           : thumbnailOpen
@@ -960,10 +776,10 @@ export default function BottomSearchBar({
                 disabled={
                   confirmOpen
                     ? busy
-                    : optimizeOpen
-                      ? !canSubmitOptimize
-                      : multiOptimizeOpen
-                        ? !canSubmitMultiOptimize
+                    : studioOpen
+                      ? !canSubmitStudio
+                      : multiStudioOpen
+                        ? !canSubmitMultiStudio
                         : moveOpen
                           ? !canSubmitMove
                           : thumbnailOpen

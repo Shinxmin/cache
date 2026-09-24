@@ -1,14 +1,5 @@
 import { ArrowRightIcon, DownloadIcon, GalleryIcon, InfoIcon, ListIcon, TrashIcon } from "./icons";
 
-// 태그: 머티리얼 디자인의 북마크 아이콘.
-function BookmarkIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
-      <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
-    </svg>
-  );
-}
-
 function EyeIcon() {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
@@ -21,29 +12,16 @@ function EyeIcon() {
   );
 }
 
-// 용량 압축: 머티리얼 디자인의 "폴더 + zip" 아이콘처럼, 폴더 모양 가운데를
-// 지퍼 이빨(작은 정사각형을 세로로 뚫은 구멍)로 관통시켜 압축 폴더임을 나타낸다.
-function ZipFolderIcon() {
+// 스튜디오(이름 바꾸기·태그·용량 압축 통합) 애드온: 슬라이더 세 개가
+// 서로 다른 위치에 놓인 이퀄라이저/믹서 모양 — 한 아이콘 안에 여러 값을
+// 동시에 다룬다는 은유다.
+export function StudioIcon({ size = 18 }) {
   return (
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        fill="currentColor"
-        d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z
-           M11.1 9h1.8v1.8h-1.8z
-           M11.1 11.7h1.8v1.8h-1.8z
-           M11.1 14.4h1.8v1.8h-1.8z
-           M11.1 17.1h1.8v1.8h-1.8z"
-      />
-    </svg>
-  );
-}
-
-function PencilIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
-      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M3 6.2h18v1.6H3zM3 11.2h18v1.6H3zM3 16.2h18v1.6H3z" />
+      <circle cx="8" cy="7" r="2.4" />
+      <circle cx="16" cy="12" r="2.4" />
+      <circle cx="10" cy="17" r="2.4" />
     </svg>
   );
 }
@@ -115,10 +93,8 @@ export const TOOL_META = {
     icon: (ctx) => (ctx?.viewMode === "gallery" ? <ListIcon /> : <GalleryIcon />),
   },
   blur: { label: "선택한 썸네일 블러", needsSelection: true, icon: () => <EyeIcon /> },
-  optimize: { label: "용량 압축", needsSelection: true, icon: () => <ZipFolderIcon /> },
   favorite: { label: "즐겨찾기", needsSelection: true, icon: () => <StarIcon /> },
-  tag: { label: "태그", needsSelection: true, icon: () => <BookmarkIcon /> },
-  rename: { label: "이름 바꾸기", needsSelection: true, icon: () => <PencilIcon /> },
+  studio: { label: "Studio", needsSelection: true, icon: () => <StudioIcon /> },
   // 애드온
   palette: { label: "팔레트 추출", needsSelection: true, icon: () => <PaletteIcon /> },
   split: { label: "스플릿 비교", needsSelection: true, icon: () => <SplitIcon /> },
