@@ -1,12 +1,12 @@
 import { isAddonId } from "./addons";
 
-// 스튜디오 툴킷의 기본 도구 id와 기본 순서. 즐겨찾기(favorite)는 용량
-// 압축(optimize)과 태그(tag) 사이에 온다. 실제로 그려지는 순서는 사용자가
+// 스튜디오 툴킷의 기본 도구 id와 기본 순서. 실제로 그려지는 순서는 사용자가
 // 설정에서 바꾼 레이아웃(app_users.toolkit_layout)을 따르고, 여기 배열은
 // 저장된 레이아웃이 없거나 새 기본 도구가 추가됐을 때의 기준이다.
-// 이름 바꾸기·태그·용량 압축은 studio 하나로 통합됐다(각자 아이콘이던
-// rename/tag/optimize는 더 이상 툴킷 도구가 아니다).
-export const BASE_TOOL_IDS = ["info", "trash", "download", "move", "view", "blur", "favorite", "studio"];
+// 이름 바꾸기·태그·용량 압축을 합친 스튜디오는 이 툴바가 아니라 검색바의
+// 전용 버튼(레이어 아이콘)으로 연다 — 그래서 studio는 툴킷 도구 목록에
+// 없다(예전에 저장된 레이아웃에 남아 있어도 정리 시 자동으로 걸러진다).
+export const BASE_TOOL_IDS = ["info", "trash", "download", "move", "view", "blur", "favorite"];
 
 // 저장된 레이아웃을 신뢰할 수 있는 형태로 다듬는다: 모르는 id·중복은 버리고,
 // 기본 도구 중 빠진 게 있으면(예전에 저장한 뒤 새 기본 도구가 생긴 경우)

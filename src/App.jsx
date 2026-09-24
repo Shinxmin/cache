@@ -1231,8 +1231,6 @@ export default function App() {
         return handleBlurSelected();
       case "favorite":
         return handleFavoriteSelected();
-      case "studio":
-        return handleStudioSelected();
       case "palette":
         return handlePaletteSelected();
       case "split":
@@ -1419,6 +1417,7 @@ export default function App() {
             onChangeNewFolderName={setNewFolderName}
             onConfirmNewFolder={confirmNewFolder}
             onCancelNewFolder={cancelNewFolder}
+            onOpenStudio={handleStudioSelected}
             studioOpen={studioOpen}
             studioTargetName={visibleItems.find((it) => it.id === studioTargetId)?.name ?? ""}
             studioTargetMime={visibleItems.find((it) => it.id === studioTargetId)?.mime ?? ""}
