@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { folderSizes, listFavorites, listFiles, searchFiles, thumbnailUrls } from "../lib/drive";
 import { formatBytes } from "../lib/format";
+import { isOptimizableFile } from "../lib/optimize";
 import { isSearchActive, parseSearchQuery } from "../lib/search";
 import { CheckIcon, FileIcon, FolderIcon } from "../components/icons";
 import { StarIcon } from "../components/toolkitIcons";
@@ -39,8 +40,14 @@ function sizeLabel(item, revealed, folderSizeMap) {
 // 띄운다), 선택된 동안은 눌린 것처럼 살짝 눌려 보이며 체크 배지가 뜬다.
 function GalleryTile({ item, thumb, selected, size, onTap, onLongPress }) {
   const press = useLongPress(onTap, onLongPress);
+  const optimizable = !item.is_folder && isOptimizableFile(item.name, item.mime);
   return (
-    <button className={`drive-tile-btn${selected ? " selected" : ""}`} type="button" {...press}>
+    <button
+      className={`drive-tile-btn${selected ? " selected" : ""}`}
+      type="button"
+      data-optimizable={optimizable ? "true" : "false"}
+      {...press}
+    >
       {thumb ? (
         // 썸네일이 있는 이미지·영상: 타일을 꽉 채우고 제목은 좌하단에 겹친다.
         // 블러 처리된 항목은 썸네일에만 블러를 건다(실제로 열어 보면 원본 그대로).
@@ -90,8 +97,14 @@ function GalleryTile({ item, thumb, selected, size, onTap, onLongPress }) {
 
 function ListRow({ item, selected, size, onTap, onLongPress }) {
   const press = useLongPress(onTap, onLongPress);
+  const optimizable = !item.is_folder && isOptimizableFile(item.name, item.mime);
   return (
-    <button className={`drive-row${selected ? " selected" : ""}`} type="button" {...press}>
+    <button
+      className={`drive-row${selected ? " selected" : ""}`}
+      type="button"
+      data-optimizable={optimizable ? "true" : "false"}
+      {...press}
+    >
       <span className="drive-row-icon">{item.is_folder ? <FolderIcon size={20} /> : <FileIcon size={20} />}</span>
       <span className="drive-row-text">
         <NameWithStar className="drive-row-name" name={item.name} favorite={item.favorite} />

@@ -290,20 +290,14 @@ export default function BottomSearchBar({
     : isMultiStudio
       ? multiStudioCurrent?.originalName ?? ""
       : "";
-  // 압축 아이콘은 선택된 항목 중 압축 가능한 게 하나도 없으면 아예 뜨지
-  // 않는다(자리도 차지하지 않는다) — 단일은 그 파일 하나만 보면 되고,
-  // 다중은 그 중 하나라도 되면 섹션 자체는 열 수 있게 한다(안 되는 항목은
-  // 확인 시 조용히 건너뛴다).
-  const studioAnyOptimizable = studioOpen
+  // 최적화 아이콘은 항상 뜨지만(자리를 차지한다), 선택된 항목이 전부
+  // 압축 가능할 때만 눌린다 — 폴더나 미지원 파일이 하나라도 섞여 있으면
+  // 보이기만 하고 비활성화된다(단일이든 다중이든 같은 규칙).
+  const studioAllOptimizable = studioOpen
     ? !studioTargetIsFolder && isOptimizableFile(studioName || studioTargetName, studioTargetMime)
     : isMultiStudio
-      ? (multiStudioItems ?? []).some((it) => !it.is_folder && isOptimizableFile(it.name, it.mime))
+      ? Boolean(multiStudioItems?.length) && multiStudioItems.every((it) => !it.is_folder && isOptimizableFile(it.name, it.mime))
       : false;
-  // 다중일 때, 압축 가능한 항목과 안 되는 항목이 섞여 있으면 경고 문구를
-  // 보여준다(단일은 애초에 안 되면 압축 섹션 자체가 없으므로 해당 없음).
-  const hasUnsupportedOptimize = isMultiStudio
-    ? (multiStudioItems ?? []).some((it) => it.is_folder || !isOptimizableFile(it.name, it.mime))
-    : false;
   // 처리 중(진행 바)이거나 결과가 이미 떠 있으면 아이콘 줄·기능 화면 대신
   // 그 화면을 보여준다.
   const studioRunning = Boolean(studioProgress) || Boolean(studioResult);
@@ -452,6 +446,13 @@ export default function BottomSearchBar({
     const stack = document.elementsFromPoint(e.clientX, e.clientY);
     const tile = stack.find((el) => el.classList?.contains("drive-tile-btn") || el.classList?.contains("drive-row"));
     if (tile) {
+      // 최적화 섹션이 열려 있는 동안은 폴더·미지원 파일 타일을 눌러도
+      // 선택에 더해지지 않는다 — 그 섹션 안에서는 선택이 항상 전부 압축
+      // 가능한 상태를 유지해야 하므로, 클릭 자체를 막는다(취소로도 처리
+      // 하지 않고 그냥 무시한다).
+      if (studioActive && studioSection === "quality" && tile.dataset.optimizable === "false") {
+        return;
+      }
       tile.click();
       return;
     }
@@ -608,16 +609,15 @@ export default function BottomSearchBar({
                       >
                         <BookmarkIcon size={16} />
                       </button>
-                      {studioAnyOptimizable && (
-                        <button
-                          type="button"
-                          className="search-bar-studio-icon-btn"
-                          aria-label="최적화"
-                          onClick={() => setStudioSection("quality")}
-                        >
-                          <ZipFolderIcon size={16} />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        className="search-bar-studio-icon-btn"
+                        aria-label="최적화"
+                        disabled={!studioAllOptimizable}
+                        onClick={() => setStudioSection("quality")}
+                      >
+                        <ZipFolderIcon size={16} />
+                      </button>
                     </div>
                     <div className="search-bar-studio-detail">
                       <button
@@ -659,14 +659,9 @@ export default function BottomSearchBar({
                   </div>
                   <div className="search-bar-studio-divider" />
                   {studioSection && (
-                    <>
-                      <p className="search-bar-confirm-filename">
-                        {displayName({ name: currentStudioOriginalName, mime: currentStudioMime })}
-                      </p>
-                      {studioSection === "quality" && hasUnsupportedOptimize && (
-                        <p className="search-bar-confirm-optimize-warn">지원하지 않는 확장자를 가진 파일이 있습니다</p>
-                      )}
-                    </>
+                    <p className="search-bar-confirm-filename">
+                      {displayName({ name: currentStudioOriginalName, mime: currentStudioMime })}
+                    </p>
                   )}
                 </>
               )
