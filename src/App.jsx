@@ -176,6 +176,11 @@ export default function App() {
   const [multiOptimizeOpen, setMultiOptimizeOpen] = useState(false);
   const [multiOptimizeItems, setMultiOptimizeItems] = useState([]); // [{ id, name, level }]
   const [multiOptimizeIndex, setMultiOptimizeIndex] = useState(0);
+  // 확인을 누른 뒤 처리 중(진행률 표시)과 완료(결과 요약) 두 화면을 위한
+  // 상태. 단일·다중 공통이며, 새로 패널을 열거나 취소하면 둘 다 비운다.
+  const [optimizeProgress, setOptimizeProgress] = useState(null); // { done, total } | null
+  const [optimizeResult, setOptimizeResult] = useState(null); // { total, totalOriginal, totalCompressed, elapsedMs } | null
+  const optimizeStatsRef = useRef({ done: 0, totalOriginal: 0, totalCompressed: 0 });
   // 폴더 썸네일 애드온(인물 아이콘). 이동 패널과 같은 폴더 탐색 UI를 재사용해,
   // 그 안에서 이미지·움짤·동영상 파일 하나를 골라 지금 선택된 폴더의 대표
   // 썸네일로 지정한다. 이름 바꾸기·태그·최적화와 같은 단일/다중 구조를
@@ -416,6 +421,13 @@ export default function App() {
   // 있어서다).
   useEffect(() => {
     if (!optimizeOpen && !multiOptimizeOpen) return;
+    // 선택이 바뀌면 지금 보여주던 진행률·결과 화면은 더 이상 이 선택을
+    // 대표하지 않으니 지운다(패널을 열어 둔 채 대상만 바뀐 것이라 확인을
+    // 다시 눌러야 새로 시작한다).
+    if (optimizeProgress || optimizeResult) {
+      setOptimizeProgress(null);
+      setOptimizeResult(null);
+    }
     const targets = visibleItems.filter((it) => selectedIds.has(it.id) && !it.is_folder);
     if (targets.length === 0) {
       setOptimizeOpen(false);
@@ -1204,26 +1216,62 @@ export default function App() {
   const cancelOptimize = () => {
     setOptimizeOpen(false);
     setOptimizeTargetId(null);
-  };
-
-  // 확인 뒤에도 선택은 풀지 않는다(원래 모달 때부터 그랬다 — 압축 결과를
-  // 바로 이어서 볼 수 있게).
-  const confirmOptimize = async () => {
-    const target = visibleItems.find((it) => it.id === optimizeTargetId);
-    if (!target || !isOptimizableFile(target.name)) return;
-    try {
-      await optimizeFiles({ token: session.token, items: [target], ratioPercent: OPTIMIZE_LEVELS[optimizeLevel] });
-      cancelOptimize();
-      setRefreshKey((k) => k + 1);
-    } catch {
-      window.alert("용량을 줄이지 못했습니다");
-    }
+    setOptimizeProgress(null);
+    setOptimizeResult(null);
   };
 
   const cancelMultiOptimize = () => {
     setMultiOptimizeOpen(false);
     setMultiOptimizeItems([]);
     setMultiOptimizeIndex(0);
+    setOptimizeProgress(null);
+    setOptimizeResult(null);
+  };
+
+  // 확인을 누르면 그룹(품질 단계)별로 optimizeFiles를 병렬로 돌리되, 파일
+  // 하나가 끝날 때마다 공통 진행률(진행 바 + "148 / 200")을 갱신하고, 전부
+  // 끝나면 처리 시간·용량 변화로 바뀐 결과 화면을 보여준다. 확인 뒤에도
+  // 선택은 풀지 않는다(원래 모달 때부터 그랬다 — 압축 결과를 바로 이어서
+  // 볼 수 있게). 패널은 결과를 본 뒤 사용자가 직접 닫아야 한다(스크림을
+  // 누르거나 아이콘을 다시 누르면 닫힌다) — 그래야 "148/200"이 뜨자마자
+  // 사라지지 않는다.
+  const runOptimizeGroups = async (groups) => {
+    const total = groups.reduce((sum, g) => sum + g.files.length, 0);
+    if (!total) return;
+    optimizeStatsRef.current = { done: 0, totalOriginal: 0, totalCompressed: 0 };
+    setOptimizeResult(null);
+    setOptimizeProgress({ done: 0, total });
+    const startedAt = performance.now();
+    const onFileDone = ({ originalSize, compressedSize }) => {
+      const s = optimizeStatsRef.current;
+      s.done += 1;
+      if (originalSize) s.totalOriginal += originalSize;
+      if (compressedSize) s.totalCompressed += compressedSize;
+      setOptimizeProgress({ done: s.done, total });
+    };
+    try {
+      await Promise.all(
+        groups.map((g) => optimizeFiles({ token: session.token, items: g.files, ratioPercent: g.ratioPercent, onFileDone }))
+      );
+      const elapsedMs = performance.now() - startedAt;
+      setOptimizeProgress(null);
+      setOptimizeResult({
+        total,
+        totalOriginal: optimizeStatsRef.current.totalOriginal,
+        totalCompressed: optimizeStatsRef.current.totalCompressed,
+        elapsedMs,
+      });
+      setRefreshKey((k) => k + 1);
+    } catch {
+      setOptimizeProgress(null);
+      window.alert("용량을 줄이지 못했습니다");
+    }
+  };
+
+  const confirmOptimize = async () => {
+    const target = visibleItems.find((it) => it.id === optimizeTargetId);
+    if (!target || !isOptimizableFile(target.name, target.mime)) return;
+    await runOptimizeGroups([{ files: [target], ratioPercent: OPTIMIZE_LEVELS[optimizeLevel] }]);
   };
 
   const changeMultiOptimizeLevel = (level) => {
@@ -1244,28 +1292,19 @@ export default function App() {
   const nextMultiOptimize = () => setMultiOptimizeIndex((i) => Math.min(multiOptimizeItems.length - 1, i + 1));
 
   // 태그와 같은 방식으로, 같은 품질 값끼리 묶어 그룹별로 한 번씩만
-  // optimizeFiles를 호출한다.
+  // optimizeFiles를 호출한다. 진행률·결과 집계는 runOptimizeGroups가
+  // 그룹을 합쳐 하나로 보여준다.
   const confirmMultiOptimize = async () => {
     const targets = multiOptimizeItems
       .map((it) => ({ level: it.level, file: visibleItems.find((v) => v.id === it.id) }))
       .filter((it) => it.file);
-    if (!targets.length || targets.some((it) => !isOptimizableFile(it.file.name))) return;
-    try {
-      const groups = new Map();
-      for (const { level, file } of targets) {
-        if (!groups.has(level)) groups.set(level, []);
-        groups.get(level).push(file);
-      }
-      await Promise.all(
-        [...groups.entries()].map(([level, files]) =>
-          optimizeFiles({ token: session.token, items: files, ratioPercent: OPTIMIZE_LEVELS[level] })
-        )
-      );
-      cancelMultiOptimize();
-      setRefreshKey((k) => k + 1);
-    } catch {
-      window.alert("용량을 줄이지 못했습니다");
+    if (!targets.length || targets.some((it) => !isOptimizableFile(it.file.name, it.file.mime))) return;
+    const groups = new Map();
+    for (const { level, file } of targets) {
+      if (!groups.has(level)) groups.set(level, []);
+      groups.get(level).push(file);
     }
+    await runOptimizeGroups([...groups.entries()].map(([level, files]) => ({ files, ratioPercent: OPTIMIZE_LEVELS[level] })));
   };
 
   // 선택된 파일·폴더의 즐겨찾기를 토글한다. 블러와 같은 "일부면 켜는 쪽으로"
@@ -1283,7 +1322,7 @@ export default function App() {
   };
 
   const looksLikeImageFile = (it) =>
-    isImage(it.mime) || isOptimizableFile(it.name) || /\.(gif|webp)$/i.test(it.name);
+    isImage(it.mime) || isOptimizableFile(it.name, it.mime) || /\.(gif|webp)$/i.test(it.name);
 
   // 기기에 따라 mime을 빈 문자열로 주는 경우가 있어 확장자도 같이 본다
   // (이미지 쪽 looksLikeImageFile과 같은 이유).
@@ -1609,7 +1648,10 @@ export default function App() {
             onCancelMultiTag={cancelMultiTag}
             optimizeOpen={optimizeOpen}
             optimizeTargetName={visibleItems.find((it) => it.id === optimizeTargetId)?.name ?? ""}
+            optimizeTargetMime={visibleItems.find((it) => it.id === optimizeTargetId)?.mime ?? ""}
             optimizeLevel={optimizeLevel}
+            optimizeProgress={optimizeProgress}
+            optimizeResult={optimizeResult}
             onChangeOptimizeLevel={setOptimizeLevel}
             onConfirmOptimize={confirmOptimize}
             onCancelOptimize={cancelOptimize}

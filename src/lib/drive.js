@@ -388,20 +388,19 @@ async function compressImageTo(blob, targetSize) {
 // HEIC 등에 mime을 빈 문자열로 주지만 <img>는 그래도 그려내는 경우가 있어서,
 // 여기서 미리 막으면 오히려 열리는 이미지까지 건너뛰게 된다. 이미지가
 // 아니거나 브라우저가 못 여는 파일은 조용히 건너뛰고 나머지를 계속 처리한다.
-export async function optimizeFiles({ token, items, ratioPercent, onProgress }) {
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    const step = (base) => onProgress?.((i + base) / items.length);
-
+// onFileDone은 파일 하나가 끝날 때마다(성공이든 건너뛰든) 한 번씩 불린다 —
+// 화면의 "148 / 200" 진행 카운트와 완료 후 용량 변화 집계가 여기서 나온다.
+export async function optimizeFiles({ token, items, ratioPercent, onFileDone }) {
+  for (const item of items) {
     try {
       const { url: getUrl } = await presign(token, { action: "get", key: item.r2_key });
-      const original = await xhrGetBlob(getUrl, (p) => step(p * 0.5));
+      const original = await xhrGetBlob(getUrl);
 
       const targetSize = Math.max(1, Math.round(original.size * (ratioPercent / 100)));
       const compressed = await compressImageTo(original, targetSize);
 
       const { url: putUrl } = await presign(token, { action: "put", key: item.r2_key, contentType: "image/jpeg" });
-      await xhrPut(putUrl, compressed, "image/jpeg", (p) => step(0.5 + p * 0.5));
+      await xhrPut(putUrl, compressed, "image/jpeg");
 
       await rpcResult(
         await supabase.rpc("update_file_content", {
@@ -411,8 +410,10 @@ export async function optimizeFiles({ token, items, ratioPercent, onProgress }) 
           p_mime: "image/jpeg",
         })
       );
+      onFileDone?.({ originalSize: original.size, compressedSize: compressed.size });
     } catch {
       // 이 파일만 건너뛴다(이미지가 아니거나 캔버스가 못 읽는 형식).
+      onFileDone?.({});
     }
   }
 }
