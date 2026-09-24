@@ -592,7 +592,7 @@ main.page {
   justify-content: flex-start;
 }
 .search-bar-confirm-panel.mode-studio.is-open {
-  max-height: 200px;
+  max-height: 175px;
 }
 /* 이동 패널은 경로 표시줄 + 스크롤되는 폴더 목록까지 들어가 가장 길다. */
 .search-bar-confirm-panel.mode-move {
@@ -608,68 +608,98 @@ main.page {
   color: var(--text);
   text-align: left;
 }
-/* Studio 패널 제목만 다른 패널보다 살짝 더 크게 — 이름·태그·압축 세
+/* 스튜디오 패널 제목만 다른 패널보다 살짝 더 크게 — 이름·태그·압축 세
    기능을 한 아이콘으로 묶은 만큼 제목의 존재감도 조금 더 준다. */
 .search-bar-confirm-title--studio {
   font-size: 17px;
 }
-/* Studio 패널 제목(과 다중일 땐 이전·다음 화살표) 바로 밑, 이름/태그/압축
-   섹션이 시작되기 전에 긋는 구분선. */
+/* 스튜디오 제목 밑, 그리고 기능 선택 줄(아이콘 줄/기능 화면) 밑에 긋는
+   구분선 두 개 — 그 사이에 기능 선택 줄이 낀 샌드위치 모양이다. */
 .search-bar-studio-divider {
   flex: none;
   height: 1px;
-  margin: 10px 0 8px;
+  margin: 10px 0;
   background: var(--glass-border);
 }
-/* 이름/태그/압축 이동 탭 — 섹션을 숨기고 보이는 게 아니라, 눌렀을 때 그
-   섹션으로 스크롤만 시켜주는 내비게이션 텍스트다. */
-.search-bar-studio-tabs {
+/* 두 구분선 사이의 기능 선택 줄. 아이콘 줄(.search-bar-studio-icon-list)과
+   기능 화면(.search-bar-studio-detail)이 같은 자리에 절대 위치로 겹쳐
+   있다가, data-mode에 따라 옆으로 밀려나며 접히듯 서로 자리를 바꾼다. */
+.search-bar-studio-switcher {
+  position: relative;
   flex: none;
+  height: 30px;
+}
+.search-bar-studio-icon-list,
+.search-bar-studio-detail {
+  position: absolute;
+  inset: 0;
   display: flex;
-  gap: 14px;
-  margin-bottom: 8px;
+  align-items: center;
+  transition: transform 0.35s var(--spring), opacity 0.25s var(--ease);
 }
-.search-bar-studio-tab {
-  flex: none;
-  padding: 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-2);
-}
-.search-bar-studio-tab:active {
-  color: var(--text);
-}
-/* 이름·태그·압축 세 섹션을 구분선 밑에 원래 레이아웃대로 쌓아 두는
-   스크롤 컨테이너 — 패널 자체는 max-height로 고정돼 있어, 셋을 다 넣으면
-   넘치는 만큼은 이 안에서만 스크롤된다. */
-.search-bar-studio-sections {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
+.search-bar-studio-icon-list {
   gap: 10px;
 }
-.search-bar-studio-section {
+.search-bar-studio-switcher[data-mode="list"] .search-bar-studio-icon-list {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.search-bar-studio-switcher[data-mode="list"] .search-bar-studio-detail {
+  transform: translateX(14px);
+  opacity: 0;
+  pointer-events: none;
+}
+.search-bar-studio-switcher[data-mode="detail"] .search-bar-studio-icon-list {
+  transform: translateX(-14px);
+  opacity: 0;
+  pointer-events: none;
+}
+.search-bar-studio-switcher[data-mode="detail"] .search-bar-studio-detail {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.search-bar-studio-icon-btn {
   flex: none;
-}
-/* 이름·태그 섹션의 전용 입력창 — 검색바 입력창(.search-bar-input)과 같은
-   높이·글자 크기를 쓰지만, Studio는 이름·태그를 동시에 보여줘야 해서 검색바
-   입력창을 공유하지 않고 패널 본문에 따로 둔다. */
-.search-bar-studio-input {
-  width: 100%;
-  height: 40px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 12px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
   background: rgba(128, 128, 128, 0.12);
-  outline: none;
-  font-family: inherit;
-  font-size: 15px;
-  color: var(--text);
-}
-.search-bar-studio-input::placeholder {
   color: var(--text-2);
+  transition: transform 0.35s var(--spring);
+}
+.search-bar-studio-icon-btn:active {
+  transform: scale(0.9);
+}
+.search-bar-studio-detail {
+  gap: 8px;
+}
+/* 오른쪽 화살표(ChevronRightIcon)를 뒤집어 왼쪽(뒤로) 화살표로 쓴다. */
+.search-bar-studio-back {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--text-2);
+  transform: scaleX(-1);
+}
+.search-bar-studio-detail-icon {
+  flex: none;
+  display: flex;
+  color: var(--text-2);
+}
+.search-bar-studio-detail-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
 }
 /* 삭제 확인 보조 설명(고정 문구). 제목과의 간격을 조금 더 줄여 본문을
    살짝 위로 올린다. */

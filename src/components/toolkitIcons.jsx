@@ -94,7 +94,7 @@ export const TOOL_META = {
   },
   blur: { label: "선택한 썸네일 블러", needsSelection: true, icon: () => <EyeIcon /> },
   favorite: { label: "즐겨찾기", needsSelection: true, icon: () => <StarIcon /> },
-  studio: { label: "Studio", needsSelection: true, icon: () => <StudioIcon /> },
+  studio: { label: "스튜디오", needsSelection: true, icon: () => <StudioIcon /> },
   // 애드온
   palette: { label: "팔레트 추출", needsSelection: true, icon: () => <PaletteIcon /> },
   split: { label: "스플릿 비교", needsSelection: true, icon: () => <SplitIcon /> },
