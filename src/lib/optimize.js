@@ -1,3 +1,5 @@
+import { extensionFromMime } from "./filename";
+
 // 용량 압축이 실제로 가능한 확장자 목록. 브라우저의 <canvas>가 디코딩할 수
 // 있는 정지 래스터 이미지 포맷만 해당한다 — 동영상·PDF·문서류·SVG(벡터)·
 // TIFF 등은 캔버스가 아예 못 읽어서 압축이 안 된다. HEIC/HEIF는 사파리·iOS
@@ -8,12 +10,17 @@
 const SUPPORTED_EXTENSIONS = new Set(["jpg", "jpeg", "jfif", "png", "bmp", "avif", "heic", "heif", "ico"]);
 
 function extensionOf(name) {
-  const dot = name.lastIndexOf(".");
+  const dot = (name ?? "").lastIndexOf(".");
   return dot > 0 ? name.slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, "") : "";
 }
 
-export function isOptimizableFile(name) {
-  return SUPPORTED_EXTENSIONS.has(extensionOf(name));
+// 이름 바꾸기로 확장자를 지워버린 파일("1.jpg" → "1")은 이름만 봐서는 압축
+// 가능 여부를 알 수 없다 — 실제로는 여전히 이미지인데 확장자가 없다는
+// 이유만으로 "지원하지 않는 파일"로 잘못 걸러졌었다. 이름에 확장자가 없으면
+// 서버가 들고 있는 mime 메타데이터로 추정한 확장자까지 함께 본다.
+export function isOptimizableFile(name, mime) {
+  const ext = extensionOf(name) || extensionFromMime(mime);
+  return SUPPORTED_EXTENSIONS.has(ext);
 }
 
 // 최적화 패널의 압축 비율 3단계(25/50/75%). App.jsx(확인 시 실제 비율로

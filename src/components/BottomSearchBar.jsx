@@ -3,6 +3,7 @@ import { BackIcon, CheckIcon, ChevronRightIcon, FileIcon } from "./icons";
 import Spinner from "./Spinner";
 import { isOptimizableFile, OPTIMIZE_LEVELS, OPTIMIZE_LEVEL_LABELS } from "../lib/optimize";
 import { displayName } from "../lib/filename";
+import { formatBytes } from "../lib/format";
 import useSegmentDrag from "../hooks/useSegmentDrag";
 
 // 하단바 아이콘(단일 solid fill, currentColor)과 같은 방식으로 그린 돋보기 아이콘.
@@ -121,7 +122,10 @@ export default function BottomSearchBar({
   onCancelMultiTag,
   optimizeOpen,
   optimizeTargetName,
+  optimizeTargetMime,
   optimizeLevel,
+  optimizeProgress,
+  optimizeResult,
   onChangeOptimizeLevel,
   onConfirmOptimize,
   onCancelOptimize,
@@ -329,9 +333,9 @@ export default function BottomSearchBar({
   const isMultiOptimize = Boolean(multiOptimizeOpen);
   const multiOptimizeCurrent = multiOptimizeItems?.[multiOptimizeIndex];
   const hasUnsupportedOptimize = optimizeOpen
-    ? Boolean(optimizeTargetName) && !isOptimizableFile(optimizeTargetName)
+    ? Boolean(optimizeTargetName) && !isOptimizableFile(optimizeTargetName, optimizeTargetMime)
     : isMultiOptimize
-      ? (multiOptimizeItems ?? []).some((it) => !isOptimizableFile(it.name))
+      ? (multiOptimizeItems ?? []).some((it) => !isOptimizableFile(it.name, it.mime))
       : false;
   // 검색바 옆으로 옮긴 품질 세그먼트가 지금 반영해야 하는 값·바꾸는 방법 —
   // 단일이면 optimizeLevel 하나, 다중이면 지금 보고 있는(multiOptimizeIndex
@@ -344,7 +348,8 @@ export default function BottomSearchBar({
   // 품질 세그먼트를 탭뿐 아니라 마우스 드래그·손가락 슬라이드로도 고를 수
   // 있게 한다.
   const optimizeSegDrag = useSegmentDrag(OPTIMIZE_LEVELS.length, changeCurrentOptimizeLevel);
-  const canSubmitOptimize = Boolean(optimizeTargetName) && !hasUnsupportedOptimize && !optimizeBusy;
+  const optimizeRunning = Boolean(optimizeProgress) || Boolean(optimizeResult);
+  const canSubmitOptimize = Boolean(optimizeTargetName) && !hasUnsupportedOptimize && !optimizeBusy && !optimizeRunning;
   const submitOptimize = async () => {
     if (!canSubmitOptimize) return;
     setOptimizeBusy(true);
@@ -354,7 +359,8 @@ export default function BottomSearchBar({
       setOptimizeBusy(false);
     }
   };
-  const canSubmitMultiOptimize = Boolean(multiOptimizeItems?.length) && !hasUnsupportedOptimize && !multiOptimizeBusy;
+  const canSubmitMultiOptimize =
+    Boolean(multiOptimizeItems?.length) && !hasUnsupportedOptimize && !multiOptimizeBusy && !optimizeRunning;
   const submitMultiOptimize = async () => {
     if (!canSubmitMultiOptimize) return;
     setMultiOptimizeBusy(true);
@@ -644,51 +650,94 @@ export default function BottomSearchBar({
                 </div>
               </>
             ) : displayMode === "optimize" || displayMode === "multiOptimize" ? (
-              <>
-                {displayMode === "multiOptimize" ? (
-                  <>
-                    <div className="search-bar-confirm-title-row">
-                      <p className="search-bar-confirm-title">최적화</p>
-                      <div className="search-bar-confirm-nav">
-                        <button
-                          type="button"
-                          className="search-bar-confirm-nav-btn search-bar-confirm-nav-btn--prev"
-                          aria-label="이전 항목"
-                          onClick={onPrevMultiOptimize}
-                          disabled={multiOptimizeIndex <= 0}
-                        >
-                          <ChevronRightIcon size={14} />
-                        </button>
-                        <span className="search-bar-confirm-nav-count">
-                          {multiOptimizeIndex + 1}/{multiOptimizeItems?.length ?? 0}
-                        </span>
-                        <button
-                          type="button"
-                          className="search-bar-confirm-nav-btn"
-                          aria-label="다음 항목"
-                          onClick={onNextMultiOptimize}
-                          disabled={multiOptimizeIndex >= (multiOptimizeItems?.length ?? 1) - 1}
-                        >
-                          <ChevronRightIcon size={14} />
+              optimizeResult ? (
+                // 확인 후 전부 끝났을 때: 단일·다중 공통으로 처리 시간·용량
+                // 변화·절약한 용량을 보여준다. 패널은 스크림을 누르거나
+                // 아이콘을 다시 눌러야 닫힌다(결과를 본 뒤 사용자가 직접).
+                <>
+                  <p className="search-bar-confirm-title">최적화</p>
+                  <p className="search-bar-confirm-desc">{optimizeResult.total}개 파일 처리 완료</p>
+                  <div className="optimize-result-stats">
+                    <div className="optimize-result-row">
+                      <span className="optimize-result-label">처리 시간</span>
+                      <span className="optimize-result-value">{(optimizeResult.elapsedMs / 1000).toFixed(1)}초</span>
+                    </div>
+                    <div className="optimize-result-row">
+                      <span className="optimize-result-label">용량 변화</span>
+                      <span className="optimize-result-value">
+                        {formatBytes(optimizeResult.totalOriginal)} → {formatBytes(optimizeResult.totalCompressed)}
+                      </span>
+                    </div>
+                    <div className="optimize-result-row">
+                      <span className="optimize-result-label">절약한 용량</span>
+                      <span className="optimize-result-value">
+                        {formatBytes(Math.max(0, optimizeResult.totalOriginal - optimizeResult.totalCompressed))}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              ) : optimizeProgress ? (
+                // 확인을 누른 직후부터 전부 끝나기 전까지: 파일 하나가 끝날
+                // 때마다 채워지는 진행 바 + "148 / 200" 카운트만 보여준다.
+                <>
+                  <p className="search-bar-confirm-title">최적화</p>
+                  <div className="optimize-progress-track">
+                    <div
+                      className="optimize-progress-fill"
+                      style={{ width: `${Math.round((optimizeProgress.done / optimizeProgress.total) * 100)}%` }}
+                    />
+                  </div>
+                  <p className="optimize-progress-count">
+                    {optimizeProgress.done} / {optimizeProgress.total}
+                  </p>
+                </>
+              ) : (
+                <>
+                  {displayMode === "multiOptimize" ? (
+                    <>
+                      <div className="search-bar-confirm-title-row">
+                        <p className="search-bar-confirm-title">최적화</p>
+                        <div className="search-bar-confirm-nav">
+                          <button
+                            type="button"
+                            className="search-bar-confirm-nav-btn search-bar-confirm-nav-btn--prev"
+                            aria-label="이전 항목"
+                            onClick={onPrevMultiOptimize}
+                            disabled={multiOptimizeIndex <= 0}
+                          >
+                            <ChevronRightIcon size={14} />
+                          </button>
+                          <span className="search-bar-confirm-nav-count">
+                            {multiOptimizeIndex + 1}/{multiOptimizeItems?.length ?? 0}
+                          </span>
+                          <button
+                            type="button"
+                            className="search-bar-confirm-nav-btn"
+                            aria-label="다음 항목"
+                            onClick={onNextMultiOptimize}
+                            disabled={multiOptimizeIndex >= (multiOptimizeItems?.length ?? 1) - 1}
+                          >
+                            <ChevronRightIcon size={14} />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="search-bar-confirm-filename">{displayName(multiOptimizeCurrent)}</p>
+                      <div className="search-bar-confirm-bulk-actions">
+                        {/* 지금 보고 있는 항목의 품질을 자신과 뒤에 남은 항목에만
+                            적용한다 — 앞서 따로 골라 둔 항목은 그대로 둔다. */}
+                        <button type="button" className="search-bar-confirm-bulk-btn" onClick={onApplyAllMultiOptimize}>
+                          전체 적용
                         </button>
                       </div>
-                    </div>
-                    <p className="search-bar-confirm-filename">{displayName(multiOptimizeCurrent)}</p>
-                    <div className="search-bar-confirm-bulk-actions">
-                      {/* 지금 보고 있는 항목의 품질을 자신과 뒤에 남은 항목에만
-                          적용한다 — 앞서 따로 골라 둔 항목은 그대로 둔다. */}
-                      <button type="button" className="search-bar-confirm-bulk-btn" onClick={onApplyAllMultiOptimize}>
-                        전체 적용
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <p className="search-bar-confirm-title">최적화</p>
-                )}
-                {hasUnsupportedOptimize && (
-                  <p className="search-bar-confirm-optimize-warn">지원하지 않는 확장자를 가진 파일이 있습니다</p>
-                )}
-              </>
+                    </>
+                  ) : (
+                    <p className="search-bar-confirm-title">최적화</p>
+                  )}
+                  {hasUnsupportedOptimize && (
+                    <p className="search-bar-confirm-optimize-warn">지원하지 않는 확장자를 가진 파일이 있습니다</p>
+                  )}
+                </>
+              )
             ) : displayMode === "move" ? (
               <>
                 <p className="search-bar-confirm-title">이동</p>
@@ -860,7 +909,7 @@ export default function BottomSearchBar({
                 e.currentTarget.blur();
               }}
             />
-            {(optimizeOpen || multiOptimizeOpen) && (
+            {(optimizeOpen || multiOptimizeOpen) && !optimizeRunning && (
               <div className="search-bar-optimize-seg-group" role="group" aria-label="압축 비율" {...optimizeSegDrag}>
                 {OPTIMIZE_LEVELS.map((pct, i) => (
                   <button
