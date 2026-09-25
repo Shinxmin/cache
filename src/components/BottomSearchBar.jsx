@@ -103,7 +103,7 @@ function ScissorsIcon({ size = 18 }) {
 // 때만 그대로 반영하고(편집 중에는 타이핑을 덮어쓰지 않는다), 포커스를
 // 잃거나 엔터를 누르면 parseTimeInput으로 해석해 커밋하며, 형식이 아니면
 // 원래 값으로 되돌린다.
-function HighlightTimeInput({ value, onCommit }) {
+function HighlightTimeInput({ value, onCommit, align }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(formatDuration(value));
   useEffect(() => {
@@ -121,6 +121,7 @@ function HighlightTimeInput({ value, onCommit }) {
       type="text"
       inputMode="numeric"
       className="search-bar-highlight-time-input"
+      style={{ textAlign: align }}
       value={text}
       onFocus={() => setEditing(true)}
       onChange={(e) => setText(e.target.value)}
@@ -777,8 +778,7 @@ export default function BottomSearchBar({
                     </p>
                   )}
                   {studioSection === "highlight" && (
-                    <div className="search-bar-highlight-row">
-                      <HighlightTimeInput value={currentStudioHighlightStart} onCommit={onChangeStudioHighlightStart} />
+                    <div className="search-bar-highlight-col">
                       <HighlightRangeSlider
                         duration={currentStudioHighlightDuration}
                         start={currentStudioHighlightStart}
@@ -787,7 +787,10 @@ export default function BottomSearchBar({
                         onChangeEnd={onChangeStudioHighlightEnd}
                         disabled={!currentStudioHighlightDuration}
                       />
-                      <HighlightTimeInput value={currentStudioHighlightEnd} onCommit={onChangeStudioHighlightEnd} />
+                      <div className="search-bar-highlight-times">
+                        <HighlightTimeInput value={currentStudioHighlightStart} onCommit={onChangeStudioHighlightStart} align="left" />
+                        <HighlightTimeInput value={currentStudioHighlightEnd} onCommit={onChangeStudioHighlightEnd} align="right" />
+                      </div>
                     </div>
                   )}
                 </>
