@@ -290,6 +290,11 @@ export default function BottomSearchBar({
     : isMultiStudio
       ? multiStudioCurrent?.originalName ?? ""
       : "";
+  // 선택된 항목이 하나도 없어도(studioTargetId가 null) 스튜디오 패널은
+  // 열리지만, 편집할 대상이 없으므로 이름·태그·최적화 아이콘을 전부
+  // 비활성화한다 — 다중 모드는 애초에 항목이 2개 이상이어야 열리므로 항상
+  // true다.
+  const studioHasTarget = studioOpen ? Boolean(studioTargetName) : isMultiStudio ? Boolean(multiStudioItems?.length) : false;
   // 최적화 아이콘은 항상 뜨지만(자리를 차지한다), 선택된 항목이 전부
   // 압축 가능할 때만 눌린다 — 폴더나 미지원 파일이 하나라도 섞여 있으면
   // 보이기만 하고 비활성화된다(단일이든 다중이든 같은 규칙).
@@ -597,6 +602,7 @@ export default function BottomSearchBar({
                         type="button"
                         className="search-bar-studio-icon-btn"
                         aria-label="이름 바꾸기"
+                        disabled={!studioHasTarget}
                         onClick={() => setStudioSection("name")}
                       >
                         <EditIcon size={16} />
@@ -605,6 +611,7 @@ export default function BottomSearchBar({
                         type="button"
                         className="search-bar-studio-icon-btn"
                         aria-label="태그"
+                        disabled={!studioHasTarget}
                         onClick={() => setStudioSection("tag")}
                       >
                         <BookmarkIcon size={16} />
@@ -613,7 +620,7 @@ export default function BottomSearchBar({
                         type="button"
                         className="search-bar-studio-icon-btn"
                         aria-label="최적화"
-                        disabled={!studioAllOptimizable}
+                        disabled={!studioHasTarget || !studioAllOptimizable}
                         onClick={() => setStudioSection("quality")}
                       >
                         <ZipFolderIcon size={16} />
@@ -659,7 +666,7 @@ export default function BottomSearchBar({
                   </div>
                   <div className="search-bar-studio-divider" />
                   {studioSection && (
-                    <p className="search-bar-confirm-filename">
+                    <p className="search-bar-confirm-filename search-bar-confirm-filename--studio">
                       {displayName({ name: currentStudioOriginalName, mime: currentStudioMime })}
                     </p>
                   )}

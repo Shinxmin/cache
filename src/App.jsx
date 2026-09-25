@@ -306,11 +306,18 @@ export default function App() {
     }
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
     if (targets.length === 0) {
-      setStudioOpen(false);
-      setStudioTargetId(null);
+      // 선택이 다 풀려도 패널을 닫지 않는다 — 대상 없는 단일 모드로 남아
+      // 모든 기능이 비활성화된 채로 계속 떠 있는다(App.jsx가 아니라
+      // BottomSearchBar.jsx가 studioTargetId 없음을 보고 비활성화를 그린다).
       setMultiStudioOpen(false);
       setMultiStudioItems([]);
       setMultiStudioIndex(0);
+      setStudioTargetId(null);
+      setStudioName("");
+      setStudioTag("");
+      setStudioLevel(1);
+      setStudioLevelTouched(false);
+      setStudioOpen(true);
       return;
     }
     const fieldsFor = (it) => {
@@ -688,9 +695,11 @@ export default function App() {
     setDeleteConfirmOpen(false);
   };
 
-  // 선택된 항목으로 Studio(이름·태그·압축 통합) 패널을 연다. 단일 선택이면
-  // studioOpen 하나를, 여러 개면 이전·다음 화살표로 하나씩 넘기며 편집하는
-  // multiStudioOpen을 연다.
+  // 선택된 항목으로 Studio(이름·태그·압축·클립 통합) 패널을 연다. 단일
+  // 선택이면 studioOpen 하나를, 여러 개면 이전·다음 화살표로 하나씩 넘기며
+  // 편집하는 multiStudioOpen을 연다. 선택이 하나도 없어도 열리지만
+  // (studioTargetId가 null), 그때는 대상이 없으므로 모든 기능이 비활성화된
+  // 채로 뜬다(BottomSearchBar.jsx가 studioTargetId 없음을 보고 그린다).
   const handleStudioSelected = () => {
     // 이미 Studio 패널(단일이든 다중이든)이 열려 있는 채로 같은 아이콘을
     // 다시 누르면 여는 대신 닫는다 — 빈 화면을 눌러 취소하는 것과 같은
@@ -700,13 +709,12 @@ export default function App() {
       return;
     }
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
-    if (!targets.length) return;
     closeAllToolPanels();
-    if (targets.length === 1) {
+    if (targets.length <= 1) {
       const only = targets[0];
-      setStudioTargetId(only.id);
-      setStudioName(only.name);
-      setStudioTag(only.tag || "");
+      setStudioTargetId(only?.id ?? null);
+      setStudioName(only?.name ?? "");
+      setStudioTag(only?.tag || "");
       setStudioLevel(1);
       setStudioLevelTouched(false);
       setStudioOpen(true);

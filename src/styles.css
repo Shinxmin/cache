@@ -608,20 +608,22 @@ main.page {
 .search-bar-confirm-panel.has-extras.is-open {
   padding-bottom: 0;
 }
-/* 스튜디오(이름·태그·압축 통합) 패널은 제목 아래 구분선 + 기능 선택 줄
-   (아이콘 줄/기능 화면) + 구분선 + 파일명이 쌓이므로, 다른 패널처럼 세로
-   가운데 정렬 대신 위에서부터 순서대로 쌓는다. 높이(170px)는 아이콘
-   줄이든 이름·태그·압축 상세 화면이든, 단일이든 다중이든 모든 상황에서
+/* 스튜디오(이름·태그·압축·클립 통합) 패널은 제목 아래 구분선 + 기능 선택
+   줄(아이콘 줄/기능 화면) + 구분선 + 본문(파일명 등)이 쌓이므로, 다른
+   패널처럼 세로 가운데 정렬 대신 위에서부터 순서대로 쌓는다. 높이(220px)는
+   아이콘 줄이든 각 기능 상세 화면이든, 단일이든 다중이든 모든 상황에서
    공통으로 적용된다(상태에 따라 흔들리지 않는다). */
 .search-bar-confirm-panel.mode-studio {
   justify-content: flex-start;
-  /* 스튜디오 패널만 다른 패널보다 살짝 천천히 열리게(그리고 닫히게)
-     기본 트랜지션(0.35s/0.35s/0.25s/0.35s)보다 조금 늘린다. */
-  transition-duration: 0.5s, 0.5s, 0.3s, 0.5s;
+  /* 스튜디오 패널만 다른 패널보다 조금 더 천천히, 스프링의 튕기는 느낌
+     없이 부드럽게 열리고 닫히게 기본 트랜지션(0.35s/0.35s/0.25s/0.35s,
+     var(--spring))보다 늘리고 이징도 var(--ease)로 바꾼다. */
+  transition-duration: 0.6s, 0.6s, 0.35s, 0.6s;
+  transition-timing-function: var(--ease), var(--ease), var(--ease), var(--ease);
 }
 .search-bar-confirm-panel.mode-studio.is-open {
-  max-height: 170px;
-  min-height: 170px;
+  max-height: 220px;
+  min-height: 220px;
 }
 /* 이동 패널은 경로 표시줄 + 스크롤되는 폴더 목록까지 들어가 가장 길다. */
 .search-bar-confirm-panel.mode-move {
@@ -760,6 +762,12 @@ main.page {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* 스튜디오 패널만 제목·구분선·아이콘 줄(위쪽 뭉치)과 본문 사이 간격을
+   더 준다 — 패널 높이를 늘린 만큼(200px→220px) 위쪽 뭉치가 위로 붙고
+   그 여유를 본문 바로 위 간격으로 돌린다. */
+.search-bar-confirm-filename--studio {
+  margin-top: 20px;
 }
 /* 다중 이름 바꾸기 패널의 제목 줄: 제목은 왼쪽, "몇 번째/전체" 카운터와
    이전·다음 화살표는 오른쪽에 둔다. 몇 개를 고르든 패널 크기가 똑같이
