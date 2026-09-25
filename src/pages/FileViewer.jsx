@@ -18,12 +18,11 @@ const SWIPE_THRESHOLD = 50;
 // paletteMode(팔레트 추출 애드온 v1.1)가 켜져 있으면 별도 모달 없이 이 화면
 // 위, 닫기(X) 버튼 쪽 좌측에 상위 5색을 바로 얹어 보여준다.
 //
-// clipMode(하이라이트 클립 애드온 v1.0)가 켜져 있으면 닫기(X) 버튼과 같은 줄
-// 왼쪽에 시작·끝 버튼이, 그 바로 밑에 저장된 클립 목록이 얹힌다. 애드온을
-// 거치지 않고 그냥 연 영상이라도 클립이 이미 있으면(다른 기기·다른 시점에
-// 만들어 둔 것 포함) 시작·끝 버튼 없이 목록만 그대로 보여준다 — 그 판단은
-// VideoClipPanel이 스스로 서버에서 받아보고 결정한다.
-export default function FileViewer({ session, items, initialIndex, onClose, paletteMode = false, clipMode = false }) {
+// 영상이면 저장된 하이라이트 클립이 있는지 VideoClipPanel이 스스로 서버에서
+// 받아보고, 있으면 닫기(X) 버튼과 같은 줄 아래에 목록을 얹어 보여준다(제목을
+// 누르면 그 구간으로 이동해 재생). 새 하이라이트를 만드는 건 스튜디오
+// 패널이 맡으므로 여기서는 보기·이름 고치기·지우기만 할 수 있다.
+export default function FileViewer({ session, items, initialIndex, onClose, paletteMode = false }) {
   const [index, setIndex] = useState(initialIndex);
   const [url, setUrl] = useState(null);
   const [failed, setFailed] = useState(false);
@@ -118,13 +117,7 @@ export default function FileViewer({ session, items, initialIndex, onClose, pale
         <CloseIcon />
       </button>
       {isVideo(item.mime) && (
-        <VideoClipPanel
-          session={session}
-          item={item}
-          video={videoEl}
-          canCreate={clipMode}
-          onHasContentChange={setHasClipPanel}
-        />
+        <VideoClipPanel session={session} item={item} video={videoEl} onHasContentChange={setHasClipPanel} />
       )}
       {paletteMode && paletteColors && paletteColors.length > 0 && (
         <ul className="viewer-palette" onClick={(e) => e.stopPropagation()}>
