@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { createClip, deleteClip, listClips, renameClip } from "../lib/drive";
+import { deleteClip, listClips, renameClip } from "../lib/drive";
 import { formatDuration } from "../lib/format";
 import { CloseIcon } from "./icons";
 import useLongPress from "../hooks/useLongPress";
@@ -8,24 +8,15 @@ import useLongPress from "../hooks/useLongPress";
 // (이 앱은 Supabase 실시간 구독을 쓰지 않는다 — 세션 토큰 기반 커스텀 인증이라
 // 실시간 채널에 RLS를 태울 수 없어서, 대신 짧은 주기로 다시 읽는다).
 const POLL_MS = 3000;
-// 제목은 확인 버튼 없이 입력하는 대로 저장된다. 글자마다 요청을 보내지 않도록
-// 잠깐 멈췄을 때만 실제로 저장한다.
+// 제목은 확인 버튼 없이 입력하는 대로 저장된다(확인 버튼 없음). 글자마다
+// 요청을 보내지 않도록 잠깐 멈췄을 때만 실제로 저장한다.
 const SAVE_DEBOUNCE_MS = 400;
-
-// 기본 저장 이름은 "클립_1", "클립_2"… 순이다. 이미 있는 번호 다음을 쓴다.
-function nextClipName(clips) {
-  const used = clips
-    .map((c) => /^클립_(\d+)$/.exec(c.name))
-    .filter(Boolean)
-    .map((m) => parseInt(m[1], 10));
-  return `클립_${used.length ? Math.max(...used) + 1 : 1}`;
-}
 
 // 클립 한 칸(제목 → 시간 → 삭제 순). 제목을 누르면 그 구간으로 이동해
 // 재생하고, 꾹 누르면 그 자리에서 제목을 고칠 수 있다. 목록 순서가 바뀌지
 // 않으므로 칸마다 훅을 써도 안전하다.
-function ClipChip({ clip, active, editing, canEdit, onPlay, onEdit, onChangeName, onFinishEdit, onDelete }) {
-  const press = useLongPress(onPlay, canEdit ? onEdit : onPlay);
+function ClipChip({ clip, active, editing, onPlay, onEdit, onChangeName, onFinishEdit, onDelete }) {
+  const press = useLongPress(onPlay, onEdit);
   return (
     <div className={`viewer-clip-chip${active ? " is-active" : ""}`}>
       {editing ? (
@@ -55,19 +46,17 @@ function ClipChip({ clip, active, editing, canEdit, onPlay, onEdit, onChangeName
   );
 }
 
-// 하이라이트 클립 애드온 v1.0: 동영상 뷰어 위에 얹히는 구간 기록 패널.
-// canCreate(애드온을 직접 실행했을 때만 true)가 켜져 있으면 닫기(X) 버튼과
-// 같은 줄 왼쪽에 시작·끝 버튼이 뜨고, 그 바로 밑에 클립 목록이 이어진다.
-// canCreate가 꺼져 있어도(영상을 그냥 눌러서 열었을 때) 그 영상에 저장된
-// 클립이 하나라도 있으면 시작·끝 버튼 없이 목록만 그대로 보여준다 — 클립은
-// 계정에 저장되므로 다른 기기·다른 시점에 만든 것도 그대로 나타난다.
-// 클립이 3개를 넘어가면 한 줄에 3개까지만 두고(모든 화면 폭에서 고정
-// 3열이라 겹치지 않는다) 그다음 줄로 넘어간다.
-export default function VideoClipPanel({ session, item, video, canCreate, onHasContentChange }) {
+// 동영상 뷰어 위에 얹히는 하이라이트 클립 목록 패널. 새 클립을 만드는 건
+// 이제 스튜디오의 "하이라이트" 섹션이 맡고(구간 기록 방식이 재생하며
+// 시작·끝을 찍던 것에서 시간 텍스트를 직접 입력하는 방식으로 바뀌었다),
+// 이 패널은 그렇게 저장된 클립을 재생 중인 영상 위에서 훑어보고(제목을
+// 누르면 그 구간으로 이동) 이름을 고치거나 지우는 것만 담당한다. 클립이
+// 하나도 없으면 아무것도 그리지 않는다 — 클립은 계정에 저장되므로 다른
+// 기기·다른 시점에 만든 것도 그대로 나타난다. 클립이 3개를 넘어가면 한
+// 줄에 3개까지만 두고(모든 화면 폭에서 고정 3열이라 겹치지 않는다) 그다음
+// 줄로 넘어간다.
+export default function VideoClipPanel({ session, item, video, onHasContentChange }) {
   const [clips, setClips] = useState([]);
-  // 시작 버튼을 눌러 찍어 둔 지점(초). null이면 아직 안 찍은 상태라 끝 버튼을
-  // 누를 수 없다.
-  const [pendingStart, setPendingStart] = useState(null);
   const [activeId, setActiveId] = useState(null);
   const [editingId, setEditingId] = useState(null);
   // 지금 구간 재생 중인 클립. 끝 지점에 닿으면 멈추고 비운다 — 그 뒤에 직접
@@ -102,7 +91,7 @@ export default function VideoClipPanel({ session, item, video, canCreate, onHasC
     };
   }, [session.token, item.id]);
 
-  const hasContent = canCreate || clips.length > 0;
+  const hasContent = clips.length > 0;
 
   // 부모(FileViewer)에게 지금 뭔가 그리고 있는지 알려준다 — 그래야 영상을
   // 패널 높이만큼 아래로 밀어낼지 결정할 수 있다.
@@ -165,30 +154,6 @@ export default function VideoClipPanel({ session, item, video, canCreate, onHasC
 
   if (!hasContent) return null;
 
-  const markStart = () => {
-    if (video) setPendingStart(video.currentTime);
-  };
-
-  const markEnd = async () => {
-    if (!video || pendingStart === null) return;
-    const end = video.currentTime;
-    // 끝이 시작보다 앞이면 아직 완성된 구간이 아니다 — 시작 지점은 그대로 두고
-    // 제대로 된 끝 지점을 다시 찍게 둔다.
-    if (end <= pendingStart) return;
-    try {
-      const created = await createClip(session.token, {
-        fileId: item.id,
-        name: nextClipName(clips),
-        start: pendingStart,
-        end,
-      });
-      setPendingStart(null);
-      setClips((prev) => [...prev, created]);
-    } catch {
-      window.alert("클립을 저장하지 못했습니다");
-    }
-  };
-
   const playClip = (clip) => {
     if (!video) return;
     setActiveId(clip.id);
@@ -240,25 +205,9 @@ export default function VideoClipPanel({ session, item, video, canCreate, onHasC
 
   return (
     <div className="viewer-clip-panel" ref={panelRef} onClick={(e) => e.stopPropagation()}>
-      {/* 시작·끝 버튼이 없어도(그냥 연 영상) 이 줄은 항상 같은 높이로 자리를
-          차지한다 — 닫기(X) 버튼과 같은 줄이라, 목록이 그 자리를 밀고 올라와
-          겹치는 것을 막는다. */}
-      <div className="viewer-clip-actions">
-        {canCreate && (
-          <>
-            <button
-              className={`viewer-clip-btn${pendingStart !== null ? " is-armed" : ""}`}
-              type="button"
-              onClick={markStart}
-            >
-              시작
-            </button>
-            <button className="viewer-clip-btn" type="button" disabled={pendingStart === null} onClick={markEnd}>
-              끝
-            </button>
-          </>
-        )}
-      </div>
+      {/* 닫기(X) 버튼과 같은 줄 높이만큼 자리를 비워 둔다 — 그래야 클립
+          목록이 그 자리를 밀고 올라와 겹치지 않는다. */}
+      <div className="viewer-clip-actions" />
       {clips.length > 0 && (
         <div className="viewer-clip-grid">
           {clips.map((clip) => (
@@ -267,7 +216,6 @@ export default function VideoClipPanel({ session, item, video, canCreate, onHasC
               clip={clip}
               active={clip.id === activeId}
               editing={clip.id === editingId}
-              canEdit={canCreate}
               onPlay={() => playClip(clip)}
               onEdit={() => startEditing(clip)}
               onChangeName={(value) => changeName(clip.id, value)}

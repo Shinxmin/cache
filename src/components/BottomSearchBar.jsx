@@ -3,11 +3,9 @@ import { BackIcon, CheckIcon, ChevronRightIcon, FileIcon } from "./icons";
 import Spinner from "./Spinner";
 import { isOptimizableFile, OPTIMIZE_LEVELS, OPTIMIZE_LEVEL_LABELS } from "../lib/optimize";
 import { displayName } from "../lib/filename";
-import { formatBytes, formatDuration, parseTimeInput } from "../lib/format";
+import { formatBytes, formatDuration, parseTimeRangeInput } from "../lib/format";
 import { looksLikeVideoFile } from "../lib/thumbnail";
 import useSegmentDrag from "../hooks/useSegmentDrag";
-import ClipRangeSlider from "./ClipRangeSlider";
-import CheckboxVisual from "./Checkbox";
 
 // 하단바 아이콘(단일 solid fill, currentColor)과 같은 방식으로 그린 돋보기 아이콘.
 // 링은 두 원을 evenodd로 겹쳐 만든 진짜 구멍(반투명 색에서도 이중 톤이 생기지
@@ -87,30 +85,32 @@ function ZipFolderIcon({ size = 18 }) {
   );
 }
 
-// 스튜디오의 클립 기능 아이콘(머티리얼 디자인의 "attach_file" 클립 모양).
-function PaperclipIcon({ size = 18 }) {
+// 스튜디오의 하이라이트 기능 아이콘 — 툴킷 바에 있던 예전 "하이라이트 클립"
+// 애드온과 같은 가위(content_cut) 모양을 그대로 쓴다(같은 기능이 옮겨온
+// 것이므로 아이콘도 그대로 이어간다).
+function ScissorsIcon({ size = 18 }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
-      <path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z" />
+      <path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3z" />
     </svg>
   );
 }
 
-// 클립 섹션의 시작·끝 시간 라벨 — 평소엔 "0:00" 같은 표시 문자열이지만
-// 탭하면 밑줄 있는 입력창으로 바뀌어 "M:SS" 형식으로 직접 고칠 수 있다.
-// 슬라이더 드래그로 바뀐 값은 포커스가 없을 때만 그대로 반영하고(편집
-// 중에는 타이핑을 덮어쓰지 않는다), 포커스를 잃거나 엔터를 누르면
-// parseTimeInput으로 해석해 커밋하며, 형식이 아니면 원래 값으로 되돌린다.
-function ClipTimeInput({ value, onCommit }) {
+// 하이라이트 섹션의 구간 입력 한 줄 — 평소엔 "0:00 - 0:10" 같은 표시
+// 문자열이지만 탭하면 밑줄 있는 입력창으로 바뀌어 통째로 고칠 수 있다.
+// 포커스를 잃거나 엔터를 누르면 parseTimeRangeInput으로 해석해 커밋하며,
+// 형식이 아니거나 끝이 시작보다 앞이면 원래 값으로 되돌린다.
+function HighlightRangeInput({ start, end, onCommit }) {
   const [editing, setEditing] = useState(false);
-  const [text, setText] = useState(formatDuration(value));
+  const formatted = () => `${formatDuration(start)} - ${formatDuration(end)}`;
+  const [text, setText] = useState(formatted());
   useEffect(() => {
-    if (!editing) setText(formatDuration(value));
-  }, [value, editing]);
+    if (!editing) setText(formatted());
+  }, [start, end, editing]);
 
   const commit = () => {
-    const parsed = parseTimeInput(text);
-    if (parsed != null) onCommit?.(parsed);
+    const parsed = parseTimeRangeInput(text);
+    if (parsed) onCommit?.(parsed);
     setEditing(false);
   };
 
@@ -118,7 +118,7 @@ function ClipTimeInput({ value, onCommit }) {
     <input
       type="text"
       inputMode="numeric"
-      className="search-bar-clip-time-input"
+      className="search-bar-highlight-range-input"
       value={text}
       onFocus={() => setEditing(true)}
       onChange={(e) => setText(e.target.value)}
@@ -184,19 +184,14 @@ export default function BottomSearchBar({
   studioTag,
   studioLevel,
   studioLevelTouched,
-  studioClipStart,
-  studioClipEnd,
-  studioClipDuration,
-  studioClipSaveAsNew,
+  studioHighlightStart,
+  studioHighlightEnd,
   studioProgress,
   studioResult,
   onChangeStudioName,
   onChangeStudioTag,
   onChangeStudioLevel,
-  onOpenStudioClip,
-  onChangeStudioClipStart,
-  onChangeStudioClipEnd,
-  onChangeStudioClipSaveAsNew,
+  onChangeStudioHighlightRange,
   onConfirmStudio,
   onCancelStudio,
   multiStudioOpen,
@@ -342,10 +337,8 @@ export default function BottomSearchBar({
   const currentStudioTag = studioOpen ? studioTag : isMultiStudio ? multiStudioCurrent?.tag ?? "" : "";
   const currentStudioLevel = studioOpen ? studioLevel : isMultiStudio ? multiStudioCurrent?.level ?? 1 : 1;
   const currentStudioMime = studioOpen ? studioTargetMime : isMultiStudio ? multiStudioCurrent?.mime ?? "" : "";
-  const currentStudioClipStart = studioOpen ? studioClipStart : isMultiStudio ? multiStudioCurrent?.clipStart ?? 0 : 0;
-  const currentStudioClipEnd = studioOpen ? studioClipEnd : isMultiStudio ? multiStudioCurrent?.clipEnd ?? 0 : 0;
-  const currentStudioClipDuration = studioOpen ? studioClipDuration : isMultiStudio ? multiStudioCurrent?.clipDuration ?? 0 : 0;
-  const currentStudioClipSaveAsNew = studioOpen ? studioClipSaveAsNew : isMultiStudio ? multiStudioCurrent?.clipSaveAsNew ?? true : true;
+  const currentStudioHighlightStart = studioOpen ? studioHighlightStart : isMultiStudio ? multiStudioCurrent?.highlightStart ?? 0 : 0;
+  const currentStudioHighlightEnd = studioOpen ? studioHighlightEnd : isMultiStudio ? multiStudioCurrent?.highlightEnd ?? 10 : 10;
   const currentStudioOriginalName = studioOpen
     ? studioTargetName
     : isMultiStudio
@@ -364,9 +357,9 @@ export default function BottomSearchBar({
     : isMultiStudio
       ? Boolean(multiStudioItems?.length) && multiStudioItems.every((it) => !it.is_folder && isOptimizableFile(it.name, it.mime))
       : false;
-  // 클립 아이콘도 최적화와 같은 규칙 — 항상 뜨지만 선택된 항목이 전부
-  // 영상일 때만 눌린다(다중 선택에 영상·이미지가 섞이면 비활성).
-  const studioAllClippable = studioOpen
+  // 하이라이트 아이콘도 최적화와 같은 규칙 — 항상 뜨지만 선택된 항목이
+  // 전부 영상일 때만 눌린다(다중 선택에 영상·이미지가 섞이면 비활성).
+  const studioAllHighlightable = studioOpen
     ? !studioTargetIsFolder && looksLikeVideoFile(studioName || studioTargetName, studioTargetMime)
     : isMultiStudio
       ? Boolean(multiStudioItems?.length) && multiStudioItems.every((it) => !it.is_folder && looksLikeVideoFile(it.name, it.mime))
@@ -577,13 +570,19 @@ export default function BottomSearchBar({
       <BookmarkIcon size={16} />
     ) : studioSection === "quality" ? (
       <ZipFolderIcon size={16} />
-    ) : studioSection === "clip" ? (
-      <PaperclipIcon size={16} />
+    ) : studioSection === "highlight" ? (
+      <ScissorsIcon size={16} />
     ) : (
       <EditIcon size={16} />
     );
   const studioSectionLabel =
-    studioSection === "tag" ? "태그" : studioSection === "quality" ? "최적화" : studioSection === "clip" ? "클립" : "이름 바꾸기";
+    studioSection === "tag"
+      ? "태그"
+      : studioSection === "quality"
+        ? "최적화"
+        : studioSection === "highlight"
+          ? "하이라이트"
+          : "이름 바꾸기";
 
   return (
     <>
@@ -621,7 +620,7 @@ export default function BottomSearchBar({
       <div className="bottom-search-wrap">
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
           <div
-            className={`search-bar-confirm-panel${displayMode === "studio" || displayMode === "multiStudio" ? " mode-studio" : ""}${(displayMode === "studio" || displayMode === "multiStudio") && studioSection === "clip" && !studioRunning ? " mode-studio-clip" : ""}${displayMode === "move" || displayMode === "thumbnail" || displayMode === "multiThumbnail" ? " mode-move" : ""}${extraActions.length > 0 ? " has-extras" : ""}${panelOpen ? " is-open" : ""}`}
+            className={`search-bar-confirm-panel${displayMode === "studio" || displayMode === "multiStudio" ? " mode-studio" : ""}${displayMode === "move" || displayMode === "thumbnail" || displayMode === "multiThumbnail" ? " mode-move" : ""}${extraActions.length > 0 ? " has-extras" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
           >
             {displayMode === "newFolder" ? (
@@ -640,25 +639,18 @@ export default function BottomSearchBar({
                       <span className="optimize-result-label">처리 시간</span>
                       <span className="optimize-result-value">{(studioResult.elapsedMs / 1000).toFixed(1)}초</span>
                     </div>
-                    {/* 클립은 용량을 줄이는 게 목적이 아니라 잘라내는 것이므로
-                        (전체가 webm으로 다시 인코딩돼 원본 용량과 직접 비교할
-                        의미가 없다), 압축 결과에만 있는 용량 변화 행은 뺀다. */}
-                    {!studioResult.isClip && (
-                      <>
-                        <div className="optimize-result-row">
-                          <span className="optimize-result-label">용량 변화</span>
-                          <span className="optimize-result-value">
-                            {formatBytes(studioResult.totalOriginal)} → {formatBytes(studioResult.totalCompressed)}
-                          </span>
-                        </div>
-                        <div className="optimize-result-row">
-                          <span className="optimize-result-label">절약한 용량</span>
-                          <span className="optimize-result-value">
-                            {formatBytes(Math.max(0, studioResult.totalOriginal - studioResult.totalCompressed))}
-                          </span>
-                        </div>
-                      </>
-                    )}
+                    <div className="optimize-result-row">
+                      <span className="optimize-result-label">용량 변화</span>
+                      <span className="optimize-result-value">
+                        {formatBytes(studioResult.totalOriginal)} → {formatBytes(studioResult.totalCompressed)}
+                      </span>
+                    </div>
+                    <div className="optimize-result-row">
+                      <span className="optimize-result-label">절약한 용량</span>
+                      <span className="optimize-result-value">
+                        {formatBytes(Math.max(0, studioResult.totalOriginal - studioResult.totalCompressed))}
+                      </span>
+                    </div>
                   </div>
                 </>
               ) : studioProgress ? (
@@ -712,14 +704,11 @@ export default function BottomSearchBar({
                       <button
                         type="button"
                         className="search-bar-studio-icon-btn"
-                        aria-label="클립"
-                        disabled={!studioHasTarget || !studioAllClippable}
-                        onClick={() => {
-                          setStudioSection("clip");
-                          onOpenStudioClip?.();
-                        }}
+                        aria-label="하이라이트"
+                        disabled={!studioHasTarget || !studioAllHighlightable}
+                        onClick={() => setStudioSection("highlight")}
                       >
-                        <PaperclipIcon size={16} />
+                        <ScissorsIcon size={16} />
                       </button>
                     </div>
                     <div className="search-bar-studio-detail">
@@ -739,11 +728,7 @@ export default function BottomSearchBar({
                             type="button"
                             className="search-bar-confirm-nav-btn search-bar-confirm-nav-btn--prev"
                             aria-label="이전 항목"
-                            onClick={() => {
-                              const nextIndex = Math.max(0, multiStudioIndex - 1);
-                              onPrevMultiStudio?.();
-                              if (studioSection === "clip") onOpenStudioClip?.(nextIndex);
-                            }}
+                            onClick={onPrevMultiStudio}
                             disabled={multiStudioIndex <= 0}
                           >
                             <ChevronRightIcon size={14} />
@@ -755,11 +740,7 @@ export default function BottomSearchBar({
                             type="button"
                             className="search-bar-confirm-nav-btn"
                             aria-label="다음 항목"
-                            onClick={() => {
-                              const nextIndex = Math.min((multiStudioItems?.length ?? 1) - 1, multiStudioIndex + 1);
-                              onNextMultiStudio?.();
-                              if (studioSection === "clip") onOpenStudioClip?.(nextIndex);
-                            }}
+                            onClick={onNextMultiStudio}
                             disabled={isLastMultiStudio}
                           >
                             <ChevronRightIcon size={14} />
@@ -774,38 +755,12 @@ export default function BottomSearchBar({
                       {displayName({ name: currentStudioOriginalName, mime: currentStudioMime })}
                     </p>
                   )}
-                  {studioSection === "clip" && (
-                    <div className="search-bar-clip-body">
-                      <ClipRangeSlider
-                        duration={currentStudioClipDuration}
-                        start={currentStudioClipStart}
-                        end={currentStudioClipEnd}
-                        onChangeStart={onChangeStudioClipStart}
-                        onChangeEnd={onChangeStudioClipEnd}
-                        disabled={!currentStudioClipDuration}
-                      />
-                      <div className="search-bar-clip-times">
-                        <ClipTimeInput
-                          value={currentStudioClipStart}
-                          onCommit={(sec) => onChangeStudioClipStart?.(sec)}
-                        />
-                        <ClipTimeInput
-                          value={currentStudioClipEnd}
-                          onCommit={(sec) => onChangeStudioClipEnd?.(sec)}
-                        />
-                      </div>
-                      <label className="search-bar-clip-save-as-new">
-                        <span className="checkbox">
-                          <input
-                            type="checkbox"
-                            checked={currentStudioClipSaveAsNew}
-                            onChange={(e) => onChangeStudioClipSaveAsNew?.(e.target.checked)}
-                          />
-                          <CheckboxVisual />
-                        </span>
-                        새 파일로 저장
-                      </label>
-                    </div>
+                  {studioSection === "highlight" && (
+                    <HighlightRangeInput
+                      start={currentStudioHighlightStart}
+                      end={currentStudioHighlightEnd}
+                      onCommit={onChangeStudioHighlightRange}
+                    />
                   )}
                 </>
               )
