@@ -752,64 +752,15 @@ main.page {
 .search-bar-confirm-filename--studio {
   margin-top: 20px;
 }
-/* 하이라이트 섹션 본문: 파일명 아래로 구간 슬라이더 → 시작·끝 시간 입력
-   두 칸이 순서대로 쌓인다. */
-.search-bar-highlight-body {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 12px;
-}
-/* 슬라이더는 패널 폭의 3/4만 차지하고 왼쪽에 붙는다(가운데 정렬이 아니다). */
-.search-bar-highlight-slider {
-  position: relative;
-  flex: none;
-  width: 75%;
-  height: 28px;
-  touch-action: none;
-}
-.search-bar-highlight-slider-track {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 3px;
-  transform: translateY(-50%);
-  border-radius: 999px;
-  background: var(--glass-border);
-}
-.search-bar-highlight-slider-range {
-  position: absolute;
-  top: 50%;
-  height: 3px;
-  transform: translateY(-50%);
-  border-radius: 999px;
-  background: var(--text);
-}
-/* 손잡이는 원형이 아니라 막대(세로로 긴 사각형) 모양이다. */
-.search-bar-highlight-slider-thumb {
-  position: absolute;
-  top: 50%;
-  width: 4px;
-  height: 18px;
-  transform: translate(-50%, -50%);
-  border-radius: 2px;
-  background: var(--text);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-.search-bar-highlight-slider.is-disabled {
-  opacity: 0.35;
-}
-.search-bar-highlight-slider.is-disabled .search-bar-highlight-slider-thumb {
-  pointer-events: none;
-}
+/* 하이라이트 섹션 본문: 파일명 바로 아래 시작·끝 시간 입력 두 칸이
+   나란히 놓인다(둘은 별개의 입력란이다). */
 .search-bar-highlight-times {
   display: flex;
   align-items: center;
   gap: 24px;
+  margin-top: 16px;
 }
-/* 밑줄만 있는 작은 입력창 — 시작·끝 시간을 각각 탭해서 직접 고칠 수
-   있다(둘은 별개의 입력란이다). */
+/* 밑줄만 있는 작은 입력창 — 시작·끝 시간을 각각 탭해서 직접 고칠 수 있다. */
 .search-bar-highlight-time-input {
   width: 52px;
   border: none;
