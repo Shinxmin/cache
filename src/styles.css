@@ -795,11 +795,13 @@ main.page {
   touch-action: none;
 }
 /* 시작·끝 사이(선택된 구간, 약간 진한 회색). 색은 ::before가 칠한다 —
-   구간 자체에 opacity를 걸면 그 안의 < > 아이콘까지 흐려지기 때문이다. */
+   구간 자체에 opacity를 걸면 그 안의 < > 아이콘까지 흐려지기 때문이다.
+   트랙(연한 회색) 폭·높이는 그대로 두고, 이 진한 회색 구간의 세로 두께만
+   기존(21px, top/bottom 3px씩) 대비 90%(18.9px)로 줄인다. */
 .search-bar-highlight-slider-range {
   position: absolute;
-  top: 3px;
-  bottom: 3px;
+  top: 4.05px;
+  bottom: 4.05px;
   border-radius: 999px;
   pointer-events: none;
 }
@@ -812,11 +814,12 @@ main.page {
   opacity: 0.22;
 }
 /* 구간 안쪽 왼쪽 끝의 < (시작), 오른쪽 끝의 > (끝) 손잡이. 이 아이콘을
-   드래그해서 시작·끝 시간을 옮긴다. */
+   드래그해서 시작·끝 시간을 옮긴다. 진한 회색 구간과 같은 세로 범위를
+   써서 그 안에 계속 세로 가운데 정렬되게 맞춘다. */
 .search-bar-highlight-slider-handle {
   position: absolute;
-  top: 3px;
-  bottom: 3px;
+  top: 4.05px;
+  bottom: 4.05px;
   z-index: 1;
   width: 20px;
   display: flex;
