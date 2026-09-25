@@ -752,13 +752,17 @@ main.page {
 .search-bar-confirm-filename--studio {
   margin-top: 20px;
 }
-/* 하이라이트 섹션 본문: 파일명 바로 아래 시작·끝 시간 입력 두 칸이
-   나란히 놓인다(둘은 별개의 입력란이다). */
+/* 하이라이트 섹션 본문: 파일명 바로 아래 "시작 - 끝" 형태로 두 입력란이
+   가운데 구분선(-)을 사이에 두고 나란히 놓인다(둘은 별개의 입력란이다). */
 .search-bar-highlight-times {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   margin-top: 16px;
+}
+.search-bar-highlight-separator {
+  font-size: 12px;
+  color: var(--text-2);
 }
 /* 밑줄만 있는 작은 입력창 — 시작·끝 시간을 각각 탭해서 직접 고칠 수 있다. */
 .search-bar-highlight-time-input {
