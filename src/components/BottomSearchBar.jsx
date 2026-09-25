@@ -760,6 +760,7 @@ export default function BottomSearchBar({
                   {studioSection === "highlight" && (
                     <div className="search-bar-highlight-times">
                       <HighlightTimeInput value={currentStudioHighlightStart} onCommit={onChangeStudioHighlightStart} />
+                      <span className="search-bar-highlight-separator">-</span>
                       <HighlightTimeInput value={currentStudioHighlightEnd} onCommit={onChangeStudioHighlightEnd} />
                     </div>
                   )}
