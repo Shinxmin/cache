@@ -3,9 +3,10 @@ import { BackIcon, CheckIcon, ChevronRightIcon, FileIcon } from "./icons";
 import Spinner from "./Spinner";
 import { isOptimizableFile, OPTIMIZE_LEVELS, OPTIMIZE_LEVEL_LABELS } from "../lib/optimize";
 import { displayName } from "../lib/filename";
-import { formatBytes, formatDuration, parseTimeRangeInput } from "../lib/format";
+import { formatBytes, formatDuration, parseTimeInput } from "../lib/format";
 import { looksLikeVideoFile } from "../lib/thumbnail";
 import useSegmentDrag from "../hooks/useSegmentDrag";
+import HighlightRangeSlider from "./HighlightRangeSlider";
 
 // 하단바 아이콘(단일 solid fill, currentColor)과 같은 방식으로 그린 돋보기 아이콘.
 // 링은 두 원을 evenodd로 겹쳐 만든 진짜 구멍(반투명 색에서도 이중 톤이 생기지
@@ -96,21 +97,22 @@ function ScissorsIcon({ size = 18 }) {
   );
 }
 
-// 하이라이트 섹션의 구간 입력 한 줄 — 평소엔 "0:00 - 0:10" 같은 표시
-// 문자열이지만 탭하면 밑줄 있는 입력창으로 바뀌어 통째로 고칠 수 있다.
-// 포커스를 잃거나 엔터를 누르면 parseTimeRangeInput으로 해석해 커밋하며,
-// 형식이 아니거나 끝이 시작보다 앞이면 원래 값으로 되돌린다.
-function HighlightRangeInput({ start, end, onCommit }) {
+// 하이라이트 섹션의 시작·끝 시간 입력(둘은 별개의 입력란이다) — 평소엔
+// "0:00" 같은 표시 문자열이지만 탭하면 밑줄 있는 입력창으로 바뀌어 "M:SS"
+// 형식으로 직접 고칠 수 있다. 슬라이더 드래그로 바뀐 값은 포커스가 없을
+// 때만 그대로 반영하고(편집 중에는 타이핑을 덮어쓰지 않는다), 포커스를
+// 잃거나 엔터를 누르면 parseTimeInput으로 해석해 커밋하며, 형식이 아니면
+// 원래 값으로 되돌린다.
+function HighlightTimeInput({ value, onCommit }) {
   const [editing, setEditing] = useState(false);
-  const formatted = () => `${formatDuration(start)} - ${formatDuration(end)}`;
-  const [text, setText] = useState(formatted());
+  const [text, setText] = useState(formatDuration(value));
   useEffect(() => {
-    if (!editing) setText(formatted());
-  }, [start, end, editing]);
+    if (!editing) setText(formatDuration(value));
+  }, [value, editing]);
 
   const commit = () => {
-    const parsed = parseTimeRangeInput(text);
-    if (parsed) onCommit?.(parsed);
+    const parsed = parseTimeInput(text);
+    if (parsed != null) onCommit?.(parsed);
     setEditing(false);
   };
 
@@ -118,7 +120,7 @@ function HighlightRangeInput({ start, end, onCommit }) {
     <input
       type="text"
       inputMode="numeric"
-      className="search-bar-highlight-range-input"
+      className="search-bar-highlight-time-input"
       value={text}
       onFocus={() => setEditing(true)}
       onChange={(e) => setText(e.target.value)}
@@ -186,12 +188,15 @@ export default function BottomSearchBar({
   studioLevelTouched,
   studioHighlightStart,
   studioHighlightEnd,
+  studioHighlightDuration,
   studioProgress,
   studioResult,
   onChangeStudioName,
   onChangeStudioTag,
   onChangeStudioLevel,
-  onChangeStudioHighlightRange,
+  onOpenStudioHighlight,
+  onChangeStudioHighlightStart,
+  onChangeStudioHighlightEnd,
   onConfirmStudio,
   onCancelStudio,
   multiStudioOpen,
@@ -339,6 +344,11 @@ export default function BottomSearchBar({
   const currentStudioMime = studioOpen ? studioTargetMime : isMultiStudio ? multiStudioCurrent?.mime ?? "" : "";
   const currentStudioHighlightStart = studioOpen ? studioHighlightStart : isMultiStudio ? multiStudioCurrent?.highlightStart ?? 0 : 0;
   const currentStudioHighlightEnd = studioOpen ? studioHighlightEnd : isMultiStudio ? multiStudioCurrent?.highlightEnd ?? 10 : 10;
+  const currentStudioHighlightDuration = studioOpen
+    ? studioHighlightDuration
+    : isMultiStudio
+      ? multiStudioCurrent?.highlightDuration ?? 0
+      : 0;
   const currentStudioOriginalName = studioOpen
     ? studioTargetName
     : isMultiStudio
@@ -706,7 +716,10 @@ export default function BottomSearchBar({
                         className="search-bar-studio-icon-btn"
                         aria-label="하이라이트"
                         disabled={!studioHasTarget || !studioAllHighlightable}
-                        onClick={() => setStudioSection("highlight")}
+                        onClick={() => {
+                          setStudioSection("highlight");
+                          onOpenStudioHighlight?.();
+                        }}
                       >
                         <ScissorsIcon size={16} />
                       </button>
@@ -728,7 +741,11 @@ export default function BottomSearchBar({
                             type="button"
                             className="search-bar-confirm-nav-btn search-bar-confirm-nav-btn--prev"
                             aria-label="이전 항목"
-                            onClick={onPrevMultiStudio}
+                            onClick={() => {
+                              const nextIndex = Math.max(0, multiStudioIndex - 1);
+                              onPrevMultiStudio?.();
+                              if (studioSection === "highlight") onOpenStudioHighlight?.(nextIndex);
+                            }}
                             disabled={multiStudioIndex <= 0}
                           >
                             <ChevronRightIcon size={14} />
@@ -740,7 +757,11 @@ export default function BottomSearchBar({
                             type="button"
                             className="search-bar-confirm-nav-btn"
                             aria-label="다음 항목"
-                            onClick={onNextMultiStudio}
+                            onClick={() => {
+                              const nextIndex = Math.min((multiStudioItems?.length ?? 1) - 1, multiStudioIndex + 1);
+                              onNextMultiStudio?.();
+                              if (studioSection === "highlight") onOpenStudioHighlight?.(nextIndex);
+                            }}
                             disabled={isLastMultiStudio}
                           >
                             <ChevronRightIcon size={14} />
@@ -756,11 +777,20 @@ export default function BottomSearchBar({
                     </p>
                   )}
                   {studioSection === "highlight" && (
-                    <HighlightRangeInput
-                      start={currentStudioHighlightStart}
-                      end={currentStudioHighlightEnd}
-                      onCommit={onChangeStudioHighlightRange}
-                    />
+                    <div className="search-bar-highlight-body">
+                      <HighlightRangeSlider
+                        duration={currentStudioHighlightDuration}
+                        start={currentStudioHighlightStart}
+                        end={currentStudioHighlightEnd}
+                        onChangeStart={onChangeStudioHighlightStart}
+                        onChangeEnd={onChangeStudioHighlightEnd}
+                        disabled={!currentStudioHighlightDuration}
+                      />
+                      <div className="search-bar-highlight-times">
+                        <HighlightTimeInput value={currentStudioHighlightStart} onCommit={onChangeStudioHighlightStart} />
+                        <HighlightTimeInput value={currentStudioHighlightEnd} onCommit={onChangeStudioHighlightEnd} />
+                      </div>
+                    </div>
                   )}
                 </>
               )

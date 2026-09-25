@@ -18,18 +18,6 @@ export function parseTimeInput(text) {
   return parts.reduce((acc, p) => acc * 60 + p, 0);
 }
 
-// 스튜디오 하이라이트 섹션의 "0:00 - 0:10" 한 줄짜리 구간 입력을 초 단위
-// {start, end}로 되돌린다. 양쪽 다 parseTimeInput 형식이어야 하고, 끝이
-// 시작보다 뒤여야 유효하다 — 그 외에는 null(호출부가 편집을 무시한다).
-export function parseTimeRangeInput(text) {
-  const parts = (text || "").split("-").map((s) => s.trim());
-  if (parts.length !== 2) return null;
-  const start = parseTimeInput(parts[0]);
-  const end = parseTimeInput(parts[1]);
-  if (start == null || end == null || end <= start) return null;
-  return { start, end };
-}
-
 // 바이트 수를 "12.3MB" 같은 사람이 읽기 쉬운 형태로 바꾼다.
 export function formatBytes(bytes) {
   if (!bytes || bytes <= 0) return "0B";
