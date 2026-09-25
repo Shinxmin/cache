@@ -9,6 +9,9 @@ const QUALITY = 0.8;
 export const isImage = (mime) => typeof mime === "string" && mime.startsWith("image/");
 export const isVideo = (mime) => typeof mime === "string" && mime.startsWith("video/");
 
+// mime이 비어 있는 경우(일부 환경의 업로드 등)를 대비해 확장자로도 한 번 더 본다.
+export const looksLikeVideoFile = (name, mime) => isVideo(mime) || /\.(mp4|mov|m4v|webm|avi|mkv)$/i.test(name || "");
+
 // 긴 변이 MAX_EDGE를 넘지 않도록 비율을 유지한 채 캔버스에 그려 JPEG blob으로 만든다.
 function drawToBlob(source, width, height) {
   const scale = Math.min(1, MAX_EDGE / Math.max(width, height));
