@@ -418,6 +418,105 @@ export async function optimizeFiles({ token, items, ratioPercent, onFileDone }) 
   }
 }
 
+// 스튜디오 클립: 실제 프레임을 다시 인코딩하는 별도 라이브러리 없이, 소스
+// 영상을 <video>로 재생하면서 captureStream()으로 얻은 스트림을
+// MediaRecorder로 그대로 다시 녹화해 구간만 잘라낸다 — 실시간(구간 길이만큼)
+// 처리 속도가 걸리고 결과물은 항상 webm이 되는 대신, 새 의존성이나
+// 크로스오리진 격리 헤더 없이 브라우저 내장 기능만으로 동작한다.
+// saveAsNew=false면 원본 r2_key에 그대로 덮어쓰고(update_file_content),
+// true면 uploadFile()로 새 파일을 만든다.
+export async function clipVideo({ token, userId, item, start, end, saveAsNew, parentId, onProgress }) {
+  const mimeType = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find(
+    (t) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(t)
+  );
+  if (typeof MediaRecorder === "undefined" || !mimeType) {
+    throw new Error("이 브라우저는 클립 만들기를 지원하지 않습니다");
+  }
+
+  const { url: getUrl } = await presign(token, { action: "get", key: item.r2_key });
+  const sourceBlob = await xhrGetBlob(getUrl, (p) => onProgress?.(p * 0.3));
+
+  const video = document.createElement("video");
+  video.muted = true;
+  video.playsInline = true;
+  const objectUrl = URL.createObjectURL(sourceBlob);
+  video.src = objectUrl;
+
+  try {
+    await new Promise((resolve, reject) => {
+      video.onloadedmetadata = resolve;
+      video.onerror = () => reject(new Error("영상을 읽지 못했습니다"));
+    });
+    const captureStream = video.captureStream || video.mozCaptureStream;
+    if (!captureStream) {
+      throw new Error("이 브라우저는 클립 만들기를 지원하지 않습니다");
+    }
+
+    const clampedEnd = Math.min(end, video.duration);
+    await new Promise((resolve, reject) => {
+      video.currentTime = start;
+      video.onseeked = resolve;
+      video.onerror = () => reject(new Error("영상을 읽지 못했습니다"));
+    });
+
+    const stream = captureStream.call(video);
+    const chunks = [];
+    const recorder = new MediaRecorder(stream, { mimeType });
+    recorder.ondataavailable = (e) => {
+      if (e.data.size) chunks.push(e.data);
+    };
+
+    const recordedBlob = await new Promise((resolve, reject) => {
+      recorder.onerror = () => reject(new Error("클립을 만들지 못했습니다"));
+      recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
+      const clipDuration = Math.max(0.01, clampedEnd - start);
+      const onTimeUpdate = () => {
+        onProgress?.(0.3 + Math.min(1, (video.currentTime - start) / clipDuration) * 0.6);
+        if (video.currentTime >= clampedEnd) {
+          video.removeEventListener("timeupdate", onTimeUpdate);
+          video.pause();
+          recorder.stop();
+        }
+      };
+      video.addEventListener("timeupdate", onTimeUpdate);
+      recorder.start();
+      video.play().catch((err) => reject(err));
+    });
+
+    onProgress?.(0.95);
+
+    if (saveAsNew) {
+      const dot = item.name.lastIndexOf(".");
+      const base = dot > 0 ? item.name.slice(0, dot) : item.name;
+      const newName = `${base}(클립).webm`;
+      const created = await uploadFile({
+        token,
+        userId,
+        file: new File([recordedBlob], newName, { type: recordedBlob.type }),
+        parentId,
+      });
+      onProgress?.(1);
+      return created;
+    }
+
+    const { url: putUrl } = await presign(token, { action: "put", key: item.r2_key, contentType: recordedBlob.type });
+    await xhrPut(putUrl, recordedBlob, recordedBlob.type);
+    await rpcResult(
+      await supabase.rpc("update_file_content", {
+        p_token: token,
+        p_id: item.id,
+        p_size: recordedBlob.size,
+        p_mime: recordedBlob.type,
+      })
+    );
+    onProgress?.(1);
+    return null;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+    video.src = "";
+  }
+}
+
 // 일반적인 "브라우저 다운로드" 방식(a[download] 클릭) — Downloads 폴더나
 // 파일 앱으로 저장된다. 공유 시트를 쓸 수 없거나 사용자가 공유 자체에
 // 실패했을 때(취소는 제외) 대체 경로로도 쓰인다.

@@ -625,6 +625,13 @@ main.page {
   max-height: 220px;
   min-height: 220px;
 }
+/* 클립 섹션은 슬라이더 + 시간 입력 두 줄 + 체크박스까지 들어가 다른 세
+   기능(이름·태그·최적화)보다 본문이 길다 — 그 섹션을 보는 동안만 패널을
+   조금 더 키운다(다른 섹션·아이콘 줄로 돌아가면 다시 220px로 줄어든다). */
+.search-bar-confirm-panel.mode-studio-clip.is-open {
+  max-height: 264px;
+  min-height: 264px;
+}
 /* 이동 패널은 경로 표시줄 + 스크롤되는 폴더 목록까지 들어가 가장 길다. */
 .search-bar-confirm-panel.mode-move {
   justify-content: flex-start;
@@ -768,6 +775,81 @@ main.page {
    그 여유를 본문 바로 위 간격으로 돌린다. */
 .search-bar-confirm-filename--studio {
   margin-top: 20px;
+}
+/* 클립 섹션 본문: 파일명 아래로 구간 슬라이더 → 시작·끝 시간 입력 →
+   "새 파일로 저장" 체크박스가 순서대로 쌓인다. */
+.search-bar-clip-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.search-bar-clip-slider {
+  position: relative;
+  flex: none;
+  height: 28px;
+  touch-action: none;
+}
+.search-bar-clip-slider-track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 3px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--glass-border);
+}
+.search-bar-clip-slider-range {
+  position: absolute;
+  top: 50%;
+  height: 3px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--text);
+}
+.search-bar-clip-slider-thumb {
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.search-bar-clip-slider.is-disabled {
+  opacity: 0.35;
+}
+.search-bar-clip-slider.is-disabled .search-bar-clip-slider-thumb {
+  pointer-events: none;
+}
+.search-bar-clip-times {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+/* 밑줄만 있는 작은 입력창 — 시작·끝 시간을 탭해서 직접 고칠 수 있다. */
+.search-bar-clip-time-input {
+  width: 52px;
+  border: none;
+  border-bottom: 1px solid var(--glass-border);
+  background: transparent;
+  padding: 2px 0;
+  font-size: 12px;
+  color: var(--text-2);
+  text-align: center;
+}
+.search-bar-clip-time-input:focus {
+  border-bottom-color: var(--text);
+  color: var(--text);
+}
+.search-bar-clip-save-as-new {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-2);
 }
 /* 다중 이름 바꾸기 패널의 제목 줄: 제목은 왼쪽, "몇 번째/전체" 카운터와
    이전·다음 화살표는 오른쪽에 둔다. 몇 개를 고르든 패널 크기가 똑같이
