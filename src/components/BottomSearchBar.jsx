@@ -136,6 +136,35 @@ function HighlightTimeInput({ value, onCommit, align }) {
   );
 }
 
+const HIGHLIGHT_CLOSE_ANIMATION_MS = 160;
+
+// 하이라이트 슬라이더(+시간 줄)를 다른 일괄 적용 버튼들처럼 등장·퇴장에
+// 페이드+스케일 애니메이션이 붙게 감싸는 래퍼. 등장할 땐 CSS 애니메이션이
+// 마운트와 동시에 자동 재생되지만, 사라질 땐 React가 DOM을 곧바로 지워버려
+// 트랜지션을 볼 틈이 없다. 그래서 ConfirmModal과 같은 방식으로, 실제 언마운트
+// 전에 "닫히는 중" 상태를 잠깐 켜서 퇴장 애니메이션(.is-closing)이 끝날
+// 시간을 준 뒤 사라진다.
+function HighlightSliderPanel({ visible, children }) {
+  const [mounted, setMounted] = useState(visible);
+  const [closing, setClosing] = useState(false);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    clearTimeout(timerRef.current);
+    if (visible) {
+      setClosing(false);
+      setMounted(true);
+    } else {
+      setClosing(true);
+      timerRef.current = setTimeout(() => setMounted(false), HIGHLIGHT_CLOSE_ANIMATION_MS);
+    }
+    return () => clearTimeout(timerRef.current);
+  }, [visible]);
+
+  if (!mounted) return null;
+  return <div className={`search-bar-highlight-col${closing ? " is-closing" : ""}`}>{children}</div>;
+}
+
 // 예전 하단 내비바가 있던 자리에 고정된 검색바. position:fixed라 스크롤을
 // 아무리 올리고 내려도 그 자리에서 전혀 움직이지 않는다. 파일 화면(과 그
 // 안에서 연 즐겨찾기 화면)에서 항상 떠 있다 — "검색바 항상 활성화" 설정은
@@ -777,22 +806,20 @@ export default function BottomSearchBar({
                       {displayName({ name: currentStudioOriginalName, mime: currentStudioMime })}
                     </p>
                   )}
-                  {studioSection === "highlight" && (
-                    <div className="search-bar-highlight-col">
-                      <HighlightRangeSlider
-                        duration={currentStudioHighlightDuration}
-                        start={currentStudioHighlightStart}
-                        end={currentStudioHighlightEnd}
-                        onChangeStart={onChangeStudioHighlightStart}
-                        onChangeEnd={onChangeStudioHighlightEnd}
-                        disabled={!currentStudioHighlightDuration}
-                      />
-                      <div className="search-bar-highlight-times">
-                        <HighlightTimeInput value={currentStudioHighlightStart} onCommit={onChangeStudioHighlightStart} align="left" />
-                        <HighlightTimeInput value={currentStudioHighlightEnd} onCommit={onChangeStudioHighlightEnd} align="right" />
-                      </div>
+                  <HighlightSliderPanel visible={studioSection === "highlight"}>
+                    <HighlightRangeSlider
+                      duration={currentStudioHighlightDuration}
+                      start={currentStudioHighlightStart}
+                      end={currentStudioHighlightEnd}
+                      onChangeStart={onChangeStudioHighlightStart}
+                      onChangeEnd={onChangeStudioHighlightEnd}
+                      disabled={!currentStudioHighlightDuration}
+                    />
+                    <div className="search-bar-highlight-times">
+                      <HighlightTimeInput value={currentStudioHighlightStart} onCommit={onChangeStudioHighlightStart} align="left" />
+                      <HighlightTimeInput value={currentStudioHighlightEnd} onCommit={onChangeStudioHighlightEnd} align="right" />
                     </div>
-                  )}
+                  </HighlightSliderPanel>
                 </>
               )
             ) : displayMode === "move" ? (

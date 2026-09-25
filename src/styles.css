@@ -755,16 +755,35 @@ main.page {
 }
 /* 하이라이트 섹션 본문: 파일명 아래에 슬라이더가 있고, 그 바로 밑에 시작·끝
    시간이 슬라이더와 같은 폭으로 좌우 끝에 맞춰 놓인다 — 슬라이더 폭은 패널
-   폭의 2/4다. */
+   폭의 2/4다. 다른 일괄 적용 버튼들처럼 등장·퇴장에 페이드+스케일 애니메이션이
+   붙는다(퇴장 때는 HighlightSliderPanel이 실제 언마운트 전에 .is-closing을
+   잠깐 켜서 트랜지션이 끝날 시간을 준다). */
 .search-bar-highlight-col {
   flex: none;
   display: flex;
   flex-direction: column;
   width: 50%;
   margin-top: 6px;
+  animation: highlight-col-in 0.22s var(--spring);
+}
+.search-bar-highlight-col.is-closing {
+  animation: highlight-col-out 0.16s var(--ease) forwards;
+}
+@keyframes highlight-col-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+@keyframes highlight-col-out {
+  to {
+    opacity: 0;
+    transform: scale(0.92);
+  }
 }
 /* 알약(캡슐) 모양 트랙(연한 회색). 부모(.search-bar-highlight-col)가 이미
-   패널 폭의 2/4이므로 여기선 그 폭을 그대로 채운다. */
+   패널 폭의 2/4이므로 여기선 그 폭을 그대로 채운다. overflow: hidden으로
+   안쪽 진한 회색 구간이 둥근 모서리 밖으로 삐져나오지 않게 잘라낸다. */
 .search-bar-highlight-slider {
   position: relative;
   flex: none;
@@ -772,6 +791,7 @@ main.page {
   height: 27px;
   border-radius: 999px;
   background: rgba(128, 128, 128, 0.14);
+  overflow: hidden;
   touch-action: none;
 }
 /* 시작·끝 사이(선택된 구간, 약간 진한 회색). 색은 ::before가 칠한다 —
