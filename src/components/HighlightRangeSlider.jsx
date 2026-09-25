@@ -37,9 +37,14 @@ export default function HighlightRangeSlider({ duration, start, end, onChangeSta
     [duration]
   );
 
+  // <, > 손잡이(각 20px 너비)가 서로 겹치지 않도록, 두 손잡이 위치 사이의
+  // 실제 화면 간격이 항상 40px 이상이 되게 하는 최소 시간 간격을 트랙의
+  // 실제 렌더링 폭 기준으로 매번 계산해 클램프한다.
   const moveHandle = (which, sec) => {
-    if (which === "start") onChangeStart?.(sec);
-    else onChangeEnd?.(sec);
+    const trackWidth = trackRef.current?.getBoundingClientRect().width || 0;
+    const minGapSec = trackWidth && duration ? (40 / trackWidth) * duration : 0;
+    if (which === "start") onChangeStart?.(Math.max(0, Math.min(sec, end - minGapSec)));
+    else onChangeEnd?.(Math.min(duration || sec, Math.max(sec, start + minGapSec)));
   };
 
   const onPointerDownHandle = (which) => (e) => {

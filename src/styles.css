@@ -753,21 +753,22 @@ main.page {
   flex: none;
   margin-top: 14px;
 }
-/* 하이라이트 섹션 본문: 파일명 아래 한 줄에 [시작 입력란] [슬라이더]
-   [끝 입력란]이 왼쪽부터 나란히 놓인다 — 시작·끝 시간이 슬라이더의 시작
-   부분과 끝 부분에 붙어 있는 모양이다. */
-.search-bar-highlight-row {
+/* 하이라이트 섹션 본문: 파일명 아래에 슬라이더가 있고, 그 바로 밑에 시작·끝
+   시간이 슬라이더와 같은 폭으로 좌우 끝에 맞춰 놓인다 — 슬라이더 폭은 패널
+   폭의 2/4다. */
+.search-bar-highlight-col {
   flex: none;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
+  flex-direction: column;
+  width: 50%;
+  margin-top: 6px;
 }
-/* 알약(캡슐) 모양 트랙(연한 회색). 패널 폭의 2/4만 차지한다. */
+/* 알약(캡슐) 모양 트랙(연한 회색). 부모(.search-bar-highlight-col)가 이미
+   패널 폭의 2/4이므로 여기선 그 폭을 그대로 채운다. */
 .search-bar-highlight-slider {
   position: relative;
   flex: none;
-  width: 50%;
+  width: 100%;
   height: 27px;
   border-radius: 999px;
   background: rgba(128, 128, 128, 0.14);
@@ -813,14 +814,23 @@ main.page {
 .search-bar-highlight-slider.is-disabled .search-bar-highlight-slider-handle {
   pointer-events: none;
 }
+/* 슬라이더 바로 밑, 슬라이더와 같은 폭의 줄에 시작 시간(좌측)과 끝 시간
+   (우측)을 양 끝으로 벌려 놓는다 — 슬라이더의 좌·우 끝에 맞춰진다. */
+.search-bar-highlight-times {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0;
+}
 /* 밑줄만 있는 작은 입력창 — 시작·끝 시간을 각각 탭해서 직접 고칠 수 있다. */
 .search-bar-highlight-time-input {
   flex: none;
-  width: 52px;
+  width: 40px;
   border: none;
   border-bottom: 1px solid var(--glass-border);
   background: transparent;
-  padding: 2px 0;
+  padding: 0;
+  line-height: 14px;
   font-size: 12px;
   color: var(--text-2);
   text-align: center;
