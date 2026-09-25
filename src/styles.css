@@ -593,9 +593,9 @@ main.page {
 }
 /* 스튜디오(이름·태그·압축·클립 통합) 패널은 제목 아래 구분선 + 기능 선택
    줄(아이콘 줄/기능 화면) + 구분선 + 본문(파일명 등)이 쌓이므로, 다른
-   패널처럼 세로 가운데 정렬 대신 위에서부터 순서대로 쌓는다. 높이(220px)는
-   아이콘 줄이든 각 기능 상세 화면이든, 단일이든 다중이든 모든 상황에서
-   공통으로 적용된다(상태에 따라 흔들리지 않는다). */
+   패널처럼 세로 가운데 정렬 대신 위에서부터 순서대로 쌓는다. 높이(200px)는
+   아이콘 줄이든 각 기능 상세 화면(하이라이트 포함)이든, 단일이든 다중이든
+   예외 없이 공통으로 적용된다(상태에 따라 흔들리지 않는다). */
 .search-bar-confirm-panel.mode-studio {
   justify-content: flex-start;
   /* 스튜디오 패널만 다른 패널보다 조금 더 천천히, 스프링의 튕기는 느낌
@@ -605,16 +605,8 @@ main.page {
   transition-timing-function: var(--ease), var(--ease), var(--ease), var(--ease);
 }
 .search-bar-confirm-panel.mode-studio.is-open {
-  max-height: 220px;
-  min-height: 220px;
-}
-/* 하이라이트 섹션은 알약 모양 구간 슬라이더 + 시작·끝 입력란까지 들어가
-   다른 세 기능(이름·태그·최적화)보다 본문이 길다 — 그 섹션을 보는 동안만
-   패널을 조금 더 키운다(다른 섹션·아이콘 줄로 돌아가면 다시 220px로
-   줄어든다). */
-.search-bar-confirm-panel.mode-studio-highlight.is-open {
-  max-height: 280px;
-  min-height: 280px;
+  max-height: 200px;
+  min-height: 200px;
 }
 /* 이동 패널은 경로 표시줄 + 스크롤되는 폴더 목록까지 들어가 가장 길다. */
 .search-bar-confirm-panel.mode-move {
@@ -754,71 +746,76 @@ main.page {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* 스튜디오 패널만 제목·구분선·아이콘 줄(위쪽 뭉치)과 본문 사이 간격을
-   더 준다 — 패널 높이를 늘린 만큼(200px→220px) 위쪽 뭉치가 위로 붙고
-   그 여유를 본문 바로 위 간격으로 돌린다. */
+/* 스튜디오 패널 본문(파일명)은 위쪽 뭉치(제목·구분선·아이콘 줄)와 간격을
+   조금 더 둔다. flex:none — 넘치는 상황에서 파일명이 조용히 0px로 찌그러져
+   사라지지 않게 한다. */
 .search-bar-confirm-filename--studio {
-  margin-top: 20px;
+  flex: none;
+  margin-top: 14px;
 }
-/* 하이라이트 섹션 본문: 파일명 바로 아래 알약 모양 구간 슬라이더가 먼저
-   오고, 그 아래 "시작 - 끝" 입력란 두 칸이 이어진다 — 서로 겹치지 않게
-   위아래로 간격을 두고 쌓는다. */
-.search-bar-highlight-body {
+/* 하이라이트 섹션 본문: 파일명 아래 한 줄에 [시작 입력란] [슬라이더]
+   [끝 입력란]이 왼쪽부터 나란히 놓인다 — 시작·끝 시간이 슬라이더의 시작
+   부분과 끝 부분에 붙어 있는 모양이다. */
+.search-bar-highlight-row {
+  flex: none;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
   margin-top: 12px;
 }
-/* 알약(캡슐) 모양 트랙 — 버튼처럼 채워진 배경 위에 원형 손잡이 두 개가
-   놓인다. 패널 폭의 3/4만 차지하고 왼쪽에 붙는다(가운데 정렬이 아니다). */
+/* 알약(캡슐) 모양 트랙(연한 회색). 패널 폭의 2/4만 차지한다. */
 .search-bar-highlight-slider {
   position: relative;
   flex: none;
-  width: 75%;
-  height: 36px;
+  width: 50%;
+  height: 27px;
   border-radius: 999px;
   background: rgba(128, 128, 128, 0.14);
   touch-action: none;
 }
-/* 시작·끝 사이(선택된 구간)를 살짝 채워 보여준다. */
+/* 시작·끝 사이(선택된 구간, 약간 진한 회색). 색은 ::before가 칠한다 —
+   구간 자체에 opacity를 걸면 그 안의 < > 아이콘까지 흐려지기 때문이다. */
 .search-bar-highlight-slider-range {
   position: absolute;
-  top: 4px;
-  bottom: 4px;
+  top: 3px;
+  bottom: 3px;
   border-radius: 999px;
+  pointer-events: none;
+}
+.search-bar-highlight-slider-range::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   background: var(--text);
   opacity: 0.22;
 }
-/* 손잡이는 알약 안에 놓이는 원형 버튼이다. */
-.search-bar-highlight-slider-thumb {
+/* 구간 안쪽 왼쪽 끝의 < (시작), 오른쪽 끝의 > (끝) 손잡이. 이 아이콘을
+   드래그해서 시작·끝 시간을 옮긴다. */
+.search-bar-highlight-slider-handle {
   position: absolute;
-  top: 50%;
-  width: 28px;
-  height: 28px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: var(--text);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  top: 3px;
+  bottom: 3px;
+  z-index: 1;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  touch-action: none;
+}
+.search-bar-highlight-slider-handle--end {
+  transform: translateX(-100%);
 }
 .search-bar-highlight-slider.is-disabled {
   opacity: 0.35;
 }
-.search-bar-highlight-slider.is-disabled .search-bar-highlight-slider-thumb {
+.search-bar-highlight-slider.is-disabled .search-bar-highlight-slider-handle {
   pointer-events: none;
-}
-/* "시작 - 끝" 형태로 두 입력란이 가운데 구분선(-)을 사이에 두고 나란히
-   놓인다(둘은 별개의 입력란이다). */
-.search-bar-highlight-times {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.search-bar-highlight-separator {
-  font-size: 12px;
-  color: var(--text-2);
 }
 /* 밑줄만 있는 작은 입력창 — 시작·끝 시간을 각각 탭해서 직접 고칠 수 있다. */
 .search-bar-highlight-time-input {
+  flex: none;
   width: 52px;
   border: none;
   border-bottom: 1px solid var(--glass-border);

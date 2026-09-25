@@ -630,7 +630,7 @@ export default function BottomSearchBar({
       <div className="bottom-search-wrap">
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
           <div
-            className={`search-bar-confirm-panel${displayMode === "studio" || displayMode === "multiStudio" ? " mode-studio" : ""}${(displayMode === "studio" || displayMode === "multiStudio") && studioSection === "highlight" && !studioRunning ? " mode-studio-highlight" : ""}${displayMode === "move" || displayMode === "thumbnail" || displayMode === "multiThumbnail" ? " mode-move" : ""}${extraActions.length > 0 ? " has-extras" : ""}${panelOpen ? " is-open" : ""}`}
+            className={`search-bar-confirm-panel${displayMode === "studio" || displayMode === "multiStudio" ? " mode-studio" : ""}${displayMode === "move" || displayMode === "thumbnail" || displayMode === "multiThumbnail" ? " mode-move" : ""}${extraActions.length > 0 ? " has-extras" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
           >
             {displayMode === "newFolder" ? (
@@ -777,7 +777,8 @@ export default function BottomSearchBar({
                     </p>
                   )}
                   {studioSection === "highlight" && (
-                    <div className="search-bar-highlight-body">
+                    <div className="search-bar-highlight-row">
+                      <HighlightTimeInput value={currentStudioHighlightStart} onCommit={onChangeStudioHighlightStart} />
                       <HighlightRangeSlider
                         duration={currentStudioHighlightDuration}
                         start={currentStudioHighlightStart}
@@ -786,11 +787,7 @@ export default function BottomSearchBar({
                         onChangeEnd={onChangeStudioHighlightEnd}
                         disabled={!currentStudioHighlightDuration}
                       />
-                      <div className="search-bar-highlight-times">
-                        <HighlightTimeInput value={currentStudioHighlightStart} onCommit={onChangeStudioHighlightStart} />
-                        <span className="search-bar-highlight-separator">-</span>
-                        <HighlightTimeInput value={currentStudioHighlightEnd} onCommit={onChangeStudioHighlightEnd} />
-                      </div>
+                      <HighlightTimeInput value={currentStudioHighlightEnd} onCommit={onChangeStudioHighlightEnd} />
                     </div>
                   )}
                 </>

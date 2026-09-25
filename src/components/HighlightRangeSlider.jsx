@@ -1,11 +1,27 @@
 import { useCallback, useRef } from "react";
 
-// 스튜디오 하이라이트 섹션의 구간 슬라이더. 알약(캡슐) 모양의 트랙 안에
-// 시작·끝을 나타내는 원형 손잡이 두 개가 있고, 각각 드래그하거나 트랙의
-// 빈 자리를 누르면 더 가까운 쪽 손잡이가 그 위치로 옮겨간다. 실제 0.5초
-// 최소 간격 제한이나 duration 경계 클램프는 App.jsx의
-// changeStudioHighlightStart/End가 맡는다 — 여기서는 누른 지점의 초(sec)값만
-// 계산해 그대로 올려보낸다.
+// 머티리얼 디자인 chevron_left / chevron_right.
+function ChevronLeftIcon({ size = 16 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon({ size = 16 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
+    </svg>
+  );
+}
+
+// 스튜디오 하이라이트 섹션의 구간 슬라이더. 연한 회색 알약 트랙 위에 선택된
+// 구간(약간 진한 회색)이 있고, 그 구간 안쪽 왼쪽 끝의 < 와 오른쪽 끝의 >
+// 가 각각 시작·끝 손잡이다 — 드래그하면 그 시간이 옮겨지고, 트랙의 빈
+// 자리를 누르면 더 가까운 쪽 손잡이가 그 위치로 옮겨간다. 최소 간격·길이
+// 클램프는 App.jsx의 changeStudioHighlightStart/End가 맡는다.
 export default function HighlightRangeSlider({ duration, start, end, onChangeStart, onChangeEnd, disabled }) {
   const trackRef = useRef(null);
   const draggingRef = useRef(null); // "start" | "end" | null
@@ -26,7 +42,7 @@ export default function HighlightRangeSlider({ duration, start, end, onChangeSta
     else onChangeEnd?.(sec);
   };
 
-  const onPointerDownThumb = (which) => (e) => {
+  const onPointerDownHandle = (which) => (e) => {
     if (disabled) return;
     e.stopPropagation();
     draggingRef.current = which;
@@ -55,6 +71,15 @@ export default function HighlightRangeSlider({ duration, start, end, onChangeSta
   const startPct = duration ? (start / duration) * 100 : 0;
   const endPct = duration ? (end / duration) * 100 : 100;
 
+  const handleProps = (which) => ({
+    type: "button",
+    onPointerDown: onPointerDownHandle(which),
+    onPointerMove,
+    onPointerUp: finish,
+    onPointerCancel: finish,
+    disabled,
+  });
+
   return (
     <div
       className={`search-bar-highlight-slider${disabled ? " is-disabled" : ""}`}
@@ -69,27 +94,21 @@ export default function HighlightRangeSlider({ duration, start, end, onChangeSta
         style={{ left: `${startPct}%`, width: `${Math.max(0, endPct - startPct)}%` }}
       />
       <button
-        type="button"
-        className="search-bar-highlight-slider-thumb"
+        {...handleProps("start")}
+        className="search-bar-highlight-slider-handle"
         aria-label="시작 지점"
         style={{ left: `${startPct}%` }}
-        onPointerDown={onPointerDownThumb("start")}
-        onPointerMove={onPointerMove}
-        onPointerUp={finish}
-        onPointerCancel={finish}
-        disabled={disabled}
-      />
+      >
+        <ChevronLeftIcon />
+      </button>
       <button
-        type="button"
-        className="search-bar-highlight-slider-thumb"
+        {...handleProps("end")}
+        className="search-bar-highlight-slider-handle search-bar-highlight-slider-handle--end"
         aria-label="끝 지점"
         style={{ left: `${endPct}%` }}
-        onPointerDown={onPointerDownThumb("end")}
-        onPointerMove={onPointerMove}
-        onPointerUp={finish}
-        onPointerCancel={finish}
-        disabled={disabled}
-      />
+      >
+        <ChevronRightIcon />
+      </button>
     </div>
   );
 }
