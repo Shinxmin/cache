@@ -757,7 +757,7 @@ main.page {
 .search-bar-highlight-times {
   display: flex;
   align-items: center;
-  gap: 24px;
+  justify-content: space-between;
   margin-top: 16px;
 }
 /* 밑줄만 있는 작은 입력창 — 시작·끝 시간을 각각 탭해서 직접 고칠 수 있다. */
