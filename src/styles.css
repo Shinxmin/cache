@@ -1874,7 +1874,7 @@ main.page {
 :root[data-theme="dark"] .search-bar-open-studio-btn,
 :root[data-theme="dark"] .search-bar-studio-icon-btn,
 :root[data-theme="dark"] .search-bar-confirm-extras-btn {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.5);
   color: var(--bg);
 }
 /* 확인을 누른 뒤 처리 중일 때 뜨는 진행 바 + "148 / 200" 카운트. */
