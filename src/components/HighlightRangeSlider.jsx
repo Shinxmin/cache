@@ -24,8 +24,8 @@ const TRACK_INSET_PX = 6;
 // 떨어져 있어야 한다.
 const MIN_HANDLE_GAP_PX = 40;
 // 트랙 폭을 실측하기 전(첫 렌더) 쓰는 기본값 — 검색바의
-// .search-bar-highlight-col CSS width(88px)와 맞춘 값이다.
-const DEFAULT_TRACK_WIDTH_PX = 88;
+// .search-bar-highlight-col CSS width(176px)와 맞춘 값이다.
+const DEFAULT_TRACK_WIDTH_PX = 176;
 
 // 스튜디오 하이라이트 섹션의 구간 슬라이더. 연한 회색 알약 트랙 위에 선택된
 // 구간(약간 진한 회색)이 있고, 그 구간 안쪽 왼쪽 끝의 < 와 오른쪽 끝의 >

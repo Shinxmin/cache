@@ -754,16 +754,19 @@ main.page {
   margin-top: 14px;
 }
 /* 하이라이트 섹션이 열려 있을 때 검색바의 확인 버튼 바로 왼쪽에 뜨는
-   구간 슬라이더 + 시작·끝 시간 묶음(품질 세그먼트와 같은 자리). 검색바가
-   align-items: center인 덕분에 세로 위치는 따로 잡지 않아도 가운데
-   정렬된다. 다른 일괄 적용 버튼들처럼 등장·퇴장에 페이드+스케일 애니메이션이
-   붙는다(퇴장 때는 HighlightSliderPanel이 실제 언마운트 전에 .is-closing을
-   잠깐 켜서 트랜지션이 끝날 시간을 준다). */
+   구간 슬라이더 + 시작·끝 시간 묶음(품질 세그먼트와 같은 자리). 슬라이더
+   윗변이 확인 버튼 윗변과 같은 높이에 오도록 align-self: flex-start +
+   margin-top으로 살짝 내린다(시간 줄은 슬라이더 밑에 자연히 같이
+   내려간다). 다른 일괄 적용 버튼들처럼 등장·퇴장에 페이드+스케일
+   애니메이션이 붙는다(퇴장 때는 HighlightSliderPanel이 실제 언마운트 전에
+   .is-closing을 잠깐 켜서 트랜지션이 끝날 시간을 준다). */
 .search-bar-highlight-col {
   flex: none;
   display: flex;
   flex-direction: column;
-  width: 88px;
+  align-self: flex-start;
+  margin-top: 11.5px;
+  width: 176px;
   animation: highlight-col-in 0.22s var(--spring);
 }
 .search-bar-highlight-col.is-closing {
@@ -797,7 +800,7 @@ main.page {
 /* 시작·끝 사이(선택된 구간, 약간 진한 회색). 색은 ::before가 칠한다 —
    구간 자체에 opacity를 걸면 그 안의 < > 아이콘까지 흐려지기 때문이다.
    트랙(연한 회색) 폭·높이는 그대로 두고, 이 진한 회색 구간의 세로 두께만
-   기존(21px, top/bottom 3px씩) 대비 90%(18.9px)로 줄인다. */
+   트랙 높이의 90%로 줄인다(위아래 여백 4.05px씩). */
 .search-bar-highlight-slider-range {
   position: absolute;
   top: 4.05px;

@@ -993,8 +993,8 @@ export default function BottomSearchBar({
                 disabled={!currentStudioHighlightDuration}
               />
               <div className="search-bar-highlight-times">
-                <span className="search-bar-highlight-time-label">시작 {formatDuration(currentStudioHighlightStart)}</span>
-                <span className="search-bar-highlight-time-label">끝 {formatDuration(currentStudioHighlightEnd)}</span>
+                <span className="search-bar-highlight-time-label">{formatDuration(currentStudioHighlightStart)}</span>
+                <span className="search-bar-highlight-time-label">{formatDuration(currentStudioHighlightEnd)}</span>
               </div>
             </HighlightSliderPanel>
             {panelOpen && (
