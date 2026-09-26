@@ -17,6 +17,10 @@ function ChevronRightIcon({ size = 16 }) {
   );
 }
 
+// 트랙 양 끝에 남기는 여백(px) — 진한 회색 구간(과 그 안의 < > 손잡이)이
+// 트랙 좌우 끝에 닿지 않고 이만큼 안쪽에서 시작·끝나도록 한다.
+const TRACK_INSET_PX = 6;
+
 // 스튜디오 하이라이트 섹션의 구간 슬라이더. 연한 회색 알약 트랙 위에 선택된
 // 구간(약간 진한 회색)이 있고, 그 구간 안쪽 왼쪽 끝의 < 와 오른쪽 끝의 >
 // 가 각각 시작·끝 손잡이다 — 드래그하면 그 시간이 옮겨지고, 트랙의 빈
@@ -31,21 +35,29 @@ export default function HighlightRangeSlider({ duration, start, end, onChangeSta
       const el = trackRef.current;
       if (!el || !duration) return 0;
       const rect = el.getBoundingClientRect();
-      const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+      const usable = rect.width - TRACK_INSET_PX * 2;
+      if (usable <= 0) return 0;
+      const ratio = Math.min(1, Math.max(0, (clientX - rect.left - TRACK_INSET_PX) / usable));
       return ratio * duration;
     },
     [duration]
   );
 
   // <, > 손잡이(각 20px 너비)가 서로 겹치지 않도록, 두 손잡이 위치 사이의
-  // 실제 화면 간격이 항상 40px 이상이 되게 하는 최소 시간 간격을 트랙의
-  // 실제 렌더링 폭 기준으로 매번 계산해 클램프한다.
+  // 실제 화면 간격이 항상 40px 이상이 되게 하는 최소 시간 간격을, 여백을
+  // 뺀 실제 사용 가능한 트랙 폭 기준으로 매번 계산해 클램프한다.
   const moveHandle = (which, sec) => {
-    const trackWidth = trackRef.current?.getBoundingClientRect().width || 0;
-    const minGapSec = trackWidth && duration ? (40 / trackWidth) * duration : 0;
+    const rect = trackRef.current?.getBoundingClientRect();
+    const usable = rect ? rect.width - TRACK_INSET_PX * 2 : 0;
+    const minGapSec = usable > 0 && duration ? (40 / usable) * duration : 0;
     if (which === "start") onChangeStart?.(Math.max(0, Math.min(sec, end - minGapSec)));
     else onChangeEnd?.(Math.min(duration || sec, Math.max(sec, start + minGapSec)));
   };
+
+  // 0~100% 위치를, 트랙 좌우로 TRACK_INSET_PX만큼 여백을 둔 안쪽 구간
+  // [TRACK_INSET_PX, 100% - TRACK_INSET_PX]에 매핑하는 CSS 길이.
+  const insetLeft = (pct) => `calc(${TRACK_INSET_PX}px + (100% - ${TRACK_INSET_PX * 2}px) * ${pct / 100})`;
+  const insetWidth = (deltaPct) => `calc((100% - ${TRACK_INSET_PX * 2}px) * ${deltaPct / 100})`;
 
   const onPointerDownHandle = (which) => (e) => {
     if (disabled) return;
@@ -96,13 +108,13 @@ export default function HighlightRangeSlider({ duration, start, end, onChangeSta
     >
       <div
         className="search-bar-highlight-slider-range"
-        style={{ left: `${startPct}%`, width: `${Math.max(0, endPct - startPct)}%` }}
+        style={{ left: insetLeft(startPct), width: insetWidth(Math.max(0, endPct - startPct)) }}
       />
       <button
         {...handleProps("start")}
         className="search-bar-highlight-slider-handle"
         aria-label="시작 지점"
-        style={{ left: `${startPct}%` }}
+        style={{ left: insetLeft(startPct) }}
       >
         <ChevronLeftIcon />
       </button>
@@ -110,7 +122,7 @@ export default function HighlightRangeSlider({ duration, start, end, onChangeSta
         {...handleProps("end")}
         className="search-bar-highlight-slider-handle search-bar-highlight-slider-handle--end"
         aria-label="끝 지점"
-        style={{ left: `${endPct}%` }}
+        style={{ left: insetLeft(endPct) }}
       >
         <ChevronRightIcon />
       </button>
