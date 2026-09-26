@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
 // 머티리얼 디자인 chevron_left / chevron_right.
 function ChevronLeftIcon({ size = 16 }) {
@@ -20,6 +20,12 @@ function ChevronRightIcon({ size = 16 }) {
 // 트랙 양 끝에 남기는 여백(px) — 진한 회색 구간(과 그 안의 < > 손잡이)이
 // 트랙 좌우 끝에 닿지 않고 이만큼 안쪽에서 시작·끝나도록 한다.
 const TRACK_INSET_PX = 6;
+// < > 손잡이(각 20px 너비)가 서로 겹치지 않으려면 두 위치가 최소 이만큼(px)
+// 떨어져 있어야 한다.
+const MIN_HANDLE_GAP_PX = 40;
+// 트랙 폭을 실측하기 전(첫 렌더) 쓰는 기본값 — 검색바의
+// .search-bar-highlight-col CSS width(88px)와 맞춘 값이다.
+const DEFAULT_TRACK_WIDTH_PX = 88;
 
 // 스튜디오 하이라이트 섹션의 구간 슬라이더. 연한 회색 알약 트랙 위에 선택된
 // 구간(약간 진한 회색)이 있고, 그 구간 안쪽 왼쪽 끝의 < 와 오른쪽 끝의 >
@@ -29,27 +35,32 @@ const TRACK_INSET_PX = 6;
 export default function HighlightRangeSlider({ duration, start, end, onChangeStart, onChangeEnd, disabled }) {
   const trackRef = useRef(null);
   const draggingRef = useRef(null); // "start" | "end" | null
+  const [trackWidth, setTrackWidth] = useState(DEFAULT_TRACK_WIDTH_PX);
+
+  // 레이아웃이 잡힌 뒤(페인트 전) 트랙의 실제 렌더링 폭을 한 번 측정해 둔다
+  // — 이 값으로 최소 간격(px)을 시간·퍼센트로 정확히 환산한다.
+  useLayoutEffect(() => {
+    const el = trackRef.current;
+    if (el) setTrackWidth(el.getBoundingClientRect().width);
+  }, []);
+
+  const usableWidth = Math.max(0, trackWidth - TRACK_INSET_PX * 2);
+  const minGapSec = usableWidth > 0 && duration ? (MIN_HANDLE_GAP_PX / usableWidth) * duration : 0;
 
   const secAt = useCallback(
     (clientX) => {
       const el = trackRef.current;
-      if (!el || !duration) return 0;
+      if (!el || !duration || usableWidth <= 0) return 0;
       const rect = el.getBoundingClientRect();
-      const usable = rect.width - TRACK_INSET_PX * 2;
-      if (usable <= 0) return 0;
-      const ratio = Math.min(1, Math.max(0, (clientX - rect.left - TRACK_INSET_PX) / usable));
+      const ratio = Math.min(1, Math.max(0, (clientX - rect.left - TRACK_INSET_PX) / usableWidth));
       return ratio * duration;
     },
-    [duration]
+    [duration, usableWidth]
   );
 
   // <, > 손잡이(각 20px 너비)가 서로 겹치지 않도록, 두 손잡이 위치 사이의
-  // 실제 화면 간격이 항상 40px 이상이 되게 하는 최소 시간 간격을, 여백을
-  // 뺀 실제 사용 가능한 트랙 폭 기준으로 매번 계산해 클램프한다.
+  // 실제 화면 간격이 항상 40px 이상이 되게 하는 최소 시간 간격만큼 클램프한다.
   const moveHandle = (which, sec) => {
-    const rect = trackRef.current?.getBoundingClientRect();
-    const usable = rect ? rect.width - TRACK_INSET_PX * 2 : 0;
-    const minGapSec = usable > 0 && duration ? (40 / usable) * duration : 0;
     if (which === "start") onChangeStart?.(Math.max(0, Math.min(sec, end - minGapSec)));
     else onChangeEnd?.(Math.min(duration || sec, Math.max(sec, start + minGapSec)));
   };
@@ -86,7 +97,13 @@ export default function HighlightRangeSlider({ duration, start, end, onChangeSta
   };
 
   const startPct = duration ? (start / duration) * 100 : 0;
-  const endPct = duration ? (end / duration) * 100 : 100;
+  const rawEndPct = duration ? (end / duration) * 100 : 100;
+  // 아직 사용자가 건드리지 않은 기본값(예: 0:00~0:10)이 긴 영상에서는
+  // 실제 시간상 간격은 있어도 화면 픽셀 간격이 최소치보다 좁을 수 있다 —
+  // 이때도 두 손잡이가 겹쳐 보이지 않도록, 실제 end 값은 바꾸지 않은 채
+  // 보여주기용 끝 위치만 최소 간격만큼 밀어서 그린다.
+  const minGapPct = duration ? (minGapSec / duration) * 100 : 0;
+  const endPct = Math.max(rawEndPct, Math.min(100, startPct + minGapPct));
 
   const handleProps = (which) => ({
     type: "button",

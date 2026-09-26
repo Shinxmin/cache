@@ -969,6 +969,25 @@ export default function App() {
       return prev.map((it, i) => (i >= multiStudioIndex ? { ...it, level: current.level, levelTouched: true } : it));
     });
   };
+  // 지금 보고 있는 항목의 시작·끝 값을 그 항목부터 뒤쪽 전부에 적용한다
+  // (예: 4번째 항목에서 누르면 4~마지막에 적용, 1~3번째는 그대로 둔다) —
+  // 이름·태그·품질의 일괄 적용과 같은 규칙이다.
+  const applyAllMultiStudioHighlight = () => {
+    setMultiStudioItems((prev) => {
+      const current = prev[multiStudioIndex];
+      if (!current) return prev;
+      return prev.map((it, i) =>
+        i >= multiStudioIndex
+          ? { ...it, highlightStart: current.highlightStart, highlightEnd: current.highlightEnd, highlightTouched: true }
+          : it
+      );
+    });
+  };
+  const clearAllMultiStudioHighlight = () => {
+    setMultiStudioItems((prev) =>
+      prev.map((it) => ({ ...it, highlightStart: 0, highlightEnd: 10, highlightTouched: false }))
+    );
+  };
 
   // 확인을 누르면 그룹(품질 단계)별로 optimizeFiles를 병렬로 돌리되, 파일
   // 하나가 끝날 때마다 공통 진행률(진행 바 + "148 / 200")을 갱신하고, 전부
@@ -1625,6 +1644,8 @@ export default function App() {
             onApplyAllMultiStudioTag={applyAllMultiStudioTag}
             onClearAllMultiStudioTag={clearAllMultiStudioTag}
             onApplyAllMultiStudioLevel={applyAllMultiStudioLevel}
+            onApplyAllMultiStudioHighlight={applyAllMultiStudioHighlight}
+            onClearAllMultiStudioHighlight={clearAllMultiStudioHighlight}
             onConfirmMultiStudio={confirmMultiStudio}
             onCancelMultiStudio={cancelMultiStudio}
             moveOpen={moveOpen}

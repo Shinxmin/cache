@@ -753,17 +753,17 @@ main.page {
   flex: none;
   margin-top: 14px;
 }
-/* 하이라이트 섹션 본문: 파일명 아래에 슬라이더가 있고, 그 바로 밑에 시작·끝
-   시간이 슬라이더와 같은 폭으로 좌우 끝에 맞춰 놓인다 — 슬라이더 폭은 패널
-   폭의 2/4다. 다른 일괄 적용 버튼들처럼 등장·퇴장에 페이드+스케일 애니메이션이
+/* 하이라이트 섹션이 열려 있을 때 검색바의 확인 버튼 바로 왼쪽에 뜨는
+   구간 슬라이더 + 시작·끝 시간 묶음(품질 세그먼트와 같은 자리). 검색바가
+   align-items: center인 덕분에 세로 위치는 따로 잡지 않아도 가운데
+   정렬된다. 다른 일괄 적용 버튼들처럼 등장·퇴장에 페이드+스케일 애니메이션이
    붙는다(퇴장 때는 HighlightSliderPanel이 실제 언마운트 전에 .is-closing을
    잠깐 켜서 트랜지션이 끝날 시간을 준다). */
 .search-bar-highlight-col {
   flex: none;
   display: flex;
   flex-direction: column;
-  width: 50%;
-  margin-top: 6px;
+  width: 88px;
   animation: highlight-col-in 0.22s var(--spring);
 }
 .search-bar-highlight-col.is-closing {
@@ -781,9 +781,9 @@ main.page {
     transform: scale(0.92);
   }
 }
-/* 알약(캡슐) 모양 트랙(연한 회색). 부모(.search-bar-highlight-col)가 이미
-   패널 폭의 2/4이므로 여기선 그 폭을 그대로 채운다. overflow: hidden으로
-   안쪽 진한 회색 구간이 둥근 모서리 밖으로 삐져나오지 않게 잘라낸다. */
+/* 알약(캡슐) 모양 트랙(연한 회색). 부모(.search-bar-highlight-col)의 폭을
+   그대로 채운다. overflow: hidden으로 안쪽 진한 회색 구간이 둥근 모서리
+   밖으로 삐져나오지 않게 잘라낸다. */
 .search-bar-highlight-slider {
   position: relative;
   flex: none;
@@ -838,29 +838,21 @@ main.page {
   pointer-events: none;
 }
 /* 슬라이더 바로 밑, 슬라이더와 같은 폭의 줄에 시작 시간(좌측)과 끝 시간
-   (우측)을 양 끝으로 벌려 놓는다 — 슬라이더의 좌·우 끝에 맞춰진다. */
+   (우측)을 양 끝으로 벌려 놓는다 — 슬라이더의 좌·우 끝에 맞춰진다. 탭해서
+   고치던 입력창은 없애고, 그냥 보기만 하는 작은 글자다. */
 .search-bar-highlight-times {
   flex: none;
   display: flex;
   justify-content: space-between;
-  margin-top: 0;
+  gap: 4px;
+  margin-top: 2px;
 }
-/* 밑줄만 있는 작은 입력창 — 시작·끝 시간을 각각 탭해서 직접 고칠 수 있다. */
-.search-bar-highlight-time-input {
+.search-bar-highlight-time-label {
   flex: none;
-  width: 40px;
-  border: none;
-  border-bottom: 1px solid var(--glass-border);
-  background: transparent;
-  padding: 0;
-  line-height: 14px;
-  font-size: 12px;
+  font-size: 9px;
+  line-height: 1.3;
   color: var(--text-2);
-  text-align: center;
-}
-.search-bar-highlight-time-input:focus {
-  border-bottom-color: var(--text);
-  color: var(--text);
+  white-space: nowrap;
 }
 /* 다중 이름 바꾸기 패널의 제목 줄: 제목은 왼쪽, "몇 번째/전체" 카운터와
    이전·다음 화살표는 오른쪽에 둔다. 몇 개를 고르든 패널 크기가 똑같이
