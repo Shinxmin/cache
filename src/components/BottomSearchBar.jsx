@@ -806,7 +806,7 @@ export default function BottomSearchBar({
                       {displayName({ name: currentStudioOriginalName, mime: currentStudioMime })}
                     </p>
                   )}
-                  <HighlightSliderPanel visible={studioSection === "highlight"}>
+                  <HighlightSliderPanel visible={studioSection === "highlight" && panelOpen}>
                     <HighlightRangeSlider
                       duration={currentStudioHighlightDuration}
                       start={currentStudioHighlightStart}
