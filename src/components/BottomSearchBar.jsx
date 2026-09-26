@@ -777,7 +777,7 @@ export default function BottomSearchBar({
                   {studioSection === "highlight" && (
                     <p className="search-bar-highlight-times-inline">
                       {formatDuration(currentStudioHighlightStart)}
-                      {"  -  "}
+                      {" - "}
                       {formatDuration(currentStudioHighlightEnd)}
                     </p>
                   )}
