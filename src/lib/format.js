@@ -8,16 +8,6 @@ export function formatDuration(seconds) {
   return `${h ? `${h}:` : ""}${mm}:${String(s).padStart(2, "0")}`;
 }
 
-// formatDuration의 역변환. "0:00"/"10:00"/"1:02:03" 같은 형식만 받아 초로
-// 돌려주고, 그 형식이 아니면 null(호출부가 편집을 무시하고 이전 값을 유지).
-export function parseTimeInput(text) {
-  const trimmed = (text || "").trim();
-  if (!/^\d{1,2}(:\d{1,2}){1,2}$/.test(trimmed)) return null;
-  const parts = trimmed.split(":").map((p) => parseInt(p, 10));
-  if (parts.some((p) => Number.isNaN(p))) return null;
-  return parts.reduce((acc, p) => acc * 60 + p, 0);
-}
-
 // 바이트 수를 "12.3MB" 같은 사람이 읽기 쉬운 형태로 바꾼다.
 export function formatBytes(bytes) {
   if (!bytes || bytes <= 0) return "0B";

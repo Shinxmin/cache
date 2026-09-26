@@ -3,7 +3,7 @@ import { BackIcon, CheckIcon, ChevronRightIcon, FileIcon } from "./icons";
 import Spinner from "./Spinner";
 import { isOptimizableFile, OPTIMIZE_LEVELS, OPTIMIZE_LEVEL_LABELS } from "../lib/optimize";
 import { displayName } from "../lib/filename";
-import { formatBytes, formatDuration, parseTimeInput } from "../lib/format";
+import { formatBytes, formatDuration } from "../lib/format";
 import { looksLikeVideoFile } from "../lib/thumbnail";
 import useSegmentDrag from "../hooks/useSegmentDrag";
 import HighlightRangeSlider from "./HighlightRangeSlider";
@@ -94,45 +94,6 @@ function ScissorsIcon({ size = 18 }) {
     <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
       <path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3z" />
     </svg>
-  );
-}
-
-// 하이라이트 섹션의 시작·끝 시간 입력(둘은 별개의 입력란이다) — 평소엔
-// "0:00" 같은 표시 문자열이지만 탭하면 밑줄 있는 입력창으로 바뀌어 "M:SS"
-// 형식으로 직접 고칠 수 있다. 슬라이더 드래그로 바뀐 값은 포커스가 없을
-// 때만 그대로 반영하고(편집 중에는 타이핑을 덮어쓰지 않는다), 포커스를
-// 잃거나 엔터를 누르면 parseTimeInput으로 해석해 커밋하며, 형식이 아니면
-// 원래 값으로 되돌린다.
-function HighlightTimeInput({ value, onCommit, align }) {
-  const [editing, setEditing] = useState(false);
-  const [text, setText] = useState(formatDuration(value));
-  useEffect(() => {
-    if (!editing) setText(formatDuration(value));
-  }, [value, editing]);
-
-  const commit = () => {
-    const parsed = parseTimeInput(text);
-    if (parsed != null) onCommit?.(parsed);
-    setEditing(false);
-  };
-
-  return (
-    <input
-      type="text"
-      inputMode="numeric"
-      className="search-bar-highlight-time-input"
-      style={{ textAlign: align }}
-      value={text}
-      onFocus={() => setEditing(true)}
-      onChange={(e) => setText(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          commit();
-          e.currentTarget.blur();
-        }
-      }}
-    />
   );
 }
 
@@ -240,6 +201,8 @@ export default function BottomSearchBar({
   onApplyAllMultiStudioTag,
   onClearAllMultiStudioTag,
   onApplyAllMultiStudioLevel,
+  onApplyAllMultiStudioHighlight,
+  onClearAllMultiStudioHighlight,
   onConfirmMultiStudio,
   onCancelMultiStudio,
   moveOpen,
@@ -596,14 +559,19 @@ export default function BottomSearchBar({
           ]
         : displayMode === "multiStudio" && !studioRunning && studioSection === "quality"
           ? [{ key: "applyAll", label: "일괄 적용", onClick: onApplyAllMultiStudioLevel }]
-          : displayMode === "thumbnail"
-            ? [{ key: "clear", label: "지우기", onClick: onClearThumbnail }]
-            : displayMode === "multiThumbnail"
-              ? [
-                  { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiThumbnail },
-                  { key: "clear", label: "지우기", onClick: onClearCurrentMultiThumbnail },
-                ]
-              : [];
+          : displayMode === "multiStudio" && !studioRunning && studioSection === "highlight"
+            ? [
+                { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiStudioHighlight },
+                { key: "applyAll", label: "일괄 적용", onClick: onApplyAllMultiStudioHighlight },
+              ]
+            : displayMode === "thumbnail"
+              ? [{ key: "clear", label: "지우기", onClick: onClearThumbnail }]
+              : displayMode === "multiThumbnail"
+                ? [
+                    { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiThumbnail },
+                    { key: "clear", label: "지우기", onClick: onClearCurrentMultiThumbnail },
+                  ]
+                : [];
 
   const studioSectionIcon =
     studioSection === "tag" ? (
@@ -806,20 +774,6 @@ export default function BottomSearchBar({
                       {displayName({ name: currentStudioOriginalName, mime: currentStudioMime })}
                     </p>
                   )}
-                  <HighlightSliderPanel visible={studioSection === "highlight" && panelOpen}>
-                    <HighlightRangeSlider
-                      duration={currentStudioHighlightDuration}
-                      start={currentStudioHighlightStart}
-                      end={currentStudioHighlightEnd}
-                      onChangeStart={onChangeStudioHighlightStart}
-                      onChangeEnd={onChangeStudioHighlightEnd}
-                      disabled={!currentStudioHighlightDuration}
-                    />
-                    <div className="search-bar-highlight-times">
-                      <HighlightTimeInput value={currentStudioHighlightStart} onCommit={onChangeStudioHighlightStart} align="left" />
-                      <HighlightTimeInput value={currentStudioHighlightEnd} onCommit={onChangeStudioHighlightEnd} align="right" />
-                    </div>
-                  </HighlightSliderPanel>
                 </>
               )
             ) : displayMode === "move" ? (
@@ -1025,6 +979,24 @@ export default function BottomSearchBar({
                 ))}
               </div>
             )}
+            {/* 하이라이트 섹션이 열려 있을 때만 확인 버튼 바로 왼쪽에 뜨는 구간
+                슬라이더 — 품질 세그먼트와 같은 자리다. 슬라이더 바로 밑에
+                작은 글자로 시작·끝 시간만 보여주고(탭해서 고치던 기능은
+                없앴다), 값 조정은 이제 슬라이더를 직접 드래그해서만 한다. */}
+            <HighlightSliderPanel visible={studioActive && studioSection === "highlight" && !studioRunning && panelOpen}>
+              <HighlightRangeSlider
+                duration={currentStudioHighlightDuration}
+                start={currentStudioHighlightStart}
+                end={currentStudioHighlightEnd}
+                onChangeStart={onChangeStudioHighlightStart}
+                onChangeEnd={onChangeStudioHighlightEnd}
+                disabled={!currentStudioHighlightDuration}
+              />
+              <div className="search-bar-highlight-times">
+                <span className="search-bar-highlight-time-label">시작 {formatDuration(currentStudioHighlightStart)}</span>
+                <span className="search-bar-highlight-time-label">끝 {formatDuration(currentStudioHighlightEnd)}</span>
+              </div>
+            </HighlightSliderPanel>
             {panelOpen && (
               <button
                 type="button"
