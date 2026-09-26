@@ -774,6 +774,13 @@ export default function BottomSearchBar({
                       {displayName({ name: currentStudioOriginalName, mime: currentStudioMime })}
                     </p>
                   )}
+                  {studioSection === "highlight" && (
+                    <p className="search-bar-highlight-times-inline">
+                      {formatDuration(currentStudioHighlightStart)}
+                      {"  -  "}
+                      {formatDuration(currentStudioHighlightEnd)}
+                    </p>
+                  )}
                 </>
               )
             ) : displayMode === "move" ? (
@@ -980,9 +987,9 @@ export default function BottomSearchBar({
               </div>
             )}
             {/* 하이라이트 섹션이 열려 있을 때만 확인 버튼 바로 왼쪽에 뜨는 구간
-                슬라이더 — 품질 세그먼트와 같은 자리다. 슬라이더 바로 밑에
-                작은 글자로 시작·끝 시간만 보여주고(탭해서 고치던 기능은
-                없앴다), 값 조정은 이제 슬라이더를 직접 드래그해서만 한다. */}
+                슬라이더 — 품질 세그먼트와 같은 자리다. 시작·끝 시간은
+                패널 본문의 파일명 밑으로 옮겼고, 값 조정은 이 슬라이더를
+                직접 드래그해서만 한다. */}
             <HighlightSliderPanel visible={studioActive && studioSection === "highlight" && !studioRunning && panelOpen}>
               <HighlightRangeSlider
                 duration={currentStudioHighlightDuration}
@@ -992,10 +999,6 @@ export default function BottomSearchBar({
                 onChangeEnd={onChangeStudioHighlightEnd}
                 disabled={!currentStudioHighlightDuration}
               />
-              <div className="search-bar-highlight-times">
-                <span className="search-bar-highlight-time-label">{formatDuration(currentStudioHighlightStart)}</span>
-                <span className="search-bar-highlight-time-label">{formatDuration(currentStudioHighlightEnd)}</span>
-              </div>
             </HighlightSliderPanel>
             {panelOpen && (
               <button
