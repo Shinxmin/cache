@@ -13,13 +13,6 @@
      아니었으면 하는 곳에 쓴다. --text/--bg를 참조하므로 테마가 바뀌면
      같은 공식으로 자동으로 반대로 뒤집힌다. */
   --fill-strong: color-mix(in srgb, var(--text) 88%, var(--bg) 12%);
-  /* 패널의 연회색 버튼(확인, 스튜디오 열기, 아이콘 줄, 일괄 지우기·적용)
-     배경(rgb(128 128 128 / 각자의 기본 투명도))에 곱하는 배수. 라이트
-     모드는 1(그대로)이지만, 다크 모드는 검색 독의 backdrop-filter(블러+
-     채도 200%)가 배경으로 비치는 어두운 사진·색을 증폭시켜 그 위의 연한
-     회색 버튼이 실제보다 훨씬 밝은 "연한 흰색"처럼 보이게 만들어서, 더
-     불투명하게(수치를 키워) 그 비침을 눌러준다. */
-  --btn-alpha-mult: 1;
 }
 
 :root[data-theme="dark"] {
@@ -28,7 +21,6 @@
   --bg-rgb: 27, 27, 27;
   --text: #f5f5f7;
   --text-2: rgba(245, 245, 247, 0.56);
-  --btn-alpha-mult: 1.6;
   --glass: rgba(255, 255, 255, 0.07);
   --glass-strong: rgba(255, 255, 255, 0.11);
   --glass-border: rgba(255, 255, 255, 0.1);
@@ -495,7 +487,7 @@ main.page {
      당긴다. */
   margin-right: -6px;
   border-radius: 999px;
-  background: rgb(128 128 128 / calc(0.23 * var(--btn-alpha-mult)));
+  background: rgba(128, 128, 128, 0.23);
   color: var(--text);
   font-size: 14px;
   font-weight: 400;
@@ -524,7 +516,7 @@ main.page {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: rgb(128 128 128 / calc(0.23 * var(--btn-alpha-mult)));
+  background: rgba(128, 128, 128, 0.23);
   color: var(--text-2);
   transition: transform 0.35s var(--spring);
 }
@@ -701,7 +693,7 @@ main.page {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: rgb(128 128 128 / calc(0.15 * var(--btn-alpha-mult)));
+  background: rgba(128, 128, 128, 0.15);
   color: var(--text-2);
   transition: transform 0.35s var(--spring);
 }
@@ -1864,7 +1856,7 @@ main.page {
   height: 26px;
   padding: 0 10px;
   border-radius: 999px;
-  background: rgb(128 128 128 / calc(0.18 * var(--btn-alpha-mult)));
+  background: rgba(128, 128, 128, 0.18);
   color: var(--text-2);
   font-size: 12px;
   font-weight: 400;
@@ -1872,6 +1864,18 @@ main.page {
 }
 .search-bar-confirm-extras-btn:active {
   transform: scale(0.9);
+}
+/* 다크 모드에서는 이 네 버튼(확인·스튜디오 열기·아이콘 줄·일괄 지우기·
+   적용)의 연회색 배경을 살짝 부드러운 흰색으로, 글자·아이콘 색은 어두운
+   색으로 뒤집는다 — 검색 독의 backdrop-filter 위에서 회색 계열은 다크
+   모드 배경과 명도 차가 작아 가독성이 떨어지므로, 확실히 밝은 배경 +
+   어두운 글자 조합으로 또렷하게 읽히게 한다. */
+:root[data-theme="dark"] .search-bar-inline-confirm,
+:root[data-theme="dark"] .search-bar-open-studio-btn,
+:root[data-theme="dark"] .search-bar-studio-icon-btn,
+:root[data-theme="dark"] .search-bar-confirm-extras-btn {
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--bg);
 }
 /* 확인을 누른 뒤 처리 중일 때 뜨는 진행 바 + "148 / 200" 카운트. */
 .optimize-progress-track {
