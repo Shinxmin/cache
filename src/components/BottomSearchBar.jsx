@@ -250,24 +250,31 @@ export default function BottomSearchBar({
   // false로 바뀐 뒤라 다른 패널 문구로 순간 바뀌어 버린다 — 사라지는 패널
   // 위에 다른 문구가 잠깐 겹쳐 보이던 버그가 이것 때문이었다. 그래서 실제로
   // 열릴 때만 갱신하고, 닫힐 때는 마지막 내용을 그대로 유지한다.
-  const resolveMode = () =>
-    newFolderOpen
-      ? "newFolder"
-      : studioOpen
-        ? "studio"
-        : multiStudioOpen
-          ? "multiStudio"
-          : moveOpen
-            ? "move"
-            : "confirm";
-  const [displayMode, setDisplayMode] = useState(resolveMode);
-  useEffect(() => {
-    if (newFolderOpen) setDisplayMode("newFolder");
-    else if (studioOpen) setDisplayMode("studio");
-    else if (multiStudioOpen) setDisplayMode("multiStudio");
-    else if (moveOpen) setDisplayMode("move");
-    else if (confirmOpen) setDisplayMode("confirm");
-  }, [newFolderOpen, studioOpen, multiStudioOpen, moveOpen, confirmOpen]);
+  //
+  // 이걸 useState+useEffect로 하면, 어떤 패널이 닫히자마자(다음 렌더에서
+  // 아직 live 플래그가 전부 false인 채로) 다른 패널이 곧바로 열릴 때 한
+  // 프레임이 붕 뜬다 — className은 이미 새로 열리는 패널 기준으로
+  // is-open이 붙지만, displayMode는 useEffect가 아직 못 돌아 이전 패널
+  // 값 그대로라 최대 높이(mode-studio 200px 등)는 이전 패널 것을 쓰면서
+  // 내용은 (선택 등 다른 상태가 이미 바뀌어) 텅 비어 보이는 "빈 패널"
+  // 이 한 순간 보였다가 다음 렌더에서야 제대로 된 높이·내용으로
+  // 바뀌는 버그였다. ref는 렌더 중에 곧바로 갱신되므로, live 플래그가
+  // true로 바뀌는 바로 그 렌더에서 이미 새 모드가 반영돼 이 프레임이
+  // 생기지 않는다.
+  const liveMode = newFolderOpen
+    ? "newFolder"
+    : studioOpen
+      ? "studio"
+      : multiStudioOpen
+        ? "multiStudio"
+        : moveOpen
+          ? "move"
+          : confirmOpen
+            ? "confirm"
+            : null;
+  const displayModeRef = useRef(liveMode ?? "confirm");
+  if (liveMode !== null) displayModeRef.current = liveMode;
+  const displayMode = displayModeRef.current;
 
   const confirm = async () => {
     if (busy) return;
