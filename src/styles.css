@@ -590,11 +590,12 @@ main.page {
   /* min-height를 max-height와 같게 둬서, 본문 줄 수가 다른 패널끼리도
      (예: 새 폴더 = 제목만, 삭제 확인 = 제목+본문) 항상 같은 세로 폭으로
      맞춰진다. */
-  max-height: 85px;
-  min-height: 85px;
+  max-height: 70px;
+  min-height: 70px;
   opacity: 1;
   pointer-events: auto;
-  padding: 14px 16px 12px;
+  /* 위쪽은 스튜디오 패널의 제목 위 여백(14px)과 똑같이 맞춘다. */
+  padding: 14px 16px 8px;
 }
 /* 일괄 적용·일괄 지우기 같은 부가 기능 줄이 있는 패널은 그 줄 자체가
    바로 밑 검색바와의 여백을 갖게 되므로, 패널 고정 아래쪽 여백은 줄여
@@ -744,6 +745,12 @@ main.page {
   font-size: 13px;
   color: var(--text-2);
   text-align: left;
+}
+/* 삭제 확인의 본문만 제목 바로 밑이 아니라 패널 맨 아래 좌측에 붙인다 —
+   부모(.search-bar-confirm-panel)가 flex-column이라 margin-top:auto를
+   주면 남는 세로 공간을 전부 먹고 아래로 밀려난다. */
+.search-bar-confirm-desc--bottom {
+  margin-top: auto;
 }
 /* 다중 이름 바꾸기·다중 태그·다중 최적화 패널의 제목 줄 바로 밑에 뜨는,
    지금 이전·다음으로 넘겨 보고 있는 항목의 실제 파일명. 긴 이름은 한 줄로

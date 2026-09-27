@@ -818,7 +818,7 @@ export default function BottomSearchBar({
             ) : (
               <>
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">삭제</p>
-                <p className="search-bar-confirm-desc">해당 항목은 휴지통에서 복구 및 삭제할 수 있습니다</p>
+                <p className="search-bar-confirm-desc search-bar-confirm-desc--bottom">해당 항목은 휴지통에서 복구 및 삭제할 수 있습니다</p>
               </>
             )}
             {/* 일괄 적용·일괄 지우기·번호 붙이기 같은 부가 기능은 패널 맨
