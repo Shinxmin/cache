@@ -3,16 +3,11 @@
 // 저장된 레이아웃이 없거나 새 도구가 추가됐을 때의 기준이다.
 // 이름 바꾸기·태그·용량 압축을 합친 스튜디오는 이 툴바가 아니라 검색바의
 // 전용 버튼(레이어 아이콘)으로 연다 — 그래서 studio는 툴킷 도구 목록에
-// 없다. 예전 애드온(팔레트 추출·썸네일 설정)처럼 목록에 없는 id가 저장된
-// 레이아웃에 남아 있어도 정리 시 자동으로 걸러진다.
-export const BASE_TOOL_IDS = ["info", "trash", "download", "move", "view", "blur", "favorite", "split"];
-
-// 툴킷 2열(아래 줄)에 따로 그리는 도구. 나머지는 전부 1열이다.
-const SECOND_ROW_TOOL_IDS = new Set(["split"]);
-
-export function isSecondRowTool(id) {
-  return SECOND_ROW_TOOL_IDS.has(id);
-}
+// 없다. 스플릿 비교도 같은 이유로 뺐다 — 아이콘은 지웠지만 기능·로직은
+// 그대로 남아 있다(App.jsx의 handleSplitCompareSelected 등). 예전
+// 애드온(팔레트 추출·썸네일 설정)처럼 목록에 없는 id가 저장된 레이아웃에
+// 남아 있어도 정리 시 자동으로 걸러진다.
+export const BASE_TOOL_IDS = ["info", "trash", "download", "move", "view", "blur", "favorite"];
 
 // 저장된 레이아웃을 신뢰할 수 있는 형태로 다듬는다: 모르는 id·중복은 버리고,
 // 도구 중 빠진 게 있으면(예전에 저장한 뒤 새 도구가 생긴 경우) 기본 순서상의

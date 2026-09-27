@@ -992,6 +992,11 @@ export default function App() {
       return prev.map((it, i) => (i >= multiStudioIndex ? { ...it, level: current.level, levelTouched: true } : it));
     });
   };
+  // 이름·태그·하이라이트의 일괄 지우기와 같은 규칙 — 인덱스와 무관하게
+  // 전체 항목을 기본값(가운데 단계, 아직 안 건드린 상태)으로 되돌린다.
+  const clearAllMultiStudioLevel = () => {
+    setMultiStudioItems((prev) => prev.map((it) => ({ ...it, level: 1, levelTouched: false })));
+  };
   // 지금 보고 있는 항목의 시작·끝 값을 그 항목부터 뒤쪽 전부에 적용한다
   // (예: 4번째 항목에서 누르면 4~마지막에 적용, 1~3번째는 그대로 둔다) —
   // 이름·태그·품질의 일괄 적용과 같은 규칙이다.
@@ -1434,8 +1439,6 @@ export default function App() {
         return handleBlurSelected();
       case "favorite":
         return handleFavoriteSelected();
-      case "split":
-        return handleSplitCompareSelected();
       default:
         return undefined;
     }
@@ -1616,6 +1619,7 @@ export default function App() {
             onApplyAllMultiStudioTag={applyAllMultiStudioTag}
             onClearAllMultiStudioTag={clearAllMultiStudioTag}
             onApplyAllMultiStudioLevel={applyAllMultiStudioLevel}
+            onClearAllMultiStudioLevel={clearAllMultiStudioLevel}
             onApplyAllMultiStudioHighlight={applyAllMultiStudioHighlight}
             onClearAllMultiStudioHighlight={clearAllMultiStudioHighlight}
             onConfirmMultiStudio={confirmMultiStudio}

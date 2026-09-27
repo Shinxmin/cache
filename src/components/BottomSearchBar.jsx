@@ -201,6 +201,7 @@ export default function BottomSearchBar({
   onApplyAllMultiStudioTag,
   onClearAllMultiStudioTag,
   onApplyAllMultiStudioLevel,
+  onClearAllMultiStudioLevel,
   onApplyAllMultiStudioHighlight,
   onClearAllMultiStudioHighlight,
   onConfirmMultiStudio,
@@ -494,7 +495,7 @@ export default function BottomSearchBar({
               : onCancelDelete;
 
   // 스크림이 화면 전체를 덮으면 그 밑에 있는 스튜디오 툴킷 바(전체 선택
-  // 체크박스 + 도구 1열 + 스플릿 비교 2열)도 가려져서 아이콘을 눌러 패널을
+  // 체크박스 + 도구 한 줄)도 가려져서 아이콘을 눌러 패널을
   // 전환하는 것도 안 됐다. 그래서 스크림을 통짜 사각형 하나 대신 툴킷 바
   // 전체의 실제 위치만큼 구멍을 낸 네 조각(위·아래·왼쪽·오른쪽)으로 나눠
   // 그린다 — 그 구멍 안에서는 스크림이 아예 존재하지 않으므로 클릭이 진짜
@@ -569,7 +570,10 @@ export default function BottomSearchBar({
             { key: "applyAll", label: "일괄 적용", onClick: onApplyAllMultiStudioTag },
           ]
         : displayMode === "multiStudio" && !studioRunning && studioSection === "quality"
-          ? [{ key: "applyAll", label: "일괄 적용", onClick: onApplyAllMultiStudioLevel }]
+          ? [
+              { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiStudioLevel },
+              { key: "applyAll", label: "일괄 적용", onClick: onApplyAllMultiStudioLevel },
+            ]
           : displayMode === "multiStudio" && !studioRunning && studioSection === "highlight"
             ? [
                 { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiStudioHighlight },
@@ -643,7 +647,7 @@ export default function BottomSearchBar({
             aria-hidden={!panelOpen}
           >
             {displayMode === "newFolder" ? (
-              <p className="search-bar-confirm-title">새 폴더</p>
+              <p className="search-bar-confirm-title search-bar-confirm-title--studio">새 폴더</p>
             ) : displayMode === "studio" || displayMode === "multiStudio" ? (
               studioResult ? (
                 // 확인 후 압축까지 전부 끝났을 때: 단일·다중 공통으로 처리
@@ -838,7 +842,7 @@ export default function BottomSearchBar({
               <>
                 {displayMode === "multiThumbnail" ? (
                   <div className="search-bar-confirm-title-row">
-                    <p className="search-bar-confirm-title">썸네일</p>
+                    <p className="search-bar-confirm-title search-bar-confirm-title--studio">썸네일</p>
                     <div className="search-bar-confirm-nav">
                       <button
                         type="button"
@@ -864,7 +868,7 @@ export default function BottomSearchBar({
                     </div>
                   </div>
                 ) : (
-                  <p className="search-bar-confirm-title">썸네일</p>
+                  <p className="search-bar-confirm-title search-bar-confirm-title--studio">썸네일</p>
                 )}
                 <p className="search-bar-confirm-filename">
                   {displayMode === "multiThumbnail" ? multiThumbnailCurrent?.name : thumbnailTargetName}
@@ -927,7 +931,7 @@ export default function BottomSearchBar({
                     "정보를 불러오지 못했습니다"
                   ) : infoStats ? (
                     <>
-                      <span>{formatBytes(infoStats.size, { fixedDecimal: true })}</span>
+                      <span>용량 {formatBytes(infoStats.size, { fixedDecimal: true })}</span>
                       <span>
                         {infoStats.folders > 0 ? `폴더 ${infoStats.folders}개 • ` : ""}파일 {infoStats.files}개
                       </span>
@@ -947,7 +951,7 @@ export default function BottomSearchBar({
               </>
             ) : (
               <>
-                <p className="search-bar-confirm-title">선택한 파일을 삭제하시겠습니까?</p>
+                <p className="search-bar-confirm-title search-bar-confirm-title--studio">삭제</p>
                 <p className="search-bar-confirm-desc">해당 항목은 휴지통에서 복구 및 삭제할 수 있습니다</p>
               </>
             )}
