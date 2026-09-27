@@ -609,6 +609,12 @@ main.page {
 .search-bar-confirm-panel.has-extras.is-open {
   padding-bottom: 0;
 }
+/* 삭제 확인·새 폴더 패널은 스프링(bounce)의 튕기는 느낌 없이 부드럽게
+   열리고 닫히도록 이징만 var(--ease)로 바꾼다(시간은 기본값 그대로
+   0.35s/0.35s/0.25s/0.35s — 스튜디오 패널처럼 느리게 늘리진 않는다). */
+.search-bar-confirm-panel.mode-confirm {
+  transition-timing-function: var(--ease), var(--ease), var(--ease), var(--ease);
+}
 /* 스튜디오(이름·태그·압축·클립 통합) 패널은 제목 아래 구분선 + 기능 선택
    줄(아이콘 줄/기능 화면) + 구분선 + 본문(파일명 등)이 쌓이므로, 다른
    패널처럼 세로 가운데 정렬 대신 위에서부터 순서대로 쌓는다. 높이(200px)는
