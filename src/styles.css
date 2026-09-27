@@ -644,18 +644,16 @@ main.page {
    도중에 함께 보이면 안 된다 — overflow:hidden으로 잘려 있던 텍스트가
    max-height가 커지면서 조금씩 드러나는 동시에 padding-top도 같이
    0→20px로 움직이다 보니, 텍스트가 튕기듯(바운스) 보이는 원인이었다.
-   그래서 내용은 opacity 0/1을 "애니메이션"이 아니라 지속시간 0으로
-   순간 전환하고, 열릴 때만 지연(delay)을 줘서 패널이 거의 다 열린
-   뒤에야 한 번에 나타나게 한다(그래서 opacity 자체는 여전히 애니메이션
-   되지 않는다 — 등장 시점만 늦춘 즉시 전환이다). 닫힐 때는 지연 없이
-   패널이 줄어들기 시작하는 순간 바로 사라진다. */
+   그래서 패널이 거의 다 열린 뒤(지연 0.42s)에야 opacity를 0%에서
+   설정된 값(1)까지 부드럽게 페이드인하고, 닫힐 때는 지연 없이 패널이
+   줄어들기 시작하는 순간 바로 페이드아웃한다. */
 .search-bar-confirm-panel > * {
   opacity: 0;
-  transition: opacity 0s linear 0s;
+  transition: opacity 0.18s var(--ease) 0s;
 }
 .search-bar-confirm-panel.is-open > * {
   opacity: 1;
-  transition: opacity 0s linear 0.42s;
+  transition: opacity 0.18s var(--ease) 0.42s;
 }
 .search-bar-confirm-title {
   margin: 0;
