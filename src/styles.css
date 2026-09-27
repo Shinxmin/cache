@@ -580,7 +580,9 @@ main.page {
   pointer-events: none;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  /* 제목을 맨 위에, 본문(있으면)을 그 바로 밑에 둔다 — 세로 가운데 정렬 대신
+     위에서부터 순서대로 쌓는다(스튜디오·이동 패널과 같은 방식). */
+  justify-content: flex-start;
   padding: 0 16px;
   transition: max-height 0.35s var(--spring), min-height 0.35s var(--spring), opacity 0.25s var(--ease), padding 0.35s var(--spring);
 }
@@ -588,11 +590,10 @@ main.page {
   /* min-height를 max-height와 같게 둬서, 본문 줄 수가 다른 패널끼리도
      (예: 새 폴더 = 제목만, 삭제 확인 = 제목+본문) 항상 같은 세로 폭으로
      맞춰진다. */
-  max-height: 130px;
-  min-height: 130px;
+  max-height: 100px;
+  min-height: 100px;
   opacity: 1;
   pointer-events: auto;
-  /* 제목·본문을 조금 위로 올리도록 위쪽 여백만 줄인다(아래쪽은 그대로). */
   padding: 18px 16px 28px;
 }
 /* 일괄 적용·일괄 지우기 같은 부가 기능 줄이 있는 패널은 그 줄 자체가
