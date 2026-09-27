@@ -21,16 +21,7 @@ export function StarIcon({ size = 18 }) {
   );
 }
 
-// 팔레트 추출 애드온: 머티리얼 디자인의 물방울(잉크 한 방울) 모양.
-export function PaletteIcon({ size = 18 }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
-      <path d="M12 2C12 2 5 10.75 5 15.25 5 18.87 8.13 22 12 22s7-3.13 7-6.75C19 10.75 12 2 12 2z" />
-    </svg>
-  );
-}
-
-// 스플릿 비교 애드온: 모서리가 둥근 정사각형을 반으로 나눠 오른쪽 절반만
+// 스플릿 비교: 모서리가 둥근 정사각형을 반으로 나눠 오른쪽 절반만
 // 채운 대비 아이콘. 선(stroke) 없이 채움(fill)만으로 그린다 — 왼쪽 절반은
 // 테두리만 남도록 안쪽을 구멍으로 파낸 "틀" 모양이고(evenodd), 오른쪽
 // 절반은 그대로 꽉 채워, 툴킷의 다른 단색 채움 아이콘들과 방식이 같다.
@@ -47,20 +38,10 @@ export function SplitIcon({ size = 18 }) {
   );
 }
 
-// 폴더 썸네일 애드온: 인물(프로필) 아이콘. "폴더의 대표 얼굴을 정한다"는
-// 은유로, 머리+어깨 실루엣 하나만 채워 그린다.
-export function PersonIcon({ size = 18 }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
-      <path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2.5c-3.34 0-10 1.68-10 5V22h20v-2.5c0-3.32-6.66-5-10-5z" />
-    </svg>
-  );
-}
-
 // 스튜디오 툴킷 도구 레지스트리. 툴킷 바(StudioToolkitBar)와 설정의 사용자
 // 정렬 미리보기(ToolkitArranger)가 같은 정의를 공유한다. ctx: { viewMode }.
 export const TOOL_META = {
-  info: { label: "파일·폴더 용량 정보", needsSelection: true, icon: () => <InfoIcon /> },
+  info: { label: "정보", needsSelection: true, icon: () => <InfoIcon /> },
   trash: { label: "휴지통으로 삭제", needsSelection: true, icon: () => <TrashIcon /> },
   download: { label: "다운로드", needsSelection: true, icon: () => <DownloadIcon /> },
   move: { label: "이동", needsSelection: true, icon: () => <ArrowRightIcon /> },
@@ -71,10 +52,7 @@ export const TOOL_META = {
   },
   blur: { label: "선택한 썸네일 블러", needsSelection: true, icon: () => <EyeIcon /> },
   favorite: { label: "즐겨찾기", needsSelection: true, icon: () => <StarIcon /> },
-  // 애드온
-  palette: { label: "팔레트 추출", needsSelection: true, icon: () => <PaletteIcon /> },
   split: { label: "스플릿 비교", needsSelection: true, icon: () => <SplitIcon /> },
-  thumbnail: { label: "폴더 썸네일", needsSelection: true, icon: () => <PersonIcon /> },
 };
 
 export function toolLabel(id, ctx) {

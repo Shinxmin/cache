@@ -4,7 +4,7 @@ import { CloseIcon, DuplicateIcon } from "../components/icons";
 import Spinner from "../components/Spinner";
 import useDarkOverlay from "../hooks/useDarkOverlay";
 
-// 스플릿 비교 애드온: 먼저 선택한 A파일을 왼쪽, 나중에 선택한 B파일을 오른쪽에
+// 스플릿 비교: 먼저 선택한 A파일을 왼쪽, 나중에 선택한 B파일을 오른쪽에
 // 두고 가운데 슬라이더를 드래그해 두 이미지(움짤 포함)를 비교한다. 파일을
 // 눌렀을 때 뜨는 기본 뷰어(FileViewer)와 같은 검정 전체화면 톤을 쓰되, 좌우
 // 스와이프 넘기기 대신 clip-path로 B 이미지를 슬라이더 위치까지만 드러낸다.

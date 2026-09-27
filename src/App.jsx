@@ -11,7 +11,6 @@ import TagsPage from "./pages/TagsPage";
 import FileViewer from "./pages/FileViewer";
 import SplitCompareViewer from "./pages/SplitCompareViewer";
 import Toast from "./components/Toast";
-import AddonStorePage from "./pages/AddonStorePage";
 import {
   clearSession,
   loadSession,
@@ -36,10 +35,10 @@ import {
   nextClipName,
   optimizeFiles,
   renameFiles,
+  selectionInfo,
   setBlur,
   setFavorite,
   setFolderThumbnail,
-  setInfoRevealed,
   setTag,
   splitPresetParts,
   trashFiles,
@@ -48,7 +47,7 @@ import {
 import { isImage, isVideo, looksLikeVideoFile as isVideoLike } from "./lib/thumbnail";
 import { isSearchActive } from "./lib/search";
 import { loadTheme, saveTheme } from "./lib/theme";
-import { BASE_TOOL_IDS, installedAddonIds, normalizeLayout } from "./lib/toolkit";
+import { BASE_TOOL_IDS, normalizeLayout } from "./lib/toolkit";
 import { isOptimizableFile, OPTIMIZE_LEVELS } from "./lib/optimize";
 import { dedupeStrings } from "./lib/dedupe";
 
@@ -99,23 +98,18 @@ export default function App() {
   // 설정의 "스튜디오 툴킷 항상 활성화" 체크박스 값. 실제로 툴킷이 보이는지는
   // 아래 toolkitVisible이 결정한다(이 설정이 꺼져 있어도 선택 중이면 뜬다).
   const [toolkitAlwaysOn, setToolkitAlwaysOn] = useState(false);
-  // 스튜디오 툴킷 도구 순서(애드온 포함). 계정(app_users.toolkit_layout)에
-  // 저장되며 애드온 스토어의 추가, 설정의 사용자 정렬·휴지통 삭제가 바꾼다.
+  // 스튜디오 툴킷 도구 순서. 계정(app_users.toolkit_layout)에 저장되며
+  // 설정의 사용자 정렬이 바꾼다.
   const [toolkitLayout, setToolkitLayoutState] = useState(() => normalizeLayout(BASE_TOOL_IDS));
-  // 파일 탭 헤더의 톱니바퀴 버튼으로 여는 설정 화면. 그 안의 즐겨찾기·
-  // 애드온 스토어 행이 각각 showFavorites·showAddonStore를 켜는 동안에도
-  // showSettings 자신은 꺼지지 않은 채로 남아 있어서, 즐겨찾기·애드온
-  // 스토어에서 뒤로가기하면 파일 화면이 아니라 설정 화면으로 돌아간다
-  // (휴지통·태그도 같은 방식).
+  // 파일 탭 헤더의 톱니바퀴 버튼으로 여는 설정 화면. 그 안의 즐겨찾기 행이
+  // showFavorites를 켜는 동안에도 showSettings 자신은 꺼지지 않은 채로 남아
+  // 있어서, 즐겨찾기에서 뒤로가기하면 파일 화면이 아니라 설정 화면으로
+  // 돌아간다(휴지통·태그도 같은 방식).
   const [showSettings, setShowSettings] = useState(false);
   // 설정 → 즐겨찾기. true면 파일 화면 자리에 즐겨찾기 목록(FilesPage)이
   // 뜨고 검색·스튜디오 툴킷이 파일 화면과 똑같이 동작한다.
   const [showFavorites, setShowFavorites] = useState(false);
-  const [showAddonStore, setShowAddonStore] = useState(false);
-  // 팔레트 추출 애드온(v1.1)의 대상 파일. null이면 닫힌 상태 — 열리면 별도
-  // 모달이 아니라 FileViewer를 paletteMode로 띄운다.
-  const [paletteViewerItem, setPaletteViewerItem] = useState(null);
-  // 스플릿 비교 애드온의 대상 두 파일 [A, B]. null이면 닫힌 상태.
+  // 스플릿 비교의 대상 두 파일 [A, B]. null이면 닫힌 상태.
   const [splitCompareTargets, setSplitCompareTargets] = useState(null);
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(0);
@@ -179,7 +173,11 @@ export default function App() {
   const [movePath, setMovePath] = useState([]); // [{ id, name }]
   const [moveRows, setMoveRows] = useState([]);
   const [moveRowsState, setMoveRowsState] = useState("loading"); // loading | ready | error
-  // 폴더 썸네일 애드온(인물 아이콘). 이동 패널과 같은 폴더 탐색 UI를 재사용해,
+  // 툴킷 정보(i) 아이콘이 여는 정보 패널. infoStats는 선택 항목 전체의
+  // { size, folders, files } — 받아 오는 중이면 null, 실패하면 "error".
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [infoStats, setInfoStats] = useState(null);
+  // 폴더 썸네일 패널(정보 패널의 "썸네일"로 연다). 이동 패널과 같은 폴더 탐색 UI를 재사용해,
   // 그 안에서 이미지·움짤·동영상 파일 하나를 골라 지금 선택된 폴더의 대표
   // 썸네일로 지정한다. 이름 바꾸기·태그·최적화와 같은 단일/다중 구조를
   // 쓰되, 폴더가 아닌 항목은 애초에 대상에서 빠진다(파일에서 실행하면 조용히
@@ -265,14 +263,12 @@ export default function App() {
     }
   };
 
-  // 툴킷 레이아웃 변경(애드온 추가·삭제, 정렬)도 마찬가지로 서버 저장이
-  // 성공한 뒤에만 화면(체크 표시·툴킷 바)에 반영한다 — 위와 같은 이유로,
-  // 추가한 순간 바로 체크 표시부터 뜨면 실제 저장 여부와 무관하게 성공한
-  // 것처럼 보여 왔다.
-  const changeToolkitLayout = async (nextLayout, action, addon = null) => {
+  // 툴킷 레이아웃 변경(정렬·초기화)도 마찬가지로 서버 저장이 성공한 뒤에만
+  // 화면(툴킷 바)에 반영한다.
+  const changeToolkitLayout = async (nextLayout, action) => {
     const next = normalizeLayout(nextLayout);
     try {
-      await persistToolkitLayout(session.token, next, action, addon);
+      await persistToolkitLayout(session.token, next, action);
       setToolkitLayoutState(next);
     } catch {
       window.alert("툴킷 설정을 저장하지 못했습니다");
@@ -500,6 +496,28 @@ export default function App() {
     };
   }, [thumbnailOpen, multiThumbnailOpen, thumbnailPath, session?.token]);
 
+  // 정보 패널이 열려 있는 동안 선택 항목의 용량·개수를 받아 온다. 선택이
+  // 바뀌면(또는 목록이 새로 고쳐지면) 다시 받고, 선택이 모두 풀리면 닫는다.
+  useEffect(() => {
+    if (!infoOpen || !session) return;
+    const ids = [...selectedIds];
+    if (!ids.length) {
+      setInfoOpen(false);
+      return;
+    }
+    let cancelled = false;
+    selectionInfo(session.token, ids)
+      .then((data) => {
+        if (!cancelled) setInfoStats(data);
+      })
+      .catch(() => {
+        if (!cancelled) setInfoStats("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [infoOpen, selectedIds, refreshKey, session?.token]);
+
   const handleSearch = (value) => {
     setSearchQuery(value);
   };
@@ -708,21 +726,26 @@ export default function App() {
     }
   };
 
-  // 선택된 항목의 용량 표기를 토글한다. 블러와 같은 "일부면 켜는 쪽으로"
-  // 방식이면서 저장 방식도 같다 — 서버에 저장돼 있어(info_revealed 컬럼)
-  // 선택을 풀거나 새로고침·재접속해도 계속 표기된 채로 남는다. 선택은 그저
-  // "지금부터 이 항목들 표기 여부를 바꾼다"는 대상 지정일 뿐, 표기 자체는
-  // 선택 상태를 실시간으로 따라가지 않는다.
-  const handleToggleInfo = async () => {
-    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
-    if (!targets.length) return;
-    const nextRevealed = !targets.every((it) => it.info_revealed);
-    try {
-      await setInfoRevealed(session.token, targets.map((it) => it.id), nextRevealed);
-      setRefreshKey((k) => k + 1);
-    } catch {
-      window.alert("정보 표기 설정을 저장하지 못했습니다");
+  // 툴킷 정보(i) 아이콘 — 하단 검색바가 위로 확장되며 선택 항목 전체의
+  // 용량과 하위 폴더·파일 개수를 보여주는 정보 패널을 연다(열려 있을 때
+  // 다시 누르면 닫는다). 실제 수치는 아래 effect가 선택이 바뀔 때마다 서버
+  // (selection_info)에서 새로 받아 온다.
+  const handleInfoSelected = () => {
+    if (infoOpen) {
+      closeAllToolPanels();
+      return;
     }
+    if (!selectedIds.size) return;
+    closeAllToolPanels();
+    setInfoStats(null);
+    setInfoOpen(true);
+  };
+
+  // 정보 패널의 "썸네일" — 패널이 기존 폴더 썸네일 선택 패널로 넘어간다
+  // (정보 패널은 closeAllToolPanels가 닫는다). 선택에 폴더가 없으면 BottomSearchBar가
+  // 이 링크를 비활성화해 둔다.
+  const handleInfoThumbnail = () => {
+    handleThumbnailSelected();
   };
 
   const handleTrashSelected = async () => {
@@ -1134,11 +1157,12 @@ export default function App() {
     setRefreshKey((k) => k + 1);
   };
 
-  // 삭제 확인·새 폴더·이동·Studio(단일/다중)·폴더 썸네일(단일/다중)은 전부
-  // 검색바 위 같은 패널 자리를 공유한다 — 그중 하나를 열기 전에 항상 이걸
-  // 먼저 불러 나머지를 전부 닫는다.
+  // 삭제 확인·새 폴더·이동·정보·Studio(단일/다중)·폴더 썸네일(단일/다중)은
+  // 전부 검색바 위 같은 패널 자리를 공유한다 — 그중 하나를 열기 전에 항상
+  // 이걸 먼저 불러 나머지를 전부 닫는다.
   const closeAllToolPanels = () => {
     setDeleteConfirmOpen(false);
+    setInfoOpen(false);
     setNewFolderOpen(false);
     cancelMove();
     cancelStudio();
@@ -1190,9 +1214,9 @@ export default function App() {
     }
   };
 
-  // 폴더 썸네일 애드온: 선택 중 폴더만 골라 연다. 파일만 선택돼 있으면(폴더가
-  // 하나도 없으면) 조용히 아무 일도 하지 않는다 — 이 애드온은 폴더에서만
-  // 동작한다.
+  // 폴더 썸네일(정보 패널의 "썸네일"): 선택 중 폴더만 골라 연다. 파일만
+  // 선택돼 있으면(폴더가 하나도 없으면) 조용히 아무 일도 하지 않는다 —
+  // 폴더에서만 동작한다.
   const handleThumbnailSelected = () => {
     if (thumbnailOpen || multiThumbnailOpen) {
       closeAllToolPanels();
@@ -1343,20 +1367,7 @@ export default function App() {
   const looksLikeImageFile = (it) =>
     isImage(it.mime) || isOptimizableFile(it.name, it.mime) || /\.(gif|webp)$/i.test(it.name);
 
-  // 팔레트 추출 애드온(v1.1): 한 번에 파일 하나에만 실행된다. 이미지 파일 딱
-  // 하나가 선택돼 있을 때만 파일 클릭 시 뜨는 기본 뷰어를 palette 모드로
-  // 연다. 그 외(아무것도 없거나 둘 이상, 또는 폴더·이미지가 아닌 파일)에는
-  // 조용히 아무 일도 하지 않는다 — 실행 조건이 아닐 때 안내 토스트를
-  // 띄우던 예전 방식 대신, 다른 도구들처럼 그냥 무응답으로 통일했다.
-  const handlePaletteSelected = () => {
-    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
-    if (targets.length !== 1 || targets[0].is_folder) return;
-    const target = targets[0];
-    if (!looksLikeImageFile(target)) return;
-    setPaletteViewerItem(target);
-  };
-
-  // 스플릿 비교 애드온: 정확히 두 개의 이미지(움짤 포함)가 선택돼 있어야
+  // 스플릿 비교: 정확히 두 개의 이미지(움짤 포함)가 선택돼 있어야
   // 하며, 먼저 선택한 순서가 곧 A(왼쪽)·B(오른쪽)가 된다 — selectedIds는
   // Set이라 삽입 순서를 그대로 보존한다. 조건이 아니면(개수·종류 어느
   // 쪽이든) 조용히 아무 일도 하지 않는다.
@@ -1367,10 +1378,6 @@ export default function App() {
     setSplitCompareTargets(targets);
   };
 
-  // 스플릿 비교 화면의 프리셋 저장: 지금 보고 있는 A/B 두 파일을 그대로
-  // 복제해 최근 연 폴더(지금 parentId)에 저장한다. 복제본은 새 파일이라
-  // 원본을 나중에 지워도 영향받지 않는다. 이름은 "프리셋_1", "프리셋_2"…
-  // 순으로 붙이며, 그 폴더에 이미 프리셋이 있으면 이어서 번호를 매긴다.
   // 스플릿 비교 화면의 프리셋 저장: 지금 보고 있는 A/B 두 파일을 그대로
   // 복제해 최근 연 폴더(지금 parentId)에 항목 하나로 저장한다. 그 항목을
   // 열면 다시 A/B 스플릿 비교 화면이 뜨고, 다운로드하면 A·B가 각자 파일로
@@ -1403,7 +1410,7 @@ export default function App() {
   const handleTool = (id) => {
     switch (id) {
       case "info":
-        return handleToggleInfo();
+        return handleInfoSelected();
       case "trash":
         // 이미 삭제 확인 패널이 열려 있는 채로 휴지통 아이콘을 다시 누르면
         // 여는 대신 취소한다(선택도 함께 풀린다 — 빈 화면을 눌러 취소하는
@@ -1427,31 +1434,11 @@ export default function App() {
         return handleBlurSelected();
       case "favorite":
         return handleFavoriteSelected();
-      case "palette":
-        return handlePaletteSelected();
       case "split":
         return handleSplitCompareSelected();
-      case "thumbnail":
-        return handleThumbnailSelected();
       default:
         return undefined;
     }
-  };
-
-  // 애드온 스토어의 추가(+): 레이아웃 끝에 붙인다(이미 있으면 무시).
-  const handleAddAddon = async (addonId) => {
-    if (toolkitLayout.includes(addonId)) return;
-    await changeToolkitLayout([...toolkitLayout, addonId], "add_addon", addonId);
-  };
-
-  // 애드온 스토어의 삭제(휴지통) 버튼: 설정의 사용자 정렬에서 휴지통으로
-  // 드래그해 지우는 것과 같은 동작이다.
-  const handleRemoveAddon = async (addonId) => {
-    await changeToolkitLayout(
-      toolkitLayout.filter((id) => id !== addonId),
-      "remove_addon",
-      addonId
-    );
   };
 
   if (checkingSession) return <SplashScreen />;
@@ -1478,17 +1465,6 @@ export default function App() {
     return <TagsPage session={session} onBack={() => setShowTags(false)} />;
   }
 
-  if (showAddonStore) {
-    return (
-      <AddonStorePage
-        installedIds={new Set(installedAddonIds(toolkitLayout))}
-        onAdd={handleAddAddon}
-        onRemove={handleRemoveAddon}
-        onBack={() => setShowAddonStore(false)}
-      />
-    );
-  }
-
   // 즐겨찾기가 열려 있는 동안엔(설정 → 즐겨찾기) 설정 화면이 그 뒤에 남아
   // 있어도 그리지 않는다 — 즐겨찾기를 닫으면(showFavorites=false) 이 조건이
   // 다시 참이 되어 설정 화면으로 자연스럽게 돌아간다.
@@ -1506,7 +1482,6 @@ export default function App() {
         onOpenTrash={() => setShowTrash(true)}
         onOpenTags={() => setShowTags(true)}
         onOpenFavorites={() => setShowFavorites(true)}
-        onOpenAddonStore={() => setShowAddonStore(true)}
         onBack={() => setShowSettings(false)}
         onLogout={() => {
           clearSession();
@@ -1516,7 +1491,7 @@ export default function App() {
     );
   }
 
-  // 이 아래로는 showTrash/showTags/showAddonStore도 아니고, 설정도(즐겨찾기가
+  // 이 아래로는 showTrash/showTags도 아니고, 설정도(즐겨찾기가
   // 열려 있지 않은 한) 아니므로 남은 화면은 파일 화면 아니면 즐겨찾기뿐이다.
   const favoritesView = showFavorites;
   const title = favoritesView
@@ -1574,10 +1549,7 @@ export default function App() {
               allSelected={allSelected}
               onToggleSelectAll={handleToggleSelectAll}
               hasSelection={selectedIds.size > 0}
-              infoVisible={(() => {
-                const targets = visibleItems.filter((it) => selectedIds.has(it.id));
-                return targets.length > 0 && targets.every((it) => it.info_revealed);
-              })()}
+              infoOpen={infoOpen}
               toolkitLayout={toolkitLayout}
               onTool={handleTool}
               onOpenSettings={favoritesView ? undefined : () => setShowSettings(true)}
@@ -1658,6 +1630,11 @@ export default function App() {
             onMoveBack={moveNavigateBack}
             onConfirmMove={confirmMove}
             onCancelMove={cancelMove}
+            infoOpen={infoOpen}
+            infoStats={infoStats}
+            infoHasFolder={visibleItems.some((it) => selectedIds.has(it.id) && it.is_folder)}
+            onInfoThumbnail={handleInfoThumbnail}
+            onCancelInfo={closeAllToolPanels}
             thumbnailOpen={thumbnailOpen}
             thumbnailTargetName={visibleItems.find((it) => it.id === thumbnailTargetId)?.name ?? ""}
             thumbnailSourceId={thumbnailSourceId}
@@ -1688,15 +1665,6 @@ export default function App() {
           items={mediaItems}
           initialIndex={viewerIndex}
           onClose={() => setViewerIndex(null)}
-        />
-      )}
-      {paletteViewerItem && (
-        <FileViewer
-          session={session}
-          items={[paletteViewerItem]}
-          initialIndex={0}
-          paletteMode
-          onClose={() => setPaletteViewerItem(null)}
         />
       )}
       {splitCompareTargets && (
