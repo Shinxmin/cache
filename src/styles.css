@@ -590,11 +590,11 @@ main.page {
   /* min-height를 max-height와 같게 둬서, 본문 줄 수가 다른 패널끼리도
      (예: 새 폴더 = 제목만, 삭제 확인 = 제목+본문) 항상 같은 세로 폭으로
      맞춰진다. */
-  max-height: 70px;
-  min-height: 70px;
+  max-height: 85px;
+  min-height: 85px;
   opacity: 1;
   pointer-events: auto;
-  padding: 10px 16px;
+  padding: 14px 16px 12px;
 }
 /* 일괄 적용·일괄 지우기 같은 부가 기능 줄이 있는 패널은 그 줄 자체가
    바로 밑 검색바와의 여백을 갖게 되므로, 패널 고정 아래쪽 여백은 줄여
