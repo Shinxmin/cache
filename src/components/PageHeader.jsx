@@ -30,7 +30,7 @@ export default function PageHeader({
   allSelected,
   onToggleSelectAll,
   hasSelection,
-  infoOpen,
+  infoVisible,
   toolkitLayout,
   onTool,
   onOpenSettings,
@@ -116,7 +116,7 @@ export default function PageHeader({
           allSelected={allSelected}
           onToggleSelectAll={onToggleSelectAll}
           hasSelection={hasSelection}
-          infoOpen={infoOpen}
+          infoVisible={infoVisible}
           onTool={onTool}
         />
       )}

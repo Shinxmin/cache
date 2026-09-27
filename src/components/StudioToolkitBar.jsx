@@ -10,15 +10,15 @@ import { TOOL_META, toolLabel } from "./toolkitIcons";
 // (370px대 아이폰부터 태블릿까지) 유동적으로 늘어나되 일정 값 이상으로는
 // 더 벌어지지 않는다 — 개수가 고정이라 어떤 폭에서도 한 줄에 다 들어가게
 // 계산돼 있어 가로 스크롤이 필요 없다. 닫기 버튼은 없다 — 선택을 모두 풀거나
-// 설정의 "항상 활성화"를 끄면 사라진다. 정보(i) 아이콘은 정보 패널이 열려
-// 있는 동안 눌린 상태(aria-pressed)로 표시된다.
+// 설정의 "항상 활성화"를 끄면 사라진다. 정보(i) 아이콘은 지금 선택된
+// 항목 전체의 용량 표기가 켜져 있으면 눌린 상태(aria-pressed)로 표시된다.
 export default function StudioToolkitBar({
   layout,
   viewMode,
   allSelected,
   onToggleSelectAll,
   hasSelection,
-  infoOpen,
+  infoVisible,
   onTool,
   style,
 }) {
@@ -33,7 +33,7 @@ export default function StudioToolkitBar({
         className="studio-toolkit-icon-btn"
         type="button"
         aria-label={toolLabel(id, ctx)}
-        aria-pressed={id === "info" ? Boolean(infoOpen) : undefined}
+        aria-pressed={id === "info" ? Boolean(infoVisible) : undefined}
         disabled={meta.needsSelection && !hasSelection}
         onClick={() => onTool(id)}
       >

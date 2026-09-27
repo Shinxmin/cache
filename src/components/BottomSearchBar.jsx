@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BackIcon, CheckIcon, ChevronRightIcon, FileIcon } from "./icons";
+import { BackIcon, ChevronRightIcon, FileIcon } from "./icons";
 import Spinner from "./Spinner";
 import { isOptimizableFile, OPTIMIZE_LEVELS, OPTIMIZE_LEVEL_LABELS } from "../lib/optimize";
 import { displayName } from "../lib/filename";
@@ -216,49 +216,13 @@ export default function BottomSearchBar({
   onMoveBack,
   onConfirmMove,
   onCancelMove,
-  infoOpen,
-  infoStats,
-  infoHasFolder,
-  onInfoThumbnail,
-  onCancelInfo,
-  thumbnailOpen,
-  thumbnailTargetName,
-  thumbnailSourceId,
-  thumbnailPath,
-  thumbnailRows,
-  thumbnailRowsState,
-  onThumbnailInto,
-  onThumbnailBack,
-  onPickThumbnailSource,
-  onConfirmThumbnail,
-  onCancelThumbnail,
-  onClearThumbnail,
-  multiThumbnailOpen,
-  multiThumbnailItems,
-  multiThumbnailIndex,
-  onPrevMultiThumbnail,
-  onNextMultiThumbnail,
-  onConfirmMultiThumbnail,
-  onCancelMultiThumbnail,
-  onClearCurrentMultiThumbnail,
-  onClearAllMultiThumbnail,
 }) {
   const [busy, setBusy] = useState(false);
   const [folderBusy, setFolderBusy] = useState(false);
   const [studioBusy, setStudioBusy] = useState(false);
   const [multiStudioBusy, setMultiStudioBusy] = useState(false);
   const [moveBusy, setMoveBusy] = useState(false);
-  const [thumbnailBusy, setThumbnailBusy] = useState(false);
-  const [multiThumbnailBusy, setMultiThumbnailBusy] = useState(false);
-  const panelOpen =
-    confirmOpen ||
-    newFolderOpen ||
-    studioOpen ||
-    multiStudioOpen ||
-    moveOpen ||
-    infoOpen ||
-    thumbnailOpen ||
-    multiThumbnailOpen;
+  const panelOpen = confirmOpen || newFolderOpen || studioOpen || multiStudioOpen || moveOpen;
 
   // 스튜디오 패널 안에서 지금 어떤 기능을 보고 있는지 — null이면 아이콘 줄,
   // "name"/"tag"/"quality"면 그 기능의 화면이다. 패널이 새로 열릴 때마다
@@ -295,24 +259,15 @@ export default function BottomSearchBar({
           ? "multiStudio"
           : moveOpen
             ? "move"
-            : infoOpen
-              ? "info"
-              : thumbnailOpen
-              ? "thumbnail"
-              : multiThumbnailOpen
-                ? "multiThumbnail"
-                : "confirm";
+            : "confirm";
   const [displayMode, setDisplayMode] = useState(resolveMode);
   useEffect(() => {
     if (newFolderOpen) setDisplayMode("newFolder");
     else if (studioOpen) setDisplayMode("studio");
     else if (multiStudioOpen) setDisplayMode("multiStudio");
     else if (moveOpen) setDisplayMode("move");
-    else if (infoOpen) setDisplayMode("info");
-    else if (thumbnailOpen) setDisplayMode("thumbnail");
-    else if (multiThumbnailOpen) setDisplayMode("multiThumbnail");
     else if (confirmOpen) setDisplayMode("confirm");
-  }, [newFolderOpen, studioOpen, multiStudioOpen, moveOpen, infoOpen, thumbnailOpen, multiThumbnailOpen, confirmOpen]);
+  }, [newFolderOpen, studioOpen, multiStudioOpen, moveOpen, confirmOpen]);
 
   const confirm = async () => {
     if (busy) return;
@@ -425,41 +380,6 @@ export default function BottomSearchBar({
   // 막지만 목록에서 미리 눌리지 않게 해 둔다.
   const moveExcluded = moveExcludedIds ?? new Set();
 
-  // 폴더 썸네일도 이동과 같은 폴더 탐색 UI를 재사용하지만, 목록에서
-  // 고르는 게 목적지 폴더가 아니라 이미지·움짤·동영상 "파일"이다. thumb_key가
-  // 있는 파일만(업로드 때 캔버스로 만든 썸네일이 있어야 그대로 복사해 쓸 수
-  // 있다) 클릭해 지정할 수 있고, 폴더 행은 그 안으로 들어가는 탐색용이다.
-  // 이동과 달리 자기 자신 폴더 안으로 들어가도 트리가 깨지지 않으므로(그냥
-  // 그 안의 파일을 보는 것뿐) 지금 썸네일을 지정하려는 폴더 자신도 그대로
-  // 눌러 들어갈 수 있게 둔다 — 오히려 그 폴더 안의 사진을 대표 썸네일로
-  // 쓰는 게 가장 흔한 경우다.
-  const isMultiThumbnail = Boolean(multiThumbnailOpen);
-  const multiThumbnailCurrent = multiThumbnailItems?.[multiThumbnailIndex];
-  const currentThumbnailSourceId = thumbnailOpen ? thumbnailSourceId : isMultiThumbnail ? (multiThumbnailCurrent?.sourceId ?? null) : null;
-  const isThumbnailSourceRow = (row) => !row.is_folder && Boolean(row.thumb_key);
-
-  const canSubmitThumbnail = Boolean(thumbnailSourceId) && !thumbnailBusy;
-  const submitThumbnail = async () => {
-    if (!canSubmitThumbnail) return;
-    setThumbnailBusy(true);
-    try {
-      await onConfirmThumbnail();
-    } finally {
-      setThumbnailBusy(false);
-    }
-  };
-  const canSubmitMultiThumbnail =
-    Boolean(multiThumbnailItems?.length) && multiThumbnailItems.every((it) => it.sourceId) && !multiThumbnailBusy;
-  const submitMultiThumbnail = async () => {
-    if (!canSubmitMultiThumbnail) return;
-    setMultiThumbnailBusy(true);
-    try {
-      await onConfirmMultiThumbnail();
-    } finally {
-      setMultiThumbnailBusy(false);
-    }
-  };
-
   const textValue = newFolderOpen
     ? newFolderName
     : studioSection === "name"
@@ -486,13 +406,7 @@ export default function BottomSearchBar({
         ? onCancelMultiStudio
         : moveOpen
           ? onCancelMove
-          : infoOpen
-            ? onCancelInfo
-          : thumbnailOpen
-            ? onCancelThumbnail
-            : multiThumbnailOpen
-              ? onCancelMultiThumbnail
-              : onCancelDelete;
+          : onCancelDelete;
 
   // 스크림이 화면 전체를 덮으면 그 밑에 있는 스튜디오 툴킷 바(전체 선택
   // 체크박스 + 도구 한 줄)도 가려져서 아이콘을 눌러 패널을
@@ -579,14 +493,7 @@ export default function BottomSearchBar({
                 { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiStudioHighlight },
                 { key: "applyAll", label: "일괄 적용", onClick: onApplyAllMultiStudioHighlight },
               ]
-            : displayMode === "thumbnail"
-              ? [{ key: "clear", label: "지우기", onClick: onClearThumbnail }]
-              : displayMode === "multiThumbnail"
-                ? [
-                    { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiThumbnail },
-                    { key: "clear", label: "지우기", onClick: onClearCurrentMultiThumbnail },
-                  ]
-                : [];
+            : [];
 
   const studioSectionIcon =
     studioSection === "tag" ? (
@@ -643,7 +550,7 @@ export default function BottomSearchBar({
       <div className="bottom-search-wrap">
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
           <div
-            className={`search-bar-confirm-panel${displayMode === "studio" || displayMode === "multiStudio" ? " mode-studio" : ""}${displayMode === "move" || displayMode === "thumbnail" || displayMode === "multiThumbnail" ? " mode-move" : ""}${displayMode === "info" ? " mode-info" : ""}${extraActions.length > 0 ? " has-extras" : ""}${panelOpen ? " is-open" : ""}`}
+            className={`search-bar-confirm-panel${displayMode === "studio" || displayMode === "multiStudio" ? " mode-studio" : ""}${displayMode === "move" ? " mode-move" : ""}${extraActions.length > 0 ? " has-extras" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
           >
             {displayMode === "newFolder" ? (
@@ -838,117 +745,6 @@ export default function BottomSearchBar({
                   )}
                 </ul>
               </>
-            ) : displayMode === "thumbnail" || displayMode === "multiThumbnail" ? (
-              <>
-                {displayMode === "multiThumbnail" ? (
-                  <div className="search-bar-confirm-title-row">
-                    <p className="search-bar-confirm-title search-bar-confirm-title--studio">썸네일</p>
-                    <div className="search-bar-confirm-nav">
-                      <button
-                        type="button"
-                        className="search-bar-confirm-nav-btn search-bar-confirm-nav-btn--prev"
-                        aria-label="이전 항목"
-                        onClick={onPrevMultiThumbnail}
-                        disabled={multiThumbnailIndex <= 0}
-                      >
-                        <ChevronRightIcon size={14} />
-                      </button>
-                      <span className="search-bar-confirm-nav-count">
-                        {multiThumbnailIndex + 1}/{multiThumbnailItems?.length ?? 0}
-                      </span>
-                      <button
-                        type="button"
-                        className="search-bar-confirm-nav-btn"
-                        aria-label="다음 항목"
-                        onClick={onNextMultiThumbnail}
-                        disabled={multiThumbnailIndex >= (multiThumbnailItems?.length ?? 1) - 1}
-                      >
-                        <ChevronRightIcon size={14} />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="search-bar-confirm-title search-bar-confirm-title--studio">썸네일</p>
-                )}
-                <p className="search-bar-confirm-filename">
-                  {displayMode === "multiThumbnail" ? multiThumbnailCurrent?.name : thumbnailTargetName}
-                </p>
-                {thumbnailPath.length > 0 && (
-                  <div className="move-path">
-                    <button type="button" className="move-path-back" aria-label="상위 폴더로" onClick={onThumbnailBack}>
-                      <BackIcon size={16} />
-                    </button>
-                    <span className="move-path-name">{thumbnailPath[thumbnailPath.length - 1].name}</span>
-                  </div>
-                )}
-                <ul className="move-list">
-                  {thumbnailRowsState === "loading" ? (
-                    <li className="move-note">
-                      <Spinner />
-                    </li>
-                  ) : thumbnailRowsState === "error" ? (
-                    <li className="move-note">불러오지 못했습니다</li>
-                  ) : thumbnailRows.length === 0 ? (
-                    <li className="move-note">이 폴더는 비어 있습니다</li>
-                  ) : (
-                    thumbnailRows.map((row) => {
-                      const pickable = isThumbnailSourceRow(row);
-                      const disabled = row.is_folder ? false : !pickable;
-                      const picked = pickable && row.id === currentThumbnailSourceId;
-                      return (
-                        <li key={row.id}>
-                          <button
-                            type="button"
-                            className={`move-row${picked ? " is-picked" : ""}`}
-                            disabled={disabled}
-                            onClick={() => (row.is_folder ? onThumbnailInto?.(row) : onPickThumbnailSource?.(row))}
-                          >
-                            <span className="move-row-icon">
-                              {row.is_folder ? <FolderIcon size={16} /> : <FileIcon size={16} />}
-                            </span>
-                            <span className="move-row-name">{row.name}</span>
-                            {picked && (
-                              <span className="move-row-picked">
-                                <CheckIcon size={14} />
-                              </span>
-                            )}
-                          </button>
-                        </li>
-                      );
-                    })
-                  )}
-                </ul>
-              </>
-            ) : displayMode === "info" ? (
-              // 정보 패널: 선택 항목 전체의 용량과 하위 폴더·파일 개수
-              // (폴더가 하나도 없으면 폴더 개수는 빼고 파일 개수만). 밑의
-              // "썸네일"을 누르면 패널이 폴더 썸네일 선택 패널로 넘어간다 —
-              // 선택에 폴더가 없으면 비활성화된다.
-              <>
-                <p className="search-bar-confirm-title search-bar-confirm-title--studio">정보</p>
-                <p className="search-bar-info-stats">
-                  {infoStats === "error" ? (
-                    "정보를 불러오지 못했습니다"
-                  ) : infoStats ? (
-                    <>
-                      <span>용량 {formatBytes(infoStats.size, { fixedDecimal: true })}</span>
-                      <span>
-                        {infoStats.folders > 0 ? `폴더 ${infoStats.folders}개 • ` : ""}파일 {infoStats.files}개
-                      </span>
-                    </>
-                  ) : (
-                    <Spinner />
-                  )}
-                </p>
-                <button
-                  type="button"
-                  className="search-bar-info-link"
-                  disabled={!infoHasFolder}
-                  onClick={onInfoThumbnail}
-                >
-                  썸네일
-                </button>
-              </>
             ) : (
               <>
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">삭제</p>
@@ -1058,13 +854,7 @@ export default function BottomSearchBar({
                         ? submitMultiStudio
                         : moveOpen
                           ? submitMove
-                          : infoOpen
-                            ? onCancelInfo
-                          : thumbnailOpen
-                            ? submitThumbnail
-                            : multiThumbnailOpen
-                              ? submitMultiThumbnail
-                              : submitText
+                          : submitText
                 }
                 disabled={
                   confirmOpen
@@ -1075,13 +865,7 @@ export default function BottomSearchBar({
                         ? !canSubmitMultiStudio
                         : moveOpen
                           ? !canSubmitMove
-                          : infoOpen
-                            ? false
-                          : thumbnailOpen
-                            ? !canSubmitThumbnail
-                            : multiThumbnailOpen
-                              ? !canSubmitMultiThumbnail
-                              : !canSubmitText
+                          : !canSubmitText
                 }
               >
                 확인

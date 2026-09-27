@@ -20,7 +20,6 @@ import {
   verifySession,
 } from "./lib/session";
 import {
-  clearFolderThumbnail,
   createClip,
   createFolder,
   createSplitPreset,
@@ -35,10 +34,9 @@ import {
   nextClipName,
   optimizeFiles,
   renameFiles,
-  selectionInfo,
   setBlur,
   setFavorite,
-  setFolderThumbnail,
+  setInfoRevealed,
   setTag,
   splitPresetParts,
   trashFiles,
@@ -173,25 +171,6 @@ export default function App() {
   const [movePath, setMovePath] = useState([]); // [{ id, name }]
   const [moveRows, setMoveRows] = useState([]);
   const [moveRowsState, setMoveRowsState] = useState("loading"); // loading | ready | error
-  // 툴킷 정보(i) 아이콘이 여는 정보 패널. infoStats는 선택 항목 전체의
-  // { size, folders, files } — 받아 오는 중이면 null, 실패하면 "error".
-  const [infoOpen, setInfoOpen] = useState(false);
-  const [infoStats, setInfoStats] = useState(null);
-  // 폴더 썸네일 패널(정보 패널의 "썸네일"로 연다). 이동 패널과 같은 폴더 탐색 UI를 재사용해,
-  // 그 안에서 이미지·움짤·동영상 파일 하나를 골라 지금 선택된 폴더의 대표
-  // 썸네일로 지정한다. 이름 바꾸기·태그·최적화와 같은 단일/다중 구조를
-  // 쓰되, 폴더가 아닌 항목은 애초에 대상에서 빠진다(파일에서 실행하면 조용히
-  // 아무 일도 하지 않는다). thumbnailPath/Rows/RowsState는 단일·다중 공통 —
-  // 지금 활성화된 대상 하나에 대해서만 의미 있는 탐색 상태다.
-  const [thumbnailOpen, setThumbnailOpen] = useState(false);
-  const [thumbnailTargetId, setThumbnailTargetId] = useState(null);
-  const [thumbnailSourceId, setThumbnailSourceId] = useState(null);
-  const [multiThumbnailOpen, setMultiThumbnailOpen] = useState(false);
-  const [multiThumbnailItems, setMultiThumbnailItems] = useState([]); // [{ id, name, sourceId }]
-  const [multiThumbnailIndex, setMultiThumbnailIndex] = useState(0);
-  const [thumbnailPath, setThumbnailPath] = useState([]); // [{ id, name }]
-  const [thumbnailRows, setThumbnailRows] = useState([]);
-  const [thumbnailRowsState, setThumbnailRowsState] = useState("loading"); // loading | ready | error
   // 헤더 삼점 버튼의 "새 폴더". 별도 모달 대신 삭제 확인과 같은 방식으로
   // 하단 검색바가 위로 확장되며 그 자리에서 이름을 입력받는다(BottomSearchBar
   // 참고). 둘 다 같은 패널 자리를 쓰므로 동시에 열리지 않는다.
@@ -412,47 +391,6 @@ export default function App() {
     setMultiStudioOpen(true);
   }, [selectedIds]);
 
-  // 폴더 썸네일 패널도 같은 방식으로 선택 변화에 맞춰 다시 계산한다 — 다만
-  // 최적화와 반대로 "폴더만"이 대상이라(파일은 애초에 대상이 아니다), 대상이
-  // 하나도 안 남으면(선택은 남아 있어도 전부 파일뿐이면) 패널을 직접 닫는다.
-  useEffect(() => {
-    if (!thumbnailOpen && !multiThumbnailOpen) return;
-    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && it.is_folder);
-    if (targets.length === 0) {
-      setThumbnailOpen(false);
-      setThumbnailTargetId(null);
-      setThumbnailSourceId(null);
-      setMultiThumbnailOpen(false);
-      setMultiThumbnailItems([]);
-      setMultiThumbnailIndex(0);
-      return;
-    }
-    const sourceFor = (it) => {
-      const fromMulti = multiThumbnailItems.find((x) => x.id === it.id);
-      if (fromMulti) return fromMulti.sourceId;
-      if (thumbnailOpen && thumbnailTargetId === it.id) return thumbnailSourceId;
-      return null;
-    };
-    if (targets.length === 1) {
-      const only = targets[0];
-      const nextSource = sourceFor(only);
-      setMultiThumbnailOpen(false);
-      setMultiThumbnailItems([]);
-      setMultiThumbnailIndex(0);
-      setThumbnailTargetId(only.id);
-      setThumbnailSourceId(nextSource);
-      setThumbnailOpen(true);
-      return;
-    }
-    const nextItems = targets.map((it) => ({ id: it.id, name: it.name, sourceId: sourceFor(it) }));
-    setThumbnailOpen(false);
-    setThumbnailTargetId(null);
-    setThumbnailSourceId(null);
-    setMultiThumbnailItems(nextItems);
-    setMultiThumbnailIndex((i) => Math.min(i, nextItems.length - 1));
-    setMultiThumbnailOpen(true);
-  }, [selectedIds]);
-
   // 이동 패널이 열려 있는 동안, 지금 들어와 있는 폴더(movePath 맨 끝, 없으면
   // 최상위)의 목록을 받아 온다. 경로가 바뀔 때마다 다시 받는다.
   useEffect(() => {
@@ -473,50 +411,6 @@ export default function App() {
       cancelled = true;
     };
   }, [moveOpen, movePath, session?.token]);
-
-  // 폴더 썸네일 패널이 열려 있는 동안, 지금 들어와 있는 폴더(thumbnailPath
-  // 맨 끝, 없으면 최상위)의 목록을 받아 온다 — 이동 패널의 탐색 효과와
-  // 똑같은 구조다.
-  useEffect(() => {
-    if ((!thumbnailOpen && !multiThumbnailOpen) || !session) return;
-    const folderId = thumbnailPath.length ? thumbnailPath[thumbnailPath.length - 1].id : null;
-    let cancelled = false;
-    setThumbnailRowsState("loading");
-    listFiles(session.token, folderId)
-      .then((data) => {
-        if (cancelled) return;
-        setThumbnailRows(data);
-        setThumbnailRowsState("ready");
-      })
-      .catch(() => {
-        if (!cancelled) setThumbnailRowsState("error");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [thumbnailOpen, multiThumbnailOpen, thumbnailPath, session?.token]);
-
-  // 정보 패널이 열려 있는 동안 선택 항목의 용량·개수를 받아 온다. 선택이
-  // 바뀌면(또는 목록이 새로 고쳐지면) 다시 받고, 선택이 모두 풀리면 닫는다.
-  useEffect(() => {
-    if (!infoOpen || !session) return;
-    const ids = [...selectedIds];
-    if (!ids.length) {
-      setInfoOpen(false);
-      return;
-    }
-    let cancelled = false;
-    selectionInfo(session.token, ids)
-      .then((data) => {
-        if (!cancelled) setInfoStats(data);
-      })
-      .catch(() => {
-        if (!cancelled) setInfoStats("error");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [infoOpen, selectedIds, refreshKey, session?.token]);
 
   const handleSearch = (value) => {
     setSearchQuery(value);
@@ -706,16 +600,11 @@ export default function App() {
     );
   };
 
-  // 선택된 항목 중 이미지·영상, 그리고 폴더 썸네일이 지정된 폴더만 대상으로
-  // 썸네일 블러를 토글한다(썸네일이 없는 폴더는 애초에 블러 걸 그림이 없으니
-  // 제외). 전체가 이미 블러 상태면 풀고, 아니면(하나도 안 되어 있거나 일부만
-  // 되어 있으면) 전부 건다 — 전체 선택 체크박스와 같은 "일부면 켜는 쪽으로"
-  // 방식이다. 폴더를 블러해도 그 안의 개별 파일들에는 영향이 없다 — 폴더
-  // 자신의 blurred 컬럼만 바뀐다.
+  // 선택된 항목 중 이미지·영상만 대상으로 썸네일 블러를 토글한다. 전체가
+  // 이미 블러 상태면 풀고, 아니면(하나도 안 되어 있거나 일부만 되어 있으면)
+  // 전부 건다 — 전체 선택 체크박스와 같은 "일부면 켜는 쪽으로" 방식이다.
   const handleBlurSelected = async () => {
-    const targets = visibleItems.filter(
-      (it) => selectedIds.has(it.id) && (isImage(it.mime) || isVideo(it.mime) || (it.is_folder && it.folder_thumb_key))
-    );
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && (isImage(it.mime) || isVideo(it.mime)));
     if (!targets.length) return;
     const nextBlurred = !targets.every((it) => it.blurred);
     try {
@@ -726,26 +615,21 @@ export default function App() {
     }
   };
 
-  // 툴킷 정보(i) 아이콘 — 하단 검색바가 위로 확장되며 선택 항목 전체의
-  // 용량과 하위 폴더·파일 개수를 보여주는 정보 패널을 연다(열려 있을 때
-  // 다시 누르면 닫는다). 실제 수치는 아래 effect가 선택이 바뀔 때마다 서버
-  // (selection_info)에서 새로 받아 온다.
-  const handleInfoSelected = () => {
-    if (infoOpen) {
-      closeAllToolPanels();
-      return;
+  // 선택된 항목의 용량 표기를 토글한다. 블러와 같은 "일부면 켜는 쪽으로"
+  // 방식이면서 저장 방식도 같다 — 서버에 저장돼 있어(info_revealed 컬럼)
+  // 선택을 풀거나 새로고침·재접속해도 계속 표기된 채로 남는다. 선택은 그저
+  // "지금부터 이 항목들 표기 여부를 바꾼다"는 대상 지정일 뿐, 표기 자체는
+  // 선택 상태를 실시간으로 따라가지 않는다.
+  const handleToggleInfo = async () => {
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    if (!targets.length) return;
+    const nextRevealed = !targets.every((it) => it.info_revealed);
+    try {
+      await setInfoRevealed(session.token, targets.map((it) => it.id), nextRevealed);
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("정보 표기 설정을 저장하지 못했습니다");
     }
-    if (!selectedIds.size) return;
-    closeAllToolPanels();
-    setInfoStats(null);
-    setInfoOpen(true);
-  };
-
-  // 정보 패널의 "썸네일" — 패널이 기존 폴더 썸네일 선택 패널로 넘어간다
-  // (정보 패널은 closeAllToolPanels가 닫는다). 선택에 폴더가 없으면 BottomSearchBar가
-  // 이 링크를 비활성화해 둔다.
-  const handleInfoThumbnail = () => {
-    handleThumbnailSelected();
   };
 
   const handleTrashSelected = async () => {
@@ -1162,18 +1046,15 @@ export default function App() {
     setRefreshKey((k) => k + 1);
   };
 
-  // 삭제 확인·새 폴더·이동·정보·Studio(단일/다중)·폴더 썸네일(단일/다중)은
-  // 전부 검색바 위 같은 패널 자리를 공유한다 — 그중 하나를 열기 전에 항상
-  // 이걸 먼저 불러 나머지를 전부 닫는다.
+  // 삭제 확인·새 폴더·이동·Studio(단일/다중)는 전부 검색바 위 같은 패널
+  // 자리를 공유한다 — 그중 하나를 열기 전에 항상 이걸 먼저 불러 나머지를
+  // 전부 닫는다.
   const closeAllToolPanels = () => {
     setDeleteConfirmOpen(false);
-    setInfoOpen(false);
     setNewFolderOpen(false);
     cancelMove();
     cancelStudio();
     cancelMultiStudio();
-    cancelThumbnail();
-    cancelMultiThumbnail();
   };
 
   // 선택된 항목으로 이동 패널을 연다(항상 최상위에서 시작). 폴더를 옮기면
@@ -1216,142 +1097,6 @@ export default function App() {
       setRefreshKey((k) => k + 1);
     } catch {
       window.alert("옮기지 못했습니다");
-    }
-  };
-
-  // 폴더 썸네일(정보 패널의 "썸네일"): 선택 중 폴더만 골라 연다. 파일만
-  // 선택돼 있으면(폴더가 하나도 없으면) 조용히 아무 일도 하지 않는다 —
-  // 폴더에서만 동작한다.
-  const handleThumbnailSelected = () => {
-    if (thumbnailOpen || multiThumbnailOpen) {
-      closeAllToolPanels();
-      return;
-    }
-    const targets = visibleItems.filter((it) => selectedIds.has(it.id) && it.is_folder);
-    if (!targets.length) return;
-    closeAllToolPanels();
-    setThumbnailPath([]);
-    if (targets.length === 1) {
-      setThumbnailTargetId(targets[0].id);
-      setThumbnailSourceId(null);
-      setThumbnailOpen(true);
-      return;
-    }
-    setMultiThumbnailItems(targets.map((it) => ({ id: it.id, name: it.name, sourceId: null })));
-    setMultiThumbnailIndex(0);
-    setMultiThumbnailOpen(true);
-  };
-
-  const cancelThumbnail = () => {
-    setThumbnailOpen(false);
-    setThumbnailTargetId(null);
-    setThumbnailSourceId(null);
-  };
-
-  const thumbnailNavigateInto = (row) => {
-    setThumbnailPath((p) => [...p, { id: row.id, name: row.name }]);
-  };
-
-  const thumbnailNavigateBack = () => {
-    setThumbnailPath((p) => p.slice(0, -1));
-  };
-
-  // 지금 활성화된 대상(단일이면 그 폴더, 다중이면 지금 보고 있는 항목)에
-  // 고른 파일을 지정한다. 폴더·지원하지 않는 파일 행은 애초에 클릭이
-  // 안 되도록 BottomSearchBar 쪽에서 막는다(여기서는 다시 확인하지 않는다).
-  const pickThumbnailSource = (row) => {
-    if (thumbnailOpen) {
-      setThumbnailSourceId(row.id);
-      return;
-    }
-    if (multiThumbnailOpen) {
-      setMultiThumbnailItems((prev) => prev.map((it, i) => (i === multiThumbnailIndex ? { ...it, sourceId: row.id } : it)));
-    }
-  };
-
-  const confirmThumbnail = async () => {
-    if (!thumbnailTargetId || !thumbnailSourceId) return;
-    try {
-      await setFolderThumbnail(session.token, thumbnailTargetId, thumbnailSourceId);
-      cancelThumbnail();
-      setRefreshKey((k) => k + 1);
-    } catch {
-      window.alert("썸네일을 지정하지 못했습니다");
-    }
-  };
-
-  const cancelMultiThumbnail = () => {
-    setMultiThumbnailOpen(false);
-    setMultiThumbnailItems([]);
-    setMultiThumbnailIndex(0);
-  };
-
-  // 탐색 위치는 지금 보고 있는 대상 하나 기준이라, 다른 항목으로 넘어가면
-  // 다시 최상위부터 찾아보게 한다.
-  const prevMultiThumbnail = () => {
-    setMultiThumbnailIndex((i) => Math.max(0, i - 1));
-    setThumbnailPath([]);
-  };
-  const nextMultiThumbnail = () => {
-    setMultiThumbnailIndex((i) => Math.min(multiThumbnailItems.length - 1, i + 1));
-    setThumbnailPath([]);
-  };
-
-  // 각자 고른 파일을 순서대로(하나씩 await) 적용한다 — 병렬로 한꺼번에
-  // 쏘지 않는 이유는 "순차적으로 적용됨"이라는 요구를 그대로 따르기 위해서다.
-  const confirmMultiThumbnail = async () => {
-    if (!multiThumbnailItems.length || multiThumbnailItems.some((it) => !it.sourceId)) return;
-    try {
-      for (const it of multiThumbnailItems) {
-        await setFolderThumbnail(session.token, it.id, it.sourceId);
-      }
-      cancelMultiThumbnail();
-      setRefreshKey((k) => k + 1);
-    } catch {
-      window.alert("썸네일을 지정하지 못했습니다");
-    }
-  };
-
-  // "지우기": 새로 고를 필요 없이 지금 지정된(혹은 지정하려던) 폴더 썸네일을
-  // 바로 없앤다 — 확인 버튼을 거치지 않는 즉시 동작이다. 원래 폴더 아이콘으로
-  // 돌아간다.
-  const clearThumbnail = async () => {
-    if (!thumbnailTargetId) return;
-    try {
-      await clearFolderThumbnail(session.token, thumbnailTargetId);
-      cancelThumbnail();
-      setRefreshKey((k) => k + 1);
-    } catch {
-      window.alert("썸네일을 지우지 못했습니다");
-    }
-  };
-
-  // 다중일 때 "지우기"는 지금 보고 있는 항목 하나만 지운다 — 패널은 열어
-  // 둔 채로, 나머지 항목은 그대로 이전·다음으로 넘기며 계속 고를 수 있다.
-  const clearCurrentMultiThumbnail = async () => {
-    const current = multiThumbnailItems[multiThumbnailIndex];
-    if (!current) return;
-    try {
-      await clearFolderThumbnail(session.token, current.id);
-      setMultiThumbnailItems((prev) => prev.map((it, i) => (i === multiThumbnailIndex ? { ...it, sourceId: null } : it)));
-      setRefreshKey((k) => k + 1);
-    } catch {
-      window.alert("썸네일을 지우지 못했습니다");
-    }
-  };
-
-  // "전체 지우기"는 지금 다중으로 보고 있는 폴더 전부의 썸네일을 순서대로
-  // 지운 뒤 패널을 닫는다.
-  const clearAllMultiThumbnail = async () => {
-    if (!multiThumbnailItems.length) return;
-    try {
-      for (const it of multiThumbnailItems) {
-        await clearFolderThumbnail(session.token, it.id);
-      }
-      cancelMultiThumbnail();
-      setRefreshKey((k) => k + 1);
-    } catch {
-      window.alert("썸네일을 지우지 못했습니다");
     }
   };
 
@@ -1415,7 +1160,7 @@ export default function App() {
   const handleTool = (id) => {
     switch (id) {
       case "info":
-        return handleInfoSelected();
+        return handleToggleInfo();
       case "trash":
         // 이미 삭제 확인 패널이 열려 있는 채로 휴지통 아이콘을 다시 누르면
         // 여는 대신 취소한다(선택도 함께 풀린다 — 빈 화면을 눌러 취소하는
@@ -1552,7 +1297,10 @@ export default function App() {
               allSelected={allSelected}
               onToggleSelectAll={handleToggleSelectAll}
               hasSelection={selectedIds.size > 0}
-              infoOpen={infoOpen}
+              infoVisible={(() => {
+                const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+                return targets.length > 0 && targets.every((it) => it.info_revealed);
+              })()}
               toolkitLayout={toolkitLayout}
               onTool={handleTool}
               onOpenSettings={favoritesView ? undefined : () => setShowSettings(true)}
@@ -1634,32 +1382,6 @@ export default function App() {
             onMoveBack={moveNavigateBack}
             onConfirmMove={confirmMove}
             onCancelMove={cancelMove}
-            infoOpen={infoOpen}
-            infoStats={infoStats}
-            infoHasFolder={visibleItems.some((it) => selectedIds.has(it.id) && it.is_folder)}
-            onInfoThumbnail={handleInfoThumbnail}
-            onCancelInfo={closeAllToolPanels}
-            thumbnailOpen={thumbnailOpen}
-            thumbnailTargetName={visibleItems.find((it) => it.id === thumbnailTargetId)?.name ?? ""}
-            thumbnailSourceId={thumbnailSourceId}
-            thumbnailPath={thumbnailPath}
-            thumbnailRows={thumbnailRows}
-            thumbnailRowsState={thumbnailRowsState}
-            onThumbnailInto={thumbnailNavigateInto}
-            onThumbnailBack={thumbnailNavigateBack}
-            onPickThumbnailSource={pickThumbnailSource}
-            onConfirmThumbnail={confirmThumbnail}
-            onCancelThumbnail={cancelThumbnail}
-            onClearThumbnail={clearThumbnail}
-            multiThumbnailOpen={multiThumbnailOpen}
-            multiThumbnailItems={multiThumbnailItems}
-            multiThumbnailIndex={multiThumbnailIndex}
-            onPrevMultiThumbnail={prevMultiThumbnail}
-            onNextMultiThumbnail={nextMultiThumbnail}
-            onConfirmMultiThumbnail={confirmMultiThumbnail}
-            onCancelMultiThumbnail={cancelMultiThumbnail}
-            onClearCurrentMultiThumbnail={clearCurrentMultiThumbnail}
-            onClearAllMultiThumbnail={clearAllMultiThumbnail}
           />
         </>
       )}
