@@ -800,7 +800,7 @@ export default function BottomSearchBar({
               )
             ) : displayMode === "move" ? (
               <>
-                <p className="search-bar-confirm-title">이동</p>
+                <p className="search-bar-confirm-title search-bar-confirm-title--studio">이동</p>
                 <p className="search-bar-confirm-desc">{moveItemCount}개 파일</p>
                 {movePath.length > 0 && (
                   <div className="move-path">

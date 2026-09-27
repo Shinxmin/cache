@@ -614,12 +614,14 @@ main.page {
   max-height: 200px;
   min-height: 200px;
 }
-/* 이동 패널은 경로 표시줄 + 스크롤되는 폴더 목록까지 들어가 가장 길다. */
+/* 이동·썸네일(단일·다중) 패널은 경로 표시줄 + 스크롤되는 폴더 목록까지
+   들어가 가장 길다 — 세 패널 다 이 mode-move 클래스를 같이 써서 세로 폭을
+   240px로 통일한다. */
 .search-bar-confirm-panel.mode-move {
   justify-content: flex-start;
 }
 .search-bar-confirm-panel.mode-move.is-open {
-  max-height: 260px;
+  max-height: 240px;
 }
 /* 정보 패널(툴킷 정보 아이콘): 제목 "정보" + 용량·개수 두 줄 + 밑줄 친
    "썸네일" 링크까지 네 줄이라 기본 패널보다 조금 더 높다. */
