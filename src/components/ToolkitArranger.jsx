@@ -1,18 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { TOOL_META, toolLabel } from "./toolkitIcons";
-import { isSecondRowTool } from "../lib/toolkit";
 
 const HOLD_MS = 250;
 const MOVE_SLOP = 8;
 
 // 설정 → "스튜디오 툴킷 사용자 정렬"을 펼치면 나오는 편집용 툴바. 실제
 // 툴킷과 똑같은 모양(.studio-toolkit)이지만 전체 선택 체크박스·글자 없이
-// 아이콘들만 있고, 그 아이콘들을 꾹 눌러(250ms) 끌어 순서를 바꿀 수 있다.
-// 실제 툴바가 1열 도구와 2열 도구(스플릿 비교 등)를 항상 따로 그리는 것과
-// 똑같이 이 편집용 미리보기도 두 줄로 나눠 그린다 — 그래서 드래그도 같은
-// 줄 안에서만 순서를 바꾼다(다른 줄로 끌어도 실제 화면에는 어차피
-// 반영되지 않으므로, 애초에 다른 줄 위로는 자리를 내주지 않는다). 끄는
-// 동안 같은 줄의 다른 아이콘 위를 지나가면 그 자리로 실시간으로 옮겨지고,
+// 아이콘들만 한 줄로 있고, 그 아이콘들을 꾹 눌러(250ms) 끌어 순서를 바꿀 수
+// 있다. 끄는 동안 다른 아이콘 위를 지나가면 그 자리로 실시간으로 옮겨지고,
 // 손을 떼면 부모에 새 순서를 알린다(서버 저장·기록은 부모 몫).
 export default function ToolkitArranger({ layout, viewMode, onChange }) {
   const [order, setOrder] = useState(layout);
@@ -64,10 +59,7 @@ export default function ToolkitArranger({ layout, viewMode, onChange }) {
     }
     e.preventDefault();
     const hit = hitTest(e.clientX, e.clientY);
-    // 다른 줄(1열 ↔ 2열)의 아이콘 위로는 자리를 내주지 않는다 — 실제
-    // 툴바는 어차피 두 그룹을 항상 따로 그리므로 그 자리바꿈은 아무
-    // 의미가 없다.
-    if (hit?.id && hit.id !== p.id && isSecondRowTool(hit.id) === isSecondRowTool(p.id)) {
+    if (hit?.id && hit.id !== p.id) {
       const cur = orderRef.current;
       const from = cur.indexOf(p.id);
       const to = cur.indexOf(hit.id);
@@ -129,8 +121,7 @@ export default function ToolkitArranger({ layout, viewMode, onChange }) {
     };
   }, [Boolean(drag)]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const baseIds = order.filter((id) => TOOL_META[id] && !isSecondRowTool(id));
-  const secondIds = order.filter((id) => TOOL_META[id] && isSecondRowTool(id));
+  const toolIds = order.filter((id) => TOOL_META[id]);
 
   const renderItem = (id) => {
     const meta = TOOL_META[id];
@@ -153,10 +144,7 @@ export default function ToolkitArranger({ layout, viewMode, onChange }) {
   return (
     <div className="toolkit-arranger">
       <div className="studio-toolkit toolkit-arranger-bar">
-        <div className="studio-toolkit-row studio-toolkit-row-base">{baseIds.map(renderItem)}</div>
-        {secondIds.length > 0 && (
-          <div className="studio-toolkit-row studio-toolkit-row-addons">{secondIds.map(renderItem)}</div>
-        )}
+        <div className="studio-toolkit-row studio-toolkit-row-base">{toolIds.map(renderItem)}</div>
       </div>
     </div>
   );

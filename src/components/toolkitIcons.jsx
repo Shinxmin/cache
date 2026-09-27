@@ -21,23 +21,6 @@ export function StarIcon({ size = 18 }) {
   );
 }
 
-// 스플릿 비교: 모서리가 둥근 정사각형을 반으로 나눠 오른쪽 절반만
-// 채운 대비 아이콘. 선(stroke) 없이 채움(fill)만으로 그린다 — 왼쪽 절반은
-// 테두리만 남도록 안쪽을 구멍으로 파낸 "틀" 모양이고(evenodd), 오른쪽
-// 절반은 그대로 꽉 채워, 툴킷의 다른 단색 채움 아이콘들과 방식이 같다.
-export function SplitIcon({ size = 18 }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M6 4h12a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3z
-           M4.6 5.6H12V18.4H4.6z"
-      />
-    </svg>
-  );
-}
-
 // 스튜디오 툴킷 도구 레지스트리. 툴킷 바(StudioToolkitBar)와 설정의 사용자
 // 정렬 미리보기(ToolkitArranger)가 같은 정의를 공유한다. ctx: { viewMode }.
 export const TOOL_META = {
@@ -52,7 +35,6 @@ export const TOOL_META = {
   },
   blur: { label: "선택한 썸네일 블러", needsSelection: true, icon: () => <EyeIcon /> },
   favorite: { label: "즐겨찾기", needsSelection: true, icon: () => <StarIcon /> },
-  split: { label: "스플릿 비교", needsSelection: true, icon: () => <SplitIcon /> },
 };
 
 export function toolLabel(id, ctx) {
