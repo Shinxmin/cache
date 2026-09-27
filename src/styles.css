@@ -609,11 +609,17 @@ main.page {
 .search-bar-confirm-panel.has-extras.is-open {
   padding-bottom: 0;
 }
-/* 삭제 확인·새 폴더 패널은 스프링(bounce)의 튕기는 느낌 없이 부드럽게
-   열리고 닫히도록 이징만 var(--ease)로 바꾼다(시간은 기본값 그대로
-   0.35s/0.35s/0.25s/0.35s — 스튜디오 패널처럼 느리게 늘리진 않는다). */
+/* 삭제 확인·새 폴더 패널은 패널이 커지고 줄어드는 것(max-height·min-height·
+   padding)만 애니메이션한다 — 제목·본문·버튼 같은 안의 내용은 따로
+   애니메이션하지 않고 그 자리에서 바로 나타나고 사라진다. 그래서 기본
+   트랜지션 목록에 있던 opacity를 빼고, 남은 셋도 스프링(bounce)의 튕기는
+   느낌 없이 부드럽게 var(--ease)로 바꾼다. opacity는 항상 1로 고정해도
+   문제없다 — 닫힌 상태는 max-height:0 + overflow:hidden만으로 이미
+   완전히 안 보이기 때문이다(속이 텅 빈 채로 opacity만 1이어도 보일 게
+   없다). */
 .search-bar-confirm-panel.mode-confirm {
-  transition-timing-function: var(--ease), var(--ease), var(--ease), var(--ease);
+  transition: max-height 0.35s var(--ease), min-height 0.35s var(--ease), padding 0.35s var(--ease);
+  opacity: 1;
 }
 /* 스튜디오(이름·태그·압축·클립 통합) 패널은 제목 아래 구분선 + 기능 선택
    줄(아이콘 줄/기능 화면) + 구분선 + 본문(파일명 등)이 쌓이므로, 다른
