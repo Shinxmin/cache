@@ -585,7 +585,11 @@ main.page {
   transition: max-height 0.35s var(--spring), min-height 0.35s var(--spring), opacity 0.25s var(--ease), padding 0.35s var(--spring);
 }
 .search-bar-confirm-panel.is-open {
+  /* min-height를 max-height와 같게 둬서, 본문 줄 수가 다른 패널끼리도
+     (예: 새 폴더 = 제목만, 삭제 확인 = 제목+본문) 항상 같은 세로 폭으로
+     맞춰진다. */
   max-height: 130px;
+  min-height: 130px;
   opacity: 1;
   pointer-events: auto;
   /* 제목·본문을 조금 위로 올리도록 위쪽 여백만 줄인다(아래쪽은 그대로). */
@@ -614,19 +618,12 @@ main.page {
   max-height: 200px;
   min-height: 200px;
 }
-/* 이동·썸네일(단일·다중) 패널은 경로 표시줄 + 스크롤되는 폴더 목록까지
-   들어가 가장 길다 — 세 패널 다 이 mode-move 클래스를 같이 써서 세로 폭을
-   240px로 통일한다. */
+/* 이동 패널은 경로 표시줄 + 스크롤되는 폴더 목록까지 들어가 가장 길다. */
 .search-bar-confirm-panel.mode-move {
   justify-content: flex-start;
 }
 .search-bar-confirm-panel.mode-move.is-open {
   max-height: 240px;
-}
-/* 정보 패널(툴킷 정보 아이콘): 제목 "정보" + 용량·개수 두 줄 + 밑줄 친
-   "썸네일" 링크까지 네 줄이라 기본 패널보다 조금 더 높다. */
-.search-bar-confirm-panel.mode-info.is-open {
-  max-height: 175px;
 }
 .search-bar-confirm-title {
   margin: 0;
@@ -738,40 +735,6 @@ main.page {
   font-size: 14px;
   font-weight: 700;
   color: var(--text);
-}
-/* 정보 패널 본문 — "용량 12.0GB" 한 줄, 그 밑에 "폴더 9개 • 파일 35개"
-   한 줄로 줄바꿈해 보여준다. 글자 크기·색은 다른 패널의 본문(제목 밑
-   보조 설명·파일명)과 똑같이 13px·var(--text-2)를 쓴다. 받아 오는 동안은
-   같은 자리에 스피너만 뜬다(줄 높이를 고정해 두어 수치가 도착해도 패널
-   높이가 흔들리지 않는다). */
-.search-bar-info-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-height: 20px;
-  margin: 8px 0 0;
-  font-size: 13px;
-  color: var(--text-2);
-  font-variant-numeric: tabular-nums;
-  text-align: left;
-}
-/* 밑줄 친 "썸네일" 링크 — 누르면 패널이 폴더 썸네일 선택 패널로 넘어간다.
-   선택에 폴더가 없으면 비활성화돼 흐리게 보인다. */
-.search-bar-info-link {
-  align-self: flex-start;
-  margin-top: 10px;
-  padding: 0;
-  font-size: 13px;
-  color: var(--text-2);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  transition: opacity 0.2s var(--ease);
-}
-.search-bar-info-link:active {
-  opacity: 0.55;
-}
-.search-bar-info-link:disabled {
-  opacity: 0.35;
 }
 /* 삭제 확인 보조 설명(고정 문구). 제목과의 간격을 조금 더 줄여 본문을
    살짝 위로 올린다. */
@@ -896,16 +859,6 @@ main.page {
   font-size: 12px;
   color: var(--text-2);
   text-align: left;
-}
-/* 다중 이름 바꾸기 패널의 제목 줄: 제목은 왼쪽, "몇 번째/전체" 카운터와
-   이전·다음 화살표는 오른쪽에 둔다. 몇 개를 고르든 패널 크기가 똑같이
-   유지되도록, 실제 목록을 늘어놓는 대신 검색바 입력창 하나를 화살표로
-   넘기며 재사용한다. */
-.search-bar-confirm-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
 }
 .search-bar-confirm-nav {
   display: flex;
@@ -2053,19 +2006,6 @@ main.page {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-/* 폴더 썸네일 애드온에서 이미 이 파일을 썸네일로 지정했음을 표시 —
-   이름을 굵게 강조하고 오른쪽 끝에 체크 배지를 붙인다. */
-.move-row.is-picked .move-row-name {
-  color: var(--text);
-  font-weight: 700;
-}
-.move-row-picked {
-  flex: none;
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  color: var(--text);
 }
 .move-note {
   padding: 14px 0;

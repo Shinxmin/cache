@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { listFavorites, listFiles, searchFiles, thumbnailUrls } from "../lib/drive";
+import { folderSizes, listFavorites, listFiles, searchFiles, thumbnailUrls } from "../lib/drive";
+import { formatBytes } from "../lib/format";
 import { isOptimizableFile } from "../lib/optimize";
 import { isSearchActive, parseSearchQuery } from "../lib/search";
 import { CheckIcon, FileIcon, FolderIcon } from "../components/icons";
@@ -21,16 +22,23 @@ function NameWithStar({ name, favorite, className }) {
   );
 }
 
-// 태그가 붙은 항목은 이름 밑(갤러리형)·오른쪽(리스트형)에 "#태그명"을
-// 작은 글씨로 항상 표기한다. 용량은 타일에 표기하지 않는다 — 정보(i)
-// 아이콘을 누르면 뜨는 정보 패널에서 선택 항목 전체의 용량·개수를 본다.
-function tagLabel(item) {
-  return item.tag ? `#${item.tag}` : null;
+// 정보(i) 아이콘으로 그 항목의 용량 표기를 켰을 때만(item.info_revealed가
+// true일 때만) 밑에 보여줄 용량 문구. 블러와 마찬가지로 서버에 저장돼 있어
+// 선택을 풀거나 새로고침·재접속해도 계속 표기된 채로 남는다.
+// 폴더는 재귀 합산 값이 folderSizeMap에 도착해야 나오고(그 전엔 로딩 중이라
+// 아무것도 안 보여준다), 파일은 이미 목록에 들어 있는 size를 바로 쓴다.
+// 태그가 붙어 있으면 그 옆에 "#태그명"처럼 덧붙인다.
+function sizeLabel(item, revealed, folderSizeMap) {
+  if (!revealed) return null;
+  const size = item.is_folder ? folderSizeMap[item.id] : item.size;
+  if (item.is_folder && size === undefined) return null;
+  const text = formatBytes(size);
+  return item.tag ? `${text} #${item.tag}` : text;
 }
 
 // 갤러리 타일 하나. 꾹 누르면 선택 모드로 들어가고(App.jsx가 스튜디오 툴킷을
 // 띄운다), 선택된 동안은 눌린 것처럼 살짝 눌려 보이며 체크 배지가 뜬다.
-function GalleryTile({ item, thumb, selected, tagText, onTap, onLongPress }) {
+function GalleryTile({ item, thumb, selected, size, onTap, onLongPress }) {
   const press = useLongPress(onTap, onLongPress);
   const optimizable = !item.is_folder && isOptimizableFile(item.name, item.mime);
   return (
@@ -53,7 +61,7 @@ function GalleryTile({ item, thumb, selected, tagText, onTap, onLongPress }) {
           />
           <span className="drive-tile-overlay-name">
             <NameWithStar className="drive-tile-overlay-title" name={item.name} favorite={item.favorite} />
-            {tagText && <span className="drive-tile-overlay-size">{tagText}</span>}
+            {size && <span className="drive-tile-overlay-size">{size}</span>}
           </span>
           {selected && (
             <span className="drive-select-badge">
@@ -79,7 +87,7 @@ function GalleryTile({ item, thumb, selected, tagText, onTap, onLongPress }) {
           )}
           <span className="drive-tile-caption">
             <NameWithStar className="drive-tile-name" name={item.name} favorite={item.favorite} />
-            {tagText && <span className="drive-tile-size">{tagText}</span>}
+            {size && <span className="drive-tile-size">{size}</span>}
           </span>
         </span>
       )}
@@ -87,7 +95,7 @@ function GalleryTile({ item, thumb, selected, tagText, onTap, onLongPress }) {
   );
 }
 
-function ListRow({ item, selected, tagText, onTap, onLongPress }) {
+function ListRow({ item, selected, size, onTap, onLongPress }) {
   const press = useLongPress(onTap, onLongPress);
   const optimizable = !item.is_folder && isOptimizableFile(item.name, item.mime);
   return (
@@ -100,7 +108,7 @@ function ListRow({ item, selected, tagText, onTap, onLongPress }) {
       <span className="drive-row-icon">{item.is_folder ? <FolderIcon size={20} /> : <FileIcon size={20} />}</span>
       <span className="drive-row-text">
         <NameWithStar className="drive-row-name" name={item.name} favorite={item.favorite} />
-        {tagText && <span className="drive-row-size">{tagText}</span>}
+        {size && <span className="drive-row-size">{size}</span>}
       </span>
       {selected && (
         <span className="drive-row-check">
@@ -138,6 +146,7 @@ export default function FilesPage({
 }) {
   const [items, setItems] = useState([]);
   const [thumbs, setThumbs] = useState({});
+  const [folderSizeMap, setFolderSizeMap] = useState({});
   const [state, setState] = useState("loading"); // loading | ready | error
   const thumbsRef = useRef(thumbs);
   thumbsRef.current = thumbs;
@@ -187,9 +196,8 @@ export default function FilesPage({
         // 썸네일 URL은 만료되는 presigned URL이라 목록을 받은 뒤 한 번에
         // 발급받는다 — 다만 이미 받아 둔 키는 다시 요청하지 않는다. 같은
         // 이미지인데도 매번 새 서명 URL로 바뀌면 <img src>가 달라져 브라우저가
-        // 다시 그리면서 깜빡이기 때문이다. 폴더도 폴더 썸네일(정보 패널)로 지정한
-        // folder_thumb_key가 있으면 파일과 똑같이 이 배치에 끼워 함께 받는다.
-        const keys = rows.filter((r) => r.thumb_key || r.folder_thumb_key).map((r) => r.thumb_key || r.folder_thumb_key);
+        // 다시 그리면서 깜빡이기 때문이다.
+        const keys = rows.filter((r) => r.thumb_key).map((r) => r.thumb_key);
         const newKeys = keys.filter((k) => !thumbsRef.current[k]);
         if (newKeys.length) {
           const urls = await thumbnailUrls(session.token, newKeys);
@@ -208,6 +216,20 @@ export default function FilesPage({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.token, parentId, favorites, refreshKey, searchQuery]);
+
+  // 용량 표기가 켜진 폴더들의 용량을 받아 온다. 폴더는 자체 용량이 없어
+  // 하위 파일을 재귀 합산해야 하므로 서버에 따로 물어본다.
+  useEffect(() => {
+    const folderIds = items.filter((it) => it.is_folder && it.info_revealed).map((it) => it.id);
+    if (!folderIds.length) return;
+    let cancelled = false;
+    folderSizes(session.token, folderIds).then((sizes) => {
+      if (!cancelled) setFolderSizeMap((prev) => ({ ...prev, ...sizes }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session.token, items]);
 
   const openOrToggle = (item) =>
     selectionMode ? onToggleSelect(item) : item.is_folder ? onOpenFolder(item) : onOpenFile(item);
@@ -230,7 +252,7 @@ export default function FilesPage({
             <ListRow
               item={item}
               selected={selectionMode && selectedIds.has(item.id)}
-              tagText={tagLabel(item)}
+              size={sizeLabel(item, item.info_revealed, folderSizeMap)}
               onTap={() => openOrToggle(item)}
               onLongPress={() => onLongPressItem(item)}
             />
@@ -246,9 +268,9 @@ export default function FilesPage({
         <li key={item.id}>
           <GalleryTile
             item={item}
-            thumb={item.thumb_key ? thumbs[item.thumb_key] : item.folder_thumb_key ? thumbs[item.folder_thumb_key] : null}
+            thumb={item.thumb_key ? thumbs[item.thumb_key] : null}
             selected={selectionMode && selectedIds.has(item.id)}
-            tagText={tagLabel(item)}
+            size={sizeLabel(item, item.info_revealed, folderSizeMap)}
             onTap={() => openOrToggle(item)}
             onLongPress={() => onLongPressItem(item)}
           />
