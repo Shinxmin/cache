@@ -3,6 +3,7 @@ import CheckboxVisual from "../components/Checkbox";
 import ThemeSwitch from "../components/ThemeSwitch";
 import ToolkitArranger from "../components/ToolkitArranger";
 import { BackIcon, ChevronRightIcon } from "../components/icons";
+import { APP_VERSION } from "../lib/version";
 
 // 설정 화면. 예전엔 하단 내비바의 한 탭이었지만, 하단 내비바 자체가
 // 없어진 뒤로는 파일 탭 헤더의 톱니바퀴 버튼으로 여는 화면이 됐다
@@ -94,6 +95,7 @@ export default function SettingsPage({
           <button className="settings-logout" type="button" onClick={onLogout}>
             로그아웃
           </button>
+          <p className="settings-version">v{APP_VERSION}</p>
         </div>
       </div>
     </>
