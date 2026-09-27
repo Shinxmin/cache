@@ -5,19 +5,17 @@ import TrashMoreButton from "../components/TrashMoreButton";
 import ConfirmModal from "../components/ConfirmModal";
 import Spinner from "../components/Spinner";
 
-// 확인 모달에 띄울 제목·문구. 전체/개별, 삭제/복원 네 가지 액션이지만
-// 모달 자체는 삭제 둘, 복원 둘을 각각 하나로 통일한다 — 어떤 파일인지,
-// 몇 개인지는 따지지 않고 문구가 항상 같다.
+// 확인 모달에 띄울 제목·문구. 개별 삭제·복원 두 가지 액션만 모달을 거친다 —
+// 어떤 파일인지, 몇 개인지는 따지지 않고 문구가 항상 같다.
 function describeAction(action) {
-  const isDelete = action.kind === "deleteAll" || action.kind === "delete";
-  return isDelete ? { title: "삭제", message: "데이터를 삭제하시겠습니까?" } : { title: "복구", message: "데이터를 복구하시겠습니까?" };
+  return action.kind === "delete" ? { title: "삭제", message: "데이터를 삭제하시겠습니까?" } : { title: "복구", message: "데이터를 복구하시겠습니까?" };
 }
 
 // 설정 → 휴지통에서 열리는 화면. 앱의 다른 화면과 같은 제목 레이아웃·리스트
 // 스타일을 그대로 쓴다. 제목 우측의 삼점바(홈·파일 탭과 같은 위치·모양)는
 // 휴지통 전체를 대상으로 한 전체 삭제·전체 복원을 맡고, 개별 항목의 삭제·복원은
-// 각 행 오른쪽의 아이콘 두 개가 그대로 맡는다. 네 액션 모두 바로 실행되지
-// 않고 ConfirmModal로 한 번 확인을 거친다.
+// 각 행 오른쪽의 아이콘 두 개가 그대로 맡는다. 전체 삭제·전체 복원은 확인 없이
+// 바로 실행되고, 개별 삭제·복원만 ConfirmModal로 한 번 확인을 거친다.
 export default function TrashPage({ session, onBack }) {
   const [items, setItems] = useState([]);
   const [state, setState] = useState("loading"); // loading | ready | error
@@ -62,7 +60,7 @@ export default function TrashPage({ session, onBack }) {
 
   const confirmPendingAction = async () => {
     if (!pendingAction) return;
-    if (pendingAction.kind === "deleteAll" || pendingAction.kind === "delete") {
+    if (pendingAction.kind === "delete") {
       await removeForever(pendingAction.ids);
     } else {
       await restore(pendingAction.ids);
@@ -81,8 +79,8 @@ export default function TrashPage({ session, onBack }) {
           <div className="page-header-actions">
             <TrashMoreButton
               disabled={items.length === 0}
-              onDeleteAll={() => setPendingAction({ kind: "deleteAll", ids: items.map((it) => it.id) })}
-              onRestoreAll={() => setPendingAction({ kind: "restoreAll", ids: items.map((it) => it.id) })}
+              onDeleteAll={() => removeForever(items.map((it) => it.id))}
+              onRestoreAll={() => restore(items.map((it) => it.id))}
             />
           </div>
         </div>
