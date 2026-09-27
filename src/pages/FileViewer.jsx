@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { fetchFileBlob, fileUrl } from "../lib/drive";
-import { extractPalette } from "../lib/palette";
+import { fileUrl } from "../lib/drive";
 import { isImage, isVideo } from "../lib/thumbnail";
 import { CloseIcon } from "../components/icons";
 import Spinner from "../components/Spinner";
@@ -15,18 +14,14 @@ const SWIPE_THRESHOLD = 50;
 // 목록, index는 그 안에서 지금 보고 있는 위치). 영상·움짤(gif/webp)은 열리면
 // 바로 재생되고 끝나면 처음부터 반복한다.
 //
-// paletteMode(팔레트 추출 애드온 v1.1)가 켜져 있으면 별도 모달 없이 이 화면
-// 위, 닫기(X) 버튼 쪽 좌측에 상위 5색을 바로 얹어 보여준다.
-//
 // 영상이면 저장된 하이라이트 클립이 있는지 VideoClipPanel이 스스로 서버에서
 // 받아보고, 있으면 닫기(X) 버튼과 같은 줄 아래에 목록을 얹어 보여준다(제목을
 // 누르면 그 구간으로 이동해 재생). 새 하이라이트를 만드는 건 스튜디오
 // 패널이 맡으므로 여기서는 보기·이름 고치기·지우기만 할 수 있다.
-export default function FileViewer({ session, items, initialIndex, onClose, paletteMode = false }) {
+export default function FileViewer({ session, items, initialIndex, onClose }) {
   const [index, setIndex] = useState(initialIndex);
   const [url, setUrl] = useState(null);
   const [failed, setFailed] = useState(false);
-  const [paletteColors, setPaletteColors] = useState(null);
   // 클립 패널이 <video>를 직접 제어해야 해서(구간 이동·재생·정지) ref 대신
   // state로 들고 있는다 — 영상은 presigned URL을 받은 뒤에야 마운트되므로,
   // 패널 쪽 effect가 그 시점에 맞춰 다시 돌아야 한다.
@@ -60,26 +55,6 @@ export default function FileViewer({ session, items, initialIndex, onClose, pale
       cancelled = true;
     };
   }, [session.token, item]);
-
-  // 팔레트 추출은 표시용 presigned URL이 아니라 캔버스로 픽셀을 읽어야 하므로
-  // (CORS로 오염되지 않게) 별도로 blob을 받아 계산한다. 뷰어 자체는 그대로
-  // 위 url로 <img>를 그린다.
-  useEffect(() => {
-    if (!paletteMode || !item) return;
-    let cancelled = false;
-    setPaletteColors(null);
-    fetchFileBlob(session.token, item.r2_key)
-      .then((blob) => extractPalette(blob, 5))
-      .then((colors) => {
-        if (!cancelled) setPaletteColors(colors);
-      })
-      .catch(() => {
-        if (!cancelled) setPaletteColors([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [paletteMode, session.token, item]);
 
   if (!item) return null;
 
@@ -118,16 +93,6 @@ export default function FileViewer({ session, items, initialIndex, onClose, pale
       </button>
       {isVideo(item.mime) && (
         <VideoClipPanel session={session} item={item} video={videoEl} onHasContentChange={setHasClipPanel} />
-      )}
-      {paletteMode && paletteColors && paletteColors.length > 0 && (
-        <ul className="viewer-palette" onClick={(e) => e.stopPropagation()}>
-          {paletteColors.map((hex) => (
-            <li key={hex} className="palette-row">
-              <span className="palette-swatch" style={{ background: hex }} aria-hidden="true" />
-              <span className="palette-hex">{hex}</span>
-            </li>
-          ))}
-        </ul>
       )}
       {/* .viewer-content 자체는 화면 전체를 채우는 정렬용 박스라, 클릭 전파 막기는
           실제 보이는 미디어 요소에만 걸어야 한다 — 그래야 미디어 바깥(패딩 여백)을

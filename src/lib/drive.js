@@ -42,11 +42,11 @@ export async function searchFiles(token, { name, tag } = {}) {
   return sortFileList(rows);
 }
 
-// 스튜디오 툴킷의 정보 아이콘으로 켠 용량 표시용. 폴더는 자체 용량이 없어서
-// 하위 파일들을 재귀적으로 합산해 서버에서 계산해 온다. { [폴더id]: bytes } 형태.
-export async function folderSizes(token, ids) {
-  if (!ids.length) return {};
-  return rpcResult(await supabase.rpc("folder_sizes", { p_token: token, p_ids: ids }));
+// 스튜디오 툴킷 "정보" 패널. 선택한 항목들의 총 용량(폴더는 하위 파일을
+// 재귀 합산)과, 선택한 폴더의 하위 폴더·파일 개수 + 직접 선택한 파일 개수를
+// 서버에서 한 번에 계산해 온다. { size, folders, files } 형태.
+export async function selectionInfo(token, ids) {
+  return rpcResult(await supabase.rpc("selection_info", { p_token: token, p_ids: ids }));
 }
 
 // 스튜디오 툴킷의 편집(연필) 아이콘으로 여는 이름 바꾸기. renames는
@@ -74,12 +74,6 @@ export async function setBlur(token, ids, blurred) {
   return rpcResult(await supabase.rpc("set_blur", { p_token: token, p_ids: ids, p_blurred: blurred }));
 }
 
-// 스튜디오 툴킷의 정보 아이콘으로 켠 용량 표시 여부. 블러와 마찬가지로
-// 서버에 저장돼 있어 새로고침·재접속해도 유지된다.
-export async function setInfoRevealed(token, ids, revealed) {
-  return rpcResult(await supabase.rpc("set_info_revealed", { p_token: token, p_ids: ids, p_revealed: revealed }));
-}
-
 // ── 즐겨찾기 ───────────────────────────────────────────────────────────
 // 스튜디오 툴킷의 별 아이콘. 파일·폴더 모두 대상이며 홈 → 즐겨찾기 화면에
 // 폴더 우선으로 모아 보여준다.
@@ -92,7 +86,7 @@ export async function listFavorites(token) {
   return sortFileList(rows);
 }
 
-// ── 폴더 썸네일 애드온 ───────────────────────────────────────────────────
+// ── 폴더 썸네일(정보 패널 → 썸네일) ──────────────────────────────────────
 // 소스 파일(이미지·움짤·동영상)의 thumb_key를 대상 폴더에 그대로 복사해
 // 그 폴더의 대표 썸네일로 쓴다.
 export async function setFolderThumbnail(token, folderId, sourceId) {
@@ -191,7 +185,7 @@ export async function thumbnailUrls(token, keys) {
   return urls ?? {};
 }
 
-// 캔버스에서 읽어야 하는 경우(팔레트 추출 등)에 쓴다 — presigned URL을 <img>에
+// 파일 본문을 blob으로 직접 받아야 하는 경우(스플릿 프리셋 복제 등)에 쓴다 — presigned URL을 <img>에
 // 직접 넣으면 CORS 때문에 캔버스가 오염되므로, blob으로 받아 object URL로 연다.
 export async function fetchFileBlob(token, key) {
   const { url } = await presign(token, { action: "get", key });

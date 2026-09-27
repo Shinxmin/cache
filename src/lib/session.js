@@ -45,8 +45,8 @@ export async function verifySession(token) {
   };
 }
 
-// 스튜디오 툴킷 도구 순서(애드온 포함). 추가·삭제·정렬 모두 이걸로 저장되며
-// 서버가 toolkit_events에 행동을 기록한다. action: add_addon | remove_addon | reorder
+// 스튜디오 툴킷 도구 순서. 설정의 사용자 정렬·초기화가 이걸로 저장되며
+// 서버가 toolkit_events에 행동을 기록한다. action: reorder | reset
 export async function setToolkitLayout(token, layout, action, addon = null) {
   const { error } = await supabase.rpc("set_toolkit_layout", { p_token: token, p_layout: layout, p_action: action, p_addon: addon });
   if (error) throw new Error(error.message);

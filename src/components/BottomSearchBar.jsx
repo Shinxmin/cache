@@ -215,6 +215,11 @@ export default function BottomSearchBar({
   onMoveBack,
   onConfirmMove,
   onCancelMove,
+  infoOpen,
+  infoStats,
+  infoHasFolder,
+  onInfoThumbnail,
+  onCancelInfo,
   thumbnailOpen,
   thumbnailTargetName,
   thumbnailSourceId,
@@ -250,6 +255,7 @@ export default function BottomSearchBar({
     studioOpen ||
     multiStudioOpen ||
     moveOpen ||
+    infoOpen ||
     thumbnailOpen ||
     multiThumbnailOpen;
 
@@ -288,7 +294,9 @@ export default function BottomSearchBar({
           ? "multiStudio"
           : moveOpen
             ? "move"
-            : thumbnailOpen
+            : infoOpen
+              ? "info"
+              : thumbnailOpen
               ? "thumbnail"
               : multiThumbnailOpen
                 ? "multiThumbnail"
@@ -299,10 +307,11 @@ export default function BottomSearchBar({
     else if (studioOpen) setDisplayMode("studio");
     else if (multiStudioOpen) setDisplayMode("multiStudio");
     else if (moveOpen) setDisplayMode("move");
+    else if (infoOpen) setDisplayMode("info");
     else if (thumbnailOpen) setDisplayMode("thumbnail");
     else if (multiThumbnailOpen) setDisplayMode("multiThumbnail");
     else if (confirmOpen) setDisplayMode("confirm");
-  }, [newFolderOpen, studioOpen, multiStudioOpen, moveOpen, thumbnailOpen, multiThumbnailOpen, confirmOpen]);
+  }, [newFolderOpen, studioOpen, multiStudioOpen, moveOpen, infoOpen, thumbnailOpen, multiThumbnailOpen, confirmOpen]);
 
   const confirm = async () => {
     if (busy) return;
@@ -415,7 +424,7 @@ export default function BottomSearchBar({
   // 막지만 목록에서 미리 눌리지 않게 해 둔다.
   const moveExcluded = moveExcludedIds ?? new Set();
 
-  // 폴더 썸네일 애드온도 이동과 같은 폴더 탐색 UI를 재사용하지만, 목록에서
+  // 폴더 썸네일도 이동과 같은 폴더 탐색 UI를 재사용하지만, 목록에서
   // 고르는 게 목적지 폴더가 아니라 이미지·움짤·동영상 "파일"이다. thumb_key가
   // 있는 파일만(업로드 때 캔버스로 만든 썸네일이 있어야 그대로 복사해 쓸 수
   // 있다) 클릭해 지정할 수 있고, 폴더 행은 그 안으로 들어가는 탐색용이다.
@@ -476,6 +485,8 @@ export default function BottomSearchBar({
         ? onCancelMultiStudio
         : moveOpen
           ? onCancelMove
+          : infoOpen
+            ? onCancelInfo
           : thumbnailOpen
             ? onCancelThumbnail
             : multiThumbnailOpen
@@ -483,7 +494,7 @@ export default function BottomSearchBar({
               : onCancelDelete;
 
   // 스크림이 화면 전체를 덮으면 그 밑에 있는 스튜디오 툴킷 바(전체 선택
-  // 체크박스 + 기본 도구 1열 + 애드온 2열)도 가려져서 아이콘을 눌러 패널을
+  // 체크박스 + 도구 1열 + 스플릿 비교 2열)도 가려져서 아이콘을 눌러 패널을
   // 전환하는 것도 안 됐다. 그래서 스크림을 통짜 사각형 하나 대신 툴킷 바
   // 전체의 실제 위치만큼 구멍을 낸 네 조각(위·아래·왼쪽·오른쪽)으로 나눠
   // 그린다 — 그 구멍 안에서는 스크림이 아예 존재하지 않으므로 클릭이 진짜
@@ -628,7 +639,7 @@ export default function BottomSearchBar({
       <div className="bottom-search-wrap">
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
           <div
-            className={`search-bar-confirm-panel${displayMode === "studio" || displayMode === "multiStudio" ? " mode-studio" : ""}${displayMode === "move" || displayMode === "thumbnail" || displayMode === "multiThumbnail" ? " mode-move" : ""}${extraActions.length > 0 ? " has-extras" : ""}${panelOpen ? " is-open" : ""}`}
+            className={`search-bar-confirm-panel${displayMode === "studio" || displayMode === "multiStudio" ? " mode-studio" : ""}${displayMode === "move" || displayMode === "thumbnail" || displayMode === "multiThumbnail" ? " mode-move" : ""}${displayMode === "info" ? " mode-info" : ""}${extraActions.length > 0 ? " has-extras" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
           >
             {displayMode === "newFolder" ? (
@@ -904,6 +915,36 @@ export default function BottomSearchBar({
                   )}
                 </ul>
               </>
+            ) : displayMode === "info" ? (
+              // 정보 패널: 선택 항목 전체의 용량과 하위 폴더·파일 개수
+              // (폴더가 하나도 없으면 폴더 개수는 빼고 파일 개수만). 밑의
+              // "썸네일"을 누르면 패널이 폴더 썸네일 선택 패널로 넘어간다 —
+              // 선택에 폴더가 없으면 비활성화된다.
+              <>
+                <p className="search-bar-confirm-title search-bar-confirm-title--studio">정보</p>
+                <p className="search-bar-info-stats">
+                  {infoStats === "error" ? (
+                    "정보를 불러오지 못했습니다"
+                  ) : infoStats ? (
+                    <>
+                      <span>{formatBytes(infoStats.size, { fixedDecimal: true })}</span>
+                      <span>
+                        {infoStats.folders > 0 ? `폴더 ${infoStats.folders}개 • ` : ""}파일 {infoStats.files}개
+                      </span>
+                    </>
+                  ) : (
+                    <Spinner />
+                  )}
+                </p>
+                <button
+                  type="button"
+                  className="search-bar-info-link"
+                  disabled={!infoHasFolder}
+                  onClick={onInfoThumbnail}
+                >
+                  썸네일
+                </button>
+              </>
             ) : (
               <>
                 <p className="search-bar-confirm-title">선택한 파일을 삭제하시겠습니까?</p>
@@ -1013,6 +1054,8 @@ export default function BottomSearchBar({
                         ? submitMultiStudio
                         : moveOpen
                           ? submitMove
+                          : infoOpen
+                            ? onCancelInfo
                           : thumbnailOpen
                             ? submitThumbnail
                             : multiThumbnailOpen
@@ -1028,6 +1071,8 @@ export default function BottomSearchBar({
                         ? !canSubmitMultiStudio
                         : moveOpen
                           ? !canSubmitMove
+                          : infoOpen
+                            ? false
                           : thumbnailOpen
                             ? !canSubmitThumbnail
                             : multiThumbnailOpen

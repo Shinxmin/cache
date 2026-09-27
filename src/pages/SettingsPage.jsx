@@ -9,8 +9,8 @@ import { BackIcon, ChevronRightIcon } from "../components/icons";
 // (App.jsx). 그래서 휴지통·태그 화면과 같은 정적 헤더(뒤로가기+제목)를
 // 직접 그린다. "스튜디오 툴킷 사용자 정렬"은 누르면 그 자리에서 펼쳐져
 // 편집용 툴바(ToolkitArranger)가 나타난다 — 다른 화면으로 넘어가지 않는다.
-// 즐겨찾기·애드온 스토어는 원래 홈 탭에 있었으나 홈 탭이 사라지면서 태그
-// 바로 밑으로 옮겨왔다.
+// 즐겨찾기는 원래 홈 탭에 있었으나 홈 탭이 사라지면서 태그 바로 밑으로
+// 옮겨왔다.
 export default function SettingsPage({
   themeMode,
   onChangeThemeMode,
@@ -23,7 +23,6 @@ export default function SettingsPage({
   onOpenTrash,
   onOpenTags,
   onOpenFavorites,
-  onOpenAddonStore,
   onBack,
   onLogout,
 }) {
@@ -90,10 +89,6 @@ export default function SettingsPage({
           </button>
           <button className="settings-row settings-row--link" type="button" onClick={onOpenFavorites}>
             <span className="settings-row-label">즐겨찾기</span>
-            <ChevronRightIcon size={18} />
-          </button>
-          <button className="settings-row settings-row--link" type="button" onClick={onOpenAddonStore}>
-            <span className="settings-row-label">애드온 스토어</span>
             <ChevronRightIcon size={18} />
           </button>
           <button className="settings-logout" type="button" onClick={onLogout}>
