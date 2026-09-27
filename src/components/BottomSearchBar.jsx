@@ -430,21 +430,87 @@ export default function BottomSearchBar({
     return () => window.removeEventListener("resize", measure);
   }, [panelOpen]);
 
-  // 패널이 열려 있어도 파일·폴더 타일을 탭하면(스크림에 가려져 있어도)
-  // 취소 대신 그 타일의 선택을 켜거나 끈다 — 패널을 계속 연 채로 대상을
-  // 더하거나 뺄 수 있게 하기 위해서다. elementsFromPoint로 클릭 지점의
-  // 실제 요소 스택을 살펴 타일(.drive-tile-btn/.drive-row)이 있으면 그
-  // 버튼을 대신 눌러준다(App.jsx의 선택 상태가 바뀌면 열려 있던 패널이
-  // 알아서 새 선택에 맞게 다시 계산된다). 타일이 아닌 빈 자리를 눌렀을
-  // 때만 원래대로 취소로 처리된다.
+  // 패널이 열려 있어도 파일·폴더 타일을 "꾹 눌러"(또는 탭해) 선택을 켜거나
+  // 끌 수 있어야 한다 — 패널을 계속 연 채로 대상을 더하거나 뺄 수 있게
+  // 하기 위해서다. 스크림이 화면을 덮고 있어 진짜 포인터다운이 타일
+  // 자신에게는 닿지 않으므로, 스크림에서 받은 실제 포인터다운·이동·업
+  // 좌표를 그대로 타일에 합성 이벤트로 전달한다 — 그래야 타일의
+  // useLongPress 훅이 원래와 똑같이 꾹 누른 시간을 재서 탭/꾹 누르기를
+  // 구분할 수 있다(클릭만 흉내 내면 "짧게 탭"밖에 재현할 수 없어 꾹 누르기
+  // 자체는 절대 발동하지 않는다).
+  //
+  // 포인터다운 시점에 찾은 그 타일 참조를 fowardTileRef에 그대로 들고
+  // 있다가 이동·업도 같은 타일로 보낸다 — 도중에 좌표로 다시 찾지 않는다.
+  // 꾹 눌러 선택이 새로 켜지면(예: 선택이 0개→ 1개) 스튜디오 툴킷 바가
+  // 그 자리에 막 나타나 밑에 있던 그리드를 아래로 밀어낼 수 있는데, 그러면
+  // 뒤따라오는 네이티브 click이 포인터다운 때와 같은 화면 좌표로 다시
+  // elementsFromPoint를 하면 이미 타일이 그 자리를 벗어나 있어 아무것도
+  // 못 찾고 "빈 자리를 눌렀다"고 오판해 패널을 취소해 버린다. 그래서
+  // 포인터다운에서 이미 타일을 찾아 처리했다면, 뒤이은 click은 좌표를 다시
+  // 확인하지 않고 그냥 건너뛴다(handledByPointerRef).
+  const forwardTileRef = useRef(null);
+  const handledByPointerRef = useRef(false);
+  const dispatchToTile = (tile, type, e) => {
+    tile.dispatchEvent(
+      new PointerEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        pointerId: e.pointerId,
+        pointerType: e.pointerType,
+        clientX: e.clientX,
+        clientY: e.clientY,
+        button: e.button,
+      })
+    );
+  };
+  const stopForwardingToTile = () => {
+    window.removeEventListener("pointermove", onForwardTileMove);
+    window.removeEventListener("pointerup", onForwardTileUp);
+    window.removeEventListener("pointercancel", onForwardTileUp);
+    forwardTileRef.current = null;
+  };
+  function onForwardTileMove(e) {
+    const tile = forwardTileRef.current;
+    if (!tile) return;
+    dispatchToTile(tile, "pointermove", e);
+  }
+  function onForwardTileUp(e) {
+    const tile = forwardTileRef.current;
+    stopForwardingToTile();
+    if (!tile) return;
+    dispatchToTile(tile, e.type === "pointercancel" ? "pointercancel" : "pointerup", e);
+  }
+  const handleScrimPointerDown = (e) => {
+    const stack = document.elementsFromPoint(e.clientX, e.clientY);
+    const tile = stack.find((el) => el.classList?.contains("drive-tile-btn") || el.classList?.contains("drive-row"));
+    if (!tile) return;
+    // 최적화 섹션이 열려 있는 동안은 폴더·미지원 파일 타일을 눌러도 선택에
+    // 더해지지 않는다 — 그 섹션 안에서는 선택이 항상 전부 압축 가능한
+    // 상태를 유지해야 하므로, 눌러도 그냥 무시한다(취소로도 처리하지 않는다).
+    if (studioActive && studioSection === "quality" && tile.dataset.optimizable === "false") return;
+    forwardTileRef.current = tile;
+    handledByPointerRef.current = true;
+    dispatchToTile(tile, "pointerdown", e);
+    window.addEventListener("pointermove", onForwardTileMove);
+    window.addEventListener("pointerup", onForwardTileUp);
+    window.addEventListener("pointercancel", onForwardTileUp);
+  };
+  // 패널이 닫히는 등으로 컴포넌트가 도중에 사라져도 걸어 둔 window 리스너가
+  // 남지 않게 정리한다.
+  useEffect(() => stopForwardingToTile, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 위 포인터다운에서 이미 타일을 찾아 눌러 처리했다면, 뒤이은 click은
+  // 다시 좌표를 확인하지 않고 넘어간다(handledByPointerRef 설명 참고).
+  // 그 외(포인터 이벤트를 못 쓰는 환경 등)에는 예전처럼 클릭 좌표로 타일을
+  // 찾아 탭을 흉내 내고, 타일도 아니면 빈 자리를 눌렀다고 보고 취소한다.
   const handleScrimClick = (e) => {
+    if (handledByPointerRef.current) {
+      handledByPointerRef.current = false;
+      return;
+    }
     const stack = document.elementsFromPoint(e.clientX, e.clientY);
     const tile = stack.find((el) => el.classList?.contains("drive-tile-btn") || el.classList?.contains("drive-row"));
     if (tile) {
-      // 최적화 섹션이 열려 있는 동안은 폴더·미지원 파일 타일을 눌러도
-      // 선택에 더해지지 않는다 — 그 섹션 안에서는 선택이 항상 전부 압축
-      // 가능한 상태를 유지해야 하므로, 클릭 자체를 막는다(취소로도 처리
-      // 하지 않고 그냥 무시한다).
       if (studioActive && studioSection === "quality" && tile.dataset.optimizable === "false") {
         return;
       }
@@ -524,28 +590,32 @@ export default function BottomSearchBar({
                 className="search-bar-scrim"
                 style={{ top: 0, left: 0, right: 0, bottom: "auto", height: scrimHole.top }}
                 onClick={handleScrimClick}
+                onPointerDown={handleScrimPointerDown}
               />
             )}
             <div
               className="search-bar-scrim"
               style={{ top: scrimHole.bottom, left: 0, right: 0, bottom: 0, height: "auto" }}
               onClick={handleScrimClick}
+              onPointerDown={handleScrimPointerDown}
             />
             {scrimHole.left > 0 && (
               <div
                 className="search-bar-scrim"
                 style={{ top: scrimHole.top, left: 0, right: "auto", bottom: "auto", width: scrimHole.left, height: scrimHole.bottom - scrimHole.top }}
                 onClick={handleScrimClick}
+                onPointerDown={handleScrimPointerDown}
               />
             )}
             <div
               className="search-bar-scrim"
               style={{ top: scrimHole.top, left: scrimHole.right, right: 0, bottom: "auto", height: scrimHole.bottom - scrimHole.top }}
               onClick={handleScrimClick}
+              onPointerDown={handleScrimPointerDown}
             />
           </>
         ) : (
-          <div className="search-bar-scrim" onClick={handleScrimClick} />
+          <div className="search-bar-scrim" onClick={handleScrimClick} onPointerDown={handleScrimPointerDown} />
         ))}
       <div className="bottom-search-wrap">
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
