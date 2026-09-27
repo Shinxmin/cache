@@ -576,20 +576,32 @@ main.page {
    버튼 줄에 맞추려고 위쪽을 바짝 줄였던 여백도 다시 넉넉하게 되돌려
    제목·본문이 예전보다 아래쪽에 자리잡는다. 새 폴더 패널은 제목 하나뿐이라
    더 짧다. ── */
+/* 모든 패널(삭제 확인·새 폴더·스튜디오·이동) 공통: 패널이 커지고
+   줄어드는 것(max-height·min-height·padding)만 애니메이션한다 — 제목·
+   본문·버튼 같은 안의 내용은 따로 애니메이션하지 않고 그 자리에서 바로
+   나타나고 사라진다(그래서 opacity는 트랜지션 목록에 없고 항상 1로
+   고정한다 — 닫힌 상태는 max-height:0 + overflow:hidden만으로 이미
+   완전히 안 보이므로 opacity가 고정이어도 문제없다). 이 패널을 담은
+   .bottom-search-wrap은 화면 아래쪽에 bottom으로 고정돼 있어(검색바가
+   맨 아래), max-height가 자라날 때 패널의 위쪽 가장자리가 위로 밀려
+   올라가는 모양이 된다 — 그래서 열릴 때는 아래에서 위로 자라나듯
+   보이고, 닫힐 때는 그 반대로 위쪽 가장자리가 아래로 내려가며 접히듯
+   사라진다. 스프링(bounce)의 튕기는 느낌 없이 var(--ease)로, 속도도
+   "천천히" 느껴지도록 늘렸다. */
 .search-bar-confirm-panel {
   position: relative;
   z-index: 1;
   max-height: 0;
-  opacity: 0;
+  opacity: 1;
   overflow: hidden;
   pointer-events: none;
   display: flex;
   flex-direction: column;
   /* 제목을 맨 위에, 본문(있으면)을 그 바로 밑에 둔다 — 세로 가운데 정렬 대신
-     위에서부터 순서대로 쌓는다(스튜디오·이동 패널과 같은 방식). */
+     위에서부터 순서대로 쌓는다. */
   justify-content: flex-start;
   padding: 0 16px;
-  transition: max-height 0.35s var(--spring), min-height 0.35s var(--spring), opacity 0.25s var(--ease), padding 0.35s var(--spring);
+  transition: max-height 0.5s var(--ease), min-height 0.5s var(--ease), padding 0.5s var(--ease);
 }
 .search-bar-confirm-panel.is-open {
   /* min-height를 max-height와 같게 둬서, 본문 줄 수가 다른 패널끼리도
@@ -597,7 +609,6 @@ main.page {
      맞춰진다. */
   max-height: 90px;
   min-height: 90px;
-  opacity: 1;
   pointer-events: auto;
   /* 위쪽 20px는 이 패딩을 그대로 물려 쓰는 스튜디오·이동 패널까지 포함해
      모든 패널의 제목 위 여백을 20px로 통일한다. */
@@ -609,30 +620,14 @@ main.page {
 .search-bar-confirm-panel.has-extras.is-open {
   padding-bottom: 0;
 }
-/* 삭제 확인·새 폴더 패널은 패널이 커지고 줄어드는 것(max-height·min-height·
-   padding)만 애니메이션한다 — 제목·본문·버튼 같은 안의 내용은 따로
-   애니메이션하지 않고 그 자리에서 바로 나타나고 사라진다. 그래서 기본
-   트랜지션 목록에 있던 opacity를 빼고, 남은 셋도 스프링(bounce)의 튕기는
-   느낌 없이 부드럽게 var(--ease)로 바꾼다. opacity는 항상 1로 고정해도
-   문제없다 — 닫힌 상태는 max-height:0 + overflow:hidden만으로 이미
-   완전히 안 보이기 때문이다(속이 텅 빈 채로 opacity만 1이어도 보일 게
-   없다). */
-.search-bar-confirm-panel.mode-confirm {
-  transition: max-height 0.35s var(--ease), min-height 0.35s var(--ease), padding 0.35s var(--ease);
-  opacity: 1;
-}
 /* 스튜디오(이름·태그·압축·클립 통합) 패널은 제목 아래 구분선 + 기능 선택
    줄(아이콘 줄/기능 화면) + 구분선 + 본문(파일명 등)이 쌓이므로, 다른
    패널처럼 세로 가운데 정렬 대신 위에서부터 순서대로 쌓는다. 높이(200px)는
    아이콘 줄이든 각 기능 상세 화면(하이라이트 포함)이든, 단일이든 다중이든
-   예외 없이 공통으로 적용된다(상태에 따라 흔들리지 않는다). */
+   예외 없이 공통으로 적용된다(상태에 따라 흔들리지 않는다). 트랜지션은
+   다른 패널과 똑같은 기본값(0.5s, var(--ease))을 그대로 쓴다. */
 .search-bar-confirm-panel.mode-studio {
   justify-content: flex-start;
-  /* 스튜디오 패널만 다른 패널보다 조금 더 천천히, 스프링의 튕기는 느낌
-     없이 부드럽게 열리고 닫히게 기본 트랜지션(0.35s/0.35s/0.25s/0.35s,
-     var(--spring))보다 늘리고 이징도 var(--ease)로 바꾼다. */
-  transition-duration: 0.6s, 0.6s, 0.35s, 0.6s;
-  transition-timing-function: var(--ease), var(--ease), var(--ease), var(--ease);
 }
 .search-bar-confirm-panel.mode-studio.is-open {
   max-height: 200px;
