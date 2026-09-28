@@ -46,6 +46,7 @@ import { isSearchActive } from "./lib/search";
 import { loadTheme, saveTheme } from "./lib/theme";
 import { BASE_TOOL_IDS, normalizeLayout } from "./lib/toolkit";
 import { isOptimizableFile, OPTIMIZE_LEVELS } from "./lib/optimize";
+import { extensionOf } from "./lib/filename";
 import { dedupeStrings } from "./lib/dedupe";
 
 const TOAST_MS = 2000;
@@ -644,7 +645,16 @@ export default function App() {
       closeAllToolPanels();
       return;
     }
-    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    // 정확히 두 개를 선택했을 때는 이미지 비교가 먼저 선택한 쪽을
+    // A(왼쪽)로 삼으므로(기존 스플릿 비교 툴킷 아이콘과 같은 규칙,
+    // handleSplitCompareSelected 참고), 화면에 보이는 순서 대신 선택한
+    // 순서 그대로 둔다 — selectedIds는 Set이라 삽입 순서를 보존한다.
+    // 세 개 이상은 순서가 결과에 영향을 주지 않으므로 그대로 화면 순서를
+    // 쓴다.
+    const targets =
+      selectedIds.size === 2
+        ? [...selectedIds].map((id) => visibleItems.find((it) => it.id === id)).filter(Boolean)
+        : visibleItems.filter((it) => selectedIds.has(it.id));
     closeAllToolPanels();
     if (targets.length <= 1) {
       const only = targets[0];
@@ -1021,6 +1031,37 @@ export default function App() {
     setRefreshKey((k) => k + 1);
   };
 
+  // 스튜디오 패널의 "이미지 비교" 확인: 지금 다중 선택 중인 두 이미지를
+  // 기존 스플릿 비교 프리셋 로직(createSplitPreset, handleSaveSplitPreset
+  // 참고)으로 그대로 복제해 새 항목 하나로 만든다. multiStudioItems는
+  // handleStudioSelected가 정확히 두 개를 선택했을 때 이미 "먼저 선택한
+  // 순서"로 담아 두므로, [0]이 A(왼쪽)다. 이름은 A 파일명에서 확장자를
+  // 떼고 "_이미지비교"를 붙인다(예: "테스트_1.jpg" → "테스트_1_이미지비교").
+  const handleConfirmCompare = async () => {
+    if (multiStudioItems.length !== 2) return;
+    const itemA = visibleItems.find((it) => it.id === multiStudioItems[0].id);
+    const itemB = visibleItems.find((it) => it.id === multiStudioItems[1].id);
+    if (!itemA || !itemB) return;
+    const ext = extensionOf(itemA.name);
+    const baseName = ext ? itemA.name.slice(0, -(ext.length + 1)) : itemA.name;
+    try {
+      await createSplitPreset({
+        token: session.token,
+        userId: session.userId,
+        itemA,
+        itemB,
+        parentId,
+        name: `${baseName}_이미지비교`,
+      });
+      cancelMultiStudio();
+      setSelectedIds(new Set());
+      setRefreshKey((k) => k + 1);
+      showToast("이미지 비교 파일을 만들었습니다");
+    } catch {
+      window.alert("이미지 비교 파일을 만들지 못했습니다");
+    }
+  };
+
   // 삭제 확인·새 폴더·이동·Studio(단일/다중)는 전부 검색바 위 같은 패널
   // 자리를 공유한다 — 그중 하나를 열기 전에 항상 이걸 먼저 불러 나머지를
   // 전부 닫는다.
@@ -1345,6 +1386,7 @@ export default function App() {
             onApplyAllMultiStudioHighlight={applyAllMultiStudioHighlight}
             onClearAllMultiStudioHighlight={clearAllMultiStudioHighlight}
             onConfirmMultiStudio={confirmMultiStudio}
+            onConfirmCompare={handleConfirmCompare}
             onCancelMultiStudio={cancelMultiStudio}
             moveOpen={moveOpen}
             moveItemCount={selectedIds.size}

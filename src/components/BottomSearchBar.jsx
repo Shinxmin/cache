@@ -97,6 +97,19 @@ function ScissorsIcon({ size = 18 }) {
   );
 }
 
+// 스튜디오의 이미지 비교 기능 아이콘 — 화면을 반으로 나눈 두 블록과 그
+// 사이의 손잡이(원)로, 앱 안 실제 스플릿 비교 화면(SplitCompareViewer의
+// 가운데 슬라이더 손잡이)을 단순화해 상징화한 모양이다.
+function CompareIcon({ size = 16 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <rect x="2" y="4" width="9" height="16" rx="2" />
+      <rect x="13" y="4" width="9" height="16" rx="2" />
+      <circle cx="12" cy="12" r="2.4" />
+    </svg>
+  );
+}
+
 const HIGHLIGHT_CLOSE_ANIMATION_MS = 160;
 
 // 하이라이트 슬라이더(+시간 줄)를 다른 일괄 적용 버튼들처럼 등장·퇴장에
@@ -205,6 +218,7 @@ export default function BottomSearchBar({
   onApplyAllMultiStudioHighlight,
   onClearAllMultiStudioHighlight,
   onConfirmMultiStudio,
+  onConfirmCompare,
   onCancelMultiStudio,
   moveOpen,
   moveItemCount,
@@ -339,6 +353,16 @@ export default function BottomSearchBar({
     : isMultiStudio
       ? Boolean(multiStudioItems?.length) && multiStudioItems.every((it) => !it.is_folder && looksLikeVideoFile(it.name, it.mime))
       : false;
+  // 이미지 비교는 단일 선택(studioOpen)에서는 애초에 성립하지 않고, 다중
+  // 선택이어도 정확히 두 개가 선택돼 있고 둘 다 움짤·동영상 등이 아닌
+  // 순수 정지 이미지일 때만 눌린다(하나만 선택하거나 세 개 이상이면
+  // 비활성). 정지 이미지 판정은 최적화 가능 여부(isOptimizableFile)와
+  // 같은 확장자 기준을 그대로 재사용한다 — 둘 다 "캔버스가 다룰 수 있는
+  // 애니메이션 없는 래스터 이미지"라는 같은 조건이기 때문이다.
+  const studioAllComparable =
+    isMultiStudio &&
+    multiStudioItems?.length === 2 &&
+    multiStudioItems.every((it) => !it.is_folder && isOptimizableFile(it.name, it.mime));
   // 처리 중(진행 바)이거나 결과가 이미 떠 있으면 아이콘 줄·기능 화면 대신
   // 그 화면을 보여준다.
   const studioRunning = Boolean(studioProgress) || Boolean(studioResult);
@@ -357,14 +381,20 @@ export default function BottomSearchBar({
       setStudioBusy(false);
     }
   };
+  // 이미지 비교 화면은 이름 편집 상태와 무관하게, 비교 가능한 두 장이
+  // 갖춰져 있기만 하면 확인을 누를 수 있다(이름·태그 등 다른 필드는 이
+  // 화면에서 건드리지 않는다).
   const canSubmitMultiStudio = studioResult
     ? true
-    : Boolean(multiStudioItems?.length) && multiStudioItems.every((it) => it.name.trim().length > 0) && !multiStudioBusy;
+    : studioSection === "compare"
+      ? studioAllComparable && !multiStudioBusy
+      : Boolean(multiStudioItems?.length) && multiStudioItems.every((it) => it.name.trim().length > 0) && !multiStudioBusy;
   const submitMultiStudio = async () => {
     if (multiStudioBusy) return;
     setMultiStudioBusy(true);
     try {
-      await onConfirmMultiStudio();
+      if (studioSection === "compare") await onConfirmCompare();
+      else await onConfirmMultiStudio();
     } finally {
       setMultiStudioBusy(false);
     }
@@ -575,6 +605,8 @@ export default function BottomSearchBar({
       <ZipFolderIcon size={16} />
     ) : studioSection === "highlight" ? (
       <ScissorsIcon size={16} />
+    ) : studioSection === "compare" ? (
+      <CompareIcon size={16} />
     ) : (
       <EditIcon size={16} />
     );
@@ -585,7 +617,19 @@ export default function BottomSearchBar({
         ? "최적화"
         : studioSection === "highlight"
           ? "하이라이트"
-          : "이름 바꾸기";
+          : studioSection === "compare"
+            ? "이미지 비교"
+            : "이름 바꾸기";
+  // 이미지 비교는 정확히 두 장을 한 쌍으로 다루는 기능이라, 다른 기능처럼
+  // 다중 선택 항목을 하나씩 넘겨보는 이전·다음 화살표(1/2 카운터)가 필요
+  // 없다 — 그래서 다중 모드라도 이 섹션에서는 내비게이션을 아예 숨긴다.
+  const showMultiStudioNav = isMultiStudio && studioSection !== "compare";
+  // "테스트_1.jpg 외 1개 파일"처럼, 먼저 선택한 파일 이름(확장자는 메타데이터로
+  // 보정)에 나머지 개수를 붙인다. 이미지 비교는 항상 정확히 두 장이므로
+  // "외 1개"로 고정된다.
+  const compareBodyText = isMultiStudio && multiStudioItems?.length
+    ? `${displayName(multiStudioItems[0])} 외 ${multiStudioItems.length - 1}개 파일`
+    : "";
 
   return (
     <>
@@ -720,6 +764,15 @@ export default function BottomSearchBar({
                       >
                         <ScissorsIcon size={16} />
                       </button>
+                      <button
+                        type="button"
+                        className="search-bar-studio-icon-btn"
+                        aria-label="이미지 비교"
+                        disabled={!studioAllComparable}
+                        onClick={() => setStudioSection("compare")}
+                      >
+                        <CompareIcon size={16} />
+                      </button>
                     </div>
                     <div className="search-bar-studio-detail">
                       <button
@@ -732,7 +785,7 @@ export default function BottomSearchBar({
                       </button>
                       <span className="search-bar-studio-detail-icon">{studioSectionIcon}</span>
                       <span className="search-bar-studio-detail-label">{studioSectionLabel}</span>
-                      {isMultiStudio && (
+                      {showMultiStudioNav && (
                         <div className="search-bar-confirm-nav">
                           <button
                             type="button"
@@ -768,7 +821,9 @@ export default function BottomSearchBar({
                     </div>
                   </div>
                   <div className="search-bar-studio-divider" />
-                  {studioSection ? (
+                  {studioSection === "compare" ? (
+                    <p className="search-bar-confirm-filename search-bar-confirm-filename--studio">{compareBodyText}</p>
+                  ) : studioSection ? (
                     <p className="search-bar-confirm-filename search-bar-confirm-filename--studio">
                       {displayName({ name: currentStudioOriginalName, mime: currentStudioMime })}
                     </p>
