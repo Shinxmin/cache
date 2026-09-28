@@ -826,10 +826,9 @@ export default function BottomSearchBar({
                       {displayName({ name: currentStudioOriginalName, mime: currentStudioMime })}
                     </p>
                   ) : (
-                    // 아이콘 줄 밑, 패널이 200px로 고정돼 있어 생기는 빈 공간을
-                    // 채우는 안내 문구 — 세로로는 그 남는 공간 한가운데,
-                    // 가로로는 왼쪽 정렬이다.
-                    <p className="search-bar-studio-tip">강력한 웹 에디터를 이용해보세요</p>
+                    // 기능을 아직 고르지 않은 아이콘 줄 상태의 안내 문구 —
+                    // 다른 섹션의 본문(파일명)과 같은 자리·스타일에 둔다.
+                    <p className="search-bar-confirm-filename search-bar-confirm-filename--studio">강력한 웹 에디터를 이용해보세요</p>
                   )}
                   {studioSection === "highlight" && (
                     <p className="search-bar-highlight-times-inline">
