@@ -97,15 +97,13 @@ function ScissorsIcon({ size = 18 }) {
   );
 }
 
-// 스튜디오의 이미지 비교 기능 아이콘 — 화면을 반으로 나눈 두 블록과 그
-// 사이의 손잡이(원)로, 앱 안 실제 스플릿 비교 화면(SplitCompareViewer의
-// 가운데 슬라이더 손잡이)을 단순화해 상징화한 모양이다.
+// 스튜디오의 이미지 비교 기능 아이콘 — 나란히 놓인 두 블록으로, 두 이미지를
+// 나란히 두고 비교하는 스플릿 비교 기능을 상징화한 모양이다.
 function CompareIcon({ size = 16 }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
       <rect x="2" y="4" width="9" height="16" rx="2" />
       <rect x="13" y="4" width="9" height="16" rx="2" />
-      <circle cx="12" cy="12" r="2.4" />
     </svg>
   );
 }
