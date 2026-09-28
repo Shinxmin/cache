@@ -15,7 +15,6 @@ import {
   clearSession,
   loadSession,
   saveSession,
-  setToolkitAlwaysOn as persistToolkitAlwaysOn,
   setToolkitLayout as persistToolkitLayout,
   verifySession,
 } from "./lib/session";
@@ -93,19 +92,14 @@ export default function App() {
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLORS[effectiveTheme]);
   }, [theme, session]);
 
-  // 설정의 "스튜디오 툴킷 항상 활성화" 체크박스 값. 실제로 툴킷이 보이는지는
-  // 아래 toolkitVisible이 결정한다(이 설정이 꺼져 있어도 선택 중이면 뜬다).
-  const [toolkitAlwaysOn, setToolkitAlwaysOn] = useState(false);
   // 스튜디오 툴킷 도구 순서. 계정(app_users.toolkit_layout)에 저장되며
   // 설정의 사용자 정렬이 바꾼다.
   const [toolkitLayout, setToolkitLayoutState] = useState(() => normalizeLayout(BASE_TOOL_IDS));
-  // 파일 탭 헤더의 톱니바퀴 버튼으로 여는 설정 화면. 그 안의 즐겨찾기 행이
-  // showFavorites를 켜는 동안에도 showSettings 자신은 꺼지지 않은 채로 남아
-  // 있어서, 즐겨찾기에서 뒤로가기하면 파일 화면이 아니라 설정 화면으로
-  // 돌아간다(휴지통·태그도 같은 방식).
+  // 파일 탭 헤더의 톱니바퀴 버튼으로 여는 설정 화면.
   const [showSettings, setShowSettings] = useState(false);
-  // 설정 → 즐겨찾기. true면 파일 화면 자리에 즐겨찾기 목록(FilesPage)이
-  // 뜨고 검색·스튜디오 툴킷이 파일 화면과 똑같이 동작한다.
+  // 아무것도 선택하지 않은 채 툴킷의 즐겨찾기(별) 아이콘을 누르면 열리는
+  // 즐겨찾기 화면. true면 파일 화면 자리에 즐겨찾기 목록(FilesPage)이 뜨고
+  // 검색·스튜디오 툴킷이 파일 화면과 똑같이 동작한다.
   const [showFavorites, setShowFavorites] = useState(false);
   // 스플릿 비교의 대상 두 파일 [A, B]. null이면 닫힌 상태.
   const [splitCompareTargets, setSplitCompareTargets] = useState(null);
@@ -219,31 +213,16 @@ export default function App() {
   }, []);
 
   // 세션이 (처음 로드되거나 막 로그인해서) 준비되면, 계정에 저장돼 있던
-  // "스튜디오 툴킷 항상 활성화" 값을 그대로 불러온다 — 다른 기기에서
-  // 로그인해도 이 설정이 유지되게 하기 위함이다.
+  // 툴킷 도구 순서를 그대로 불러온다.
   useEffect(() => {
     if (session) {
-      setToolkitAlwaysOn(Boolean(session.toolkitAlwaysOn));
       setToolkitLayoutState(normalizeLayout(session.toolkitLayout ?? BASE_TOOL_IDS));
     }
   }, [session]);
 
-  // 체크박스를 바꾸면 서버에 먼저 저장하고, 저장이 확인된 뒤에야 화면에
-  // 반영한다 — 먼저 화면부터 바꿔 버리면(낙관적 갱신) 저장 요청이 끝나기도
-  // 전에 아이폰 PWA를 백그라운드로 보내거나 완전히 종료했을 때 요청이
-  // 중간에 끊겨 실제로는 저장되지 않았는데도 사용자는 저장된 줄 알고
-  // 넘어가 버리는 문제가 있었다(재접속하면 사라져 있는 것처럼 보임).
-  const handleToggleToolkitAlwaysOn = async (value) => {
-    try {
-      await persistToolkitAlwaysOn(session.token, value);
-      setToolkitAlwaysOn(value);
-    } catch {
-      window.alert("설정을 저장하지 못했습니다");
-    }
-  };
-
-  // 툴킷 레이아웃 변경(정렬·초기화)도 마찬가지로 서버 저장이 성공한 뒤에만
-  // 화면(툴킷 바)에 반영한다.
+  // 툴킷 레이아웃 변경(정렬·초기화)은 서버 저장이 성공한 뒤에만 화면(툴킷
+  // 바)에 반영한다 — 먼저 화면부터 바꾸면 저장 요청이 끊겼을 때(아이폰 PWA를
+  // 백그라운드로 보내는 등) 저장된 줄 알고 넘어가 버리는 문제가 있었다.
   const changeToolkitLayout = async (nextLayout, action) => {
     const next = normalizeLayout(nextLayout);
     try {
@@ -416,10 +395,6 @@ export default function App() {
     setSearchQuery(value);
   };
 
-  // 스튜디오 툴킷 "바"는 파일 화면(과 그 안에서 연 즐겨찾기 화면)에서만
-  // 뜬다 — 이 두 화면만 PageHeader의 toolkitActive를 실제로 넘겨받는다.
-  // 설정이 항상 켜 두었거나 선택된 파일이 하나라도 있으면 뜬다.
-  const toolkitVisible = toolkitAlwaysOn || selectedIds.size > 0;
   const allSelected = visibleItems.length > 0 && visibleItems.every((it) => selectedIds.has(it.id));
 
   const toggleSelect = (item) => {
@@ -1183,6 +1158,12 @@ export default function App() {
       case "blur":
         return handleBlurSelected();
       case "favorite":
+        // 아무것도 선택하지 않았으면 즐겨찾기 화면을 연다.
+        if (selectedIds.size === 0) {
+          setSearchQuery("");
+          setShowFavorites(true);
+          return undefined;
+        }
         return handleFavoriteSelected();
       default:
         return undefined;
@@ -1213,23 +1194,17 @@ export default function App() {
     return <TagsPage session={session} onBack={() => setShowTags(false)} />;
   }
 
-  // 즐겨찾기가 열려 있는 동안엔(설정 → 즐겨찾기) 설정 화면이 그 뒤에 남아
-  // 있어도 그리지 않는다 — 즐겨찾기를 닫으면(showFavorites=false) 이 조건이
-  // 다시 참이 되어 설정 화면으로 자연스럽게 돌아간다.
-  if (showSettings && !showFavorites) {
+  if (showSettings) {
     return (
       <SettingsPage
         themeMode={themeMode}
         onChangeThemeMode={handleChangeThemeMode}
-        toolkitActive={toolkitAlwaysOn}
-        onToggleToolkit={handleToggleToolkitAlwaysOn}
         toolkitLayout={toolkitLayout}
         viewMode={viewMode}
         onChangeToolkitLayout={changeToolkitLayout}
         onResetToolkitLayout={() => changeToolkitLayout(BASE_TOOL_IDS, "reset")}
         onOpenTrash={() => setShowTrash(true)}
         onOpenTags={() => setShowTags(true)}
-        onOpenFavorites={() => setShowFavorites(true)}
         onBack={() => setShowSettings(false)}
         onLogout={() => {
           clearSession();
@@ -1239,8 +1214,8 @@ export default function App() {
     );
   }
 
-  // 이 아래로는 showTrash/showTags도 아니고, 설정도(즐겨찾기가
-  // 열려 있지 않은 한) 아니므로 남은 화면은 파일 화면 아니면 즐겨찾기뿐이다.
+  // 이 아래로는 휴지통·태그·설정이 아니므로 남은 화면은 파일 화면 아니면
+  // 즐겨찾기뿐이다.
   const favoritesView = showFavorites;
   const title = favoritesView
     ? "즐겨찾기"
@@ -1275,7 +1250,6 @@ export default function App() {
             <PageHeader
               title={title}
               resetKey={favoritesView ? "favorites" : "files"}
-              toolkitActive={toolkitVisible}
               viewMode={viewMode}
               onUpload={handleUpload}
               onNewFolder={handleNewFolder}

@@ -40,7 +40,6 @@ export async function verifySession(token) {
     token,
     username: data.username,
     userId: data.user_id,
-    toolkitAlwaysOn: data.toolkit_always_on,
     toolkitLayout: data.toolkit_layout ?? null,
   };
 }
@@ -52,9 +51,3 @@ export async function setToolkitLayout(token, layout, action, addon = null) {
   if (error) throw new Error(error.message);
 }
 
-// 설정의 "스튜디오 툴킷 항상 활성화" 체크박스는 계정에 저장되어, 다른 기기에서
-// 로그인해도 그대로 불러와진다.
-export async function setToolkitAlwaysOn(token, value) {
-  const { error } = await supabase.rpc("set_toolkit_always_on", { p_token: token, p_value: value });
-  if (error) throw new Error(error.message);
-}

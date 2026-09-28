@@ -34,7 +34,8 @@ export const TOOL_META = {
     icon: (ctx) => (ctx?.viewMode === "gallery" ? <ListIcon /> : <GalleryIcon />),
   },
   blur: { label: "선택한 썸네일 블러", needsSelection: true, icon: () => <EyeIcon /> },
-  favorite: { label: "즐겨찾기", needsSelection: true, icon: () => <StarIcon /> },
+  // 선택이 없으면 즐겨찾기 화면을 연다(App.jsx handleTool).
+  favorite: { label: "즐겨찾기", needsSelection: false, icon: () => <StarIcon /> },
 };
 
 export function toolLabel(id, ctx) {
