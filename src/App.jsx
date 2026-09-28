@@ -1056,7 +1056,6 @@ export default function App() {
       cancelMultiStudio();
       setSelectedIds(new Set());
       setRefreshKey((k) => k + 1);
-      showToast("이미지 비교 파일을 만들었습니다");
     } catch {
       window.alert("이미지 비교 파일을 만들지 못했습니다");
     }
