@@ -791,6 +791,19 @@ main.page {
   flex: none;
   margin-top: 14px;
 }
+/* 스튜디오 패널이 아이콘 줄만 보여줄 때(기능을 아직 고르지 않은 상태),
+   패널이 200px로 고정돼 있어 아이콘 줄 밑에 남는 빈 공간을 이 안내
+   문구가 채운다. flex:1로 남는 세로 공간을 전부 차지하고, 그 안에서
+   align-items:center로 텍스트를 세로 가운데에 두되 가로는 왼쪽에 붙인다. */
+.search-bar-studio-tip {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-2-strong);
+  text-align: left;
+}
 /* 하이라이트 섹션이 열려 있을 때 검색바의 확인 버튼 바로 왼쪽에 뜨는
    구간 슬라이더(품질 세그먼트와 같은 자리). 검색바가 align-items: center인
    덕분에 세로 위치는 따로 잡지 않아도 수직 가운데 정렬된다(가로 위치는
