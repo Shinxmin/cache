@@ -1237,6 +1237,7 @@ export default function App() {
   if (showSettings) {
     return (
       <SettingsPage
+        session={session}
         themeMode={themeMode}
         onChangeThemeMode={handleChangeThemeMode}
         toolkitLayout={toolkitLayout}

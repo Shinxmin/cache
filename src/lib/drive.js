@@ -92,6 +92,13 @@ export async function listFavorites(token) {
   return sortFileList(rows);
 }
 
+// 설정 화면의 용량 섹션이 쓴다 — 휴지통에 있지 않은 파일 전체 용량 합계
+// (바이트)만 쓴다(폴더 종류별 내역인 by_kind는 지금은 쓰지 않는다).
+export async function getStorageUsed(token) {
+  const result = rpcResult(await supabase.rpc("storage_summary", { p_token: token }));
+  return result?.total ?? 0;
+}
+
 // ── 태그 관리(설정 → 태그) ──────────────────────────────────────────────
 // 지금 쓰이고 있는(휴지통에 있지 않은 파일에 붙어 있는) 태그를 중복 없이
 // 나열한다. 각 항목은 { tag, count }(그 태그가 붙은 파일·폴더 개수) 형태다.

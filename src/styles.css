@@ -2142,6 +2142,42 @@ main.page {
   width: 100%;
   color: var(--text-2);
 }
+/* 테마 바로 밑, 계정 전체 파일 용량을 보여주는 줄. 다른 행과 달리 눌러도
+   아무 일도 없는 정보성 줄이라 커서를 기본값으로 되돌린다. */
+.settings-storage-row {
+  cursor: default;
+}
+.settings-storage-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* 진행 막대 폭은 화면 가로폭의 25%로 유동적이다(뷰포트 기준이라 기기
+   폭이 바뀌면 막대도 그만큼 늘고 준다). */
+.settings-storage-bar {
+  width: 25vw;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--glass-border);
+  overflow: hidden;
+}
+/* 채운 부분은 하이라이트·품질 슬라이더의 진한 배경(--fill-strong)과
+   같은 색을 써서, 다른 슬라이더들과 같은 "칠해진" 느낌을 준다. */
+.settings-storage-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--fill-strong);
+  transition: width 0.25s var(--ease);
+}
+/* 초기화·로그아웃과 같은 글자 크기(12px)를 쓰되, 색은 그 둘의 흐린
+   보조색(--text-2) 대신 제목과 같은 진한 색(--text)을 쓴다. */
+.settings-storage-text {
+  flex: none;
+  font-size: 12px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 /* 설정 목록 맨 밑, 가운데 정렬된 작은 밑줄 텍스트. 다른 행들과 달리
    테두리·아이콘 없이 글자만 있다. */
 .settings-logout {
