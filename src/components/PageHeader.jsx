@@ -12,11 +12,9 @@ const TRANSFER_RING_C = 2 * Math.PI * TRANSFER_RING_R;
 // 자체에 포함되지 않는다 — 문서를 아무리 스크롤해도 이 박스는 절대 움직이거나
 // 사라지지 않는다. 검색바는 더 이상 여기 없다 — 예전 하단 내비바 자리로
 // 옮겨서 항상 떠 있다(App.jsx의 BottomSearchBar). 그래서 이 헤더는 제목·
-// 뒤로가기·더보기/설정/전송현황 버튼, 그리고(선택 중이면) 스튜디오 툴킷
-// 바만 그린다.
+// 뒤로가기·더보기/설정/전송현황 버튼, 그리고 스튜디오 툴킷 바만 그린다.
 export default function PageHeader({
   title,
-  toolkitActive,
   viewMode,
   onUpload,
   onNewFolder,
@@ -39,7 +37,7 @@ export default function PageHeader({
   const ref = useRef(null);
 
   // 헤더가 fixed라 문서 흐름을 벗어나므로, 실제 렌더링된 높이(제목 줄 +
-  // 선택 중이면 스튜디오 툴킷 바까지)를 재서 --header-h로 넘겨준다. .page의
+  // 스튜디오 툴킷 바까지)를 재서 --header-h로 넘겨준다. .page의
   // padding-top이 이 값을 써서 본문이 헤더 바로 밑에서 시작한다.
   useEffect(() => {
     const el = ref.current;
@@ -104,22 +102,16 @@ export default function PageHeader({
           )}
         </div>
       </div>
-      {/* 평소엔 마운트되지 않는다(비활성화). 설정의 "스튜디오 툴킷 항상 활성화"가
-          켜져 있거나, 파일을 꾹 눌러 선택이 하나라도 있으면 뜬다. 헤더 자체의
-          ResizeObserver가 이 바의 유무에 따라 --header-h를 자동으로 다시 잰다.
-          닫기 버튼은 없다 — 선택을 모두 풀거나(선택 때문에 떠 있었다면) 설정을
-          끄면(항상 활성화 때문에 떠 있었다면) 사라진다. */}
-      {toolkitActive && (
-        <StudioToolkitBar
-          layout={toolkitLayout}
-          viewMode={viewMode}
-          allSelected={allSelected}
-          onToggleSelectAll={onToggleSelectAll}
-          hasSelection={hasSelection}
-          infoVisible={infoVisible}
-          onTool={onTool}
-        />
-      )}
+      {/* 스튜디오 툴킷은 항상 떠 있다. */}
+      <StudioToolkitBar
+        layout={toolkitLayout}
+        viewMode={viewMode}
+        allSelected={allSelected}
+        onToggleSelectAll={onToggleSelectAll}
+        hasSelection={hasSelection}
+        infoVisible={infoVisible}
+        onTool={onTool}
+      />
     </header>
   );
 }

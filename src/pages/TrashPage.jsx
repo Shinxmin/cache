@@ -70,7 +70,7 @@ export default function TrashPage({ session, onBack }) {
 
   return (
     <>
-      <header className="page-header page-header--static">
+      <header className="page-header page-header--static page-header--no-blur">
         <div className="page-header-row">
           <button className="header-back" type="button" aria-label="뒤로" onClick={onBack}>
             <BackIcon />
