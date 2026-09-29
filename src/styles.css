@@ -2146,6 +2146,8 @@ main.page {
    아무 일도 없는 정보성 줄이라 커서를 기본값으로 되돌린다. */
 .settings-storage-row {
   cursor: default;
+  justify-content: flex-start;
+  gap: 10px;
 }
 .settings-storage-right {
   display: flex;
