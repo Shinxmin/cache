@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { listDuplicateFiles, trashFiles } from "../lib/drive";
 import { BackIcon, FileIcon, TrashIcon } from "../components/icons";
-import PageMoreButton from "../components/PageMoreButton";
 import Spinner from "../components/Spinner";
 import useArmedConfirm from "../hooks/useArmedConfirm";
 import { formatBytes } from "../lib/format";
@@ -10,7 +9,8 @@ import { formatBytes } from "../lib/format";
 // 같은 종류·같은 크기인 파일들을 한 묶음으로 보고, 묶음마다 가장 먼저 올린 원본은
 // 빼고 나머지(중복본)만 리스트로 나열한다 — 그래서 "전체 삭제"를 눌러도 원본은 남는다.
 // 삭제는 영구 삭제가 아니라 휴지통으로 보낸다(휴지통에서 되살릴 수 있다). 각 행 오른쪽의
-// 휴지통 아이콘은 그 파일 하나만, 제목 우측 삼점바의 "전체 삭제"는 목록 전체를 지운다.
+// 휴지통 아이콘은 그 파일 하나만, 제목 우측의 원형 삭제 버튼(태그 화면과 같은
+// .header-circle-btn)은 목록 전체를 지운다.
 // 두 액션 모두 두 번 눌러야 실행된다(useArmedConfirm).
 export default function DuplicatesPage({ session, onBack }) {
   const [items, setItems] = useState([]);
@@ -52,20 +52,16 @@ export default function DuplicatesPage({ session, onBack }) {
             <BackIcon />
           </button>
           <h1 className="page-title">중복된 파일</h1>
-          <div className="page-header-actions">
-            <PageMoreButton
-              disabled={items.length === 0}
-              actions={[
-                {
-                  key: "deleteAll",
-                  label: "전체 삭제",
-                  icon: <TrashIcon size={17} />,
-                  armed: isArmed("deleteAll"),
-                  onClick: press("deleteAll", () => trash(items.map((it) => it.id))),
-                },
-              ]}
-            />
-          </div>
+          <button
+            className={`header-circle-btn${isArmed("all") ? " is-armed" : ""}`}
+            type="button"
+            aria-label="중복된 파일 전체 삭제"
+            data-armed={isArmed("all") ? "true" : undefined}
+            disabled={items.length === 0}
+            onClick={press("all", () => trash(items.map((it) => it.id)))}
+          >
+            <TrashIcon size={20} />
+          </button>
         </div>
       </header>
       <div className="page page--flush">
