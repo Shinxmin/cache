@@ -2154,10 +2154,10 @@ main.page {
   align-items: center;
   gap: 10px;
 }
-/* 진행 막대 폭은 화면 가로폭의 25%로 유동적이다(뷰포트 기준이라 기기
-   폭이 바뀌면 막대도 그만큼 늘고 준다). */
+/* 진행 막대 폭은 화면 가로폭의 30%로 유동적이다(뷰포트 기준이라 기기
+   폭이 바뀌면 막대도 그만큼 늘고 준다). 처음 25%에서 20% 늘린 값이다. */
 .settings-storage-bar {
-  width: 25vw;
+  width: 30vw;
   height: 6px;
   border-radius: 999px;
   background: var(--glass-border);
