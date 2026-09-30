@@ -22,6 +22,10 @@
   --studio-t70: color-mix(in srgb, var(--text) 70%, transparent);
   --studio-t10: color-mix(in srgb, var(--text) 10%, transparent);
   --studio-gray-35: rgba(128, 128, 128, 0.35);
+  /* 슬라이더·진행 바 전용: 배경(트랙)과 채움을 버튼 회색보다 한 단계 연하게. */
+  --slider-track: rgba(128, 128, 128, 0.28);
+  --slider-fill: color-mix(in srgb, color-mix(in srgb, var(--text) 88%, var(--bg) 12%) 74%, transparent);
+  --progress-fill: rgba(128, 128, 128, 0.58);
   --studio-gray-40: rgba(128, 128, 128, 0.4);
   --studio-gray-70: rgba(128, 128, 128, 0.7);
   --studio-disabled: 0.4;
@@ -574,7 +578,7 @@ main.page {
   height: 26px;
   padding: 2px;
   border-radius: 999px;
-  background: var(--studio-gray-35);
+  background: var(--slider-track);
   touch-action: none;
 }
 .search-bar-optimize-seg {
@@ -592,8 +596,8 @@ main.page {
   transition: background 0.2s var(--ease), color 0.2s var(--ease), transform 0.35s var(--spring);
 }
 .search-bar-optimize-seg.active {
-  /* 선택 칸은 원래 슬라이더 템플릿 그대로: 진한 채움(--fill-strong) + 반전 글자 + 볼드. */
-  background: var(--fill-strong);
+  /* 선택 칸은 원래 슬라이더 템플릿 그대로: 진한 채움(--slider-fill) + 반전 글자 + 볼드. */
+  background: var(--slider-fill);
   color: var(--surface);
   font-weight: 700;
 }
@@ -879,7 +883,7 @@ main.page {
   width: 100%;
   height: 27px;
   border-radius: 999px;
-  background: var(--studio-gray-35);
+  background: var(--slider-track);
   overflow: hidden;
   touch-action: none;
 }
@@ -900,7 +904,7 @@ main.page {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--fill-strong);
+  background: var(--slider-fill);
 }
 /* 구간 안쪽 왼쪽 끝의 < (시작), 오른쪽 끝의 > (끝) 손잡이. 이 아이콘을
    드래그해서 시작·끝 시간을 옮긴다. 진한 구간과 같은 세로 범위를 써서 그
@@ -1925,14 +1929,14 @@ main.page {
   margin-top: 10px;
   height: 6px;
   border-radius: 999px;
-  /* 품질 슬라이더(트랙 40% / 선택 칸 70%)와 같은 회색 */
-  background: var(--studio-gray-40);
+  /* 슬라이더 트랙과 같은 연한 회색 */
+  background: var(--slider-track);
   overflow: hidden;
 }
 .optimize-progress-fill {
   height: 100%;
   border-radius: 999px;
-  background: var(--studio-gray-70);
+  background: var(--progress-fill);
   transition: width 0.25s var(--ease);
 }
 .optimize-progress-count {
@@ -2248,7 +2252,7 @@ main.page {
 .settings-storage-fill {
   height: 100%;
   border-radius: 999px;
-  background: var(--fill-strong);
+  background: var(--slider-fill);
   transition: width 0.25s var(--ease);
 }
 /* 초기화·로그아웃과 같은 글자 크기(12px)를 쓰되, 색은 그 둘의 흐린
