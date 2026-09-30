@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { deleteAllTags, deleteTag, listDistinctTags } from "../lib/drive";
 import { BackIcon, HashIcon, TrashIcon } from "../components/icons";
 import Spinner from "../components/Spinner";
+import useArmedConfirm from "../hooks/useArmedConfirm";
 
 // 설정 → 태그에서 열리는 화면. 지금 쓰이고 있는(휴지통에 있지 않은 파일에
 // 붙어 있는) 태그를 전부 나열하고, 이름 바로 오른쪽에 그 태그가 붙은
@@ -9,12 +10,14 @@ import Spinner from "../components/Spinner";
 // 아이콘은 그 태그 하나만(붙어 있던 모든 파일에서 태그만 뗀다, 파일
 // 자체는 그대로) 지우고,
 // 제목 우측의 원형 삭제 버튼(전송 현황의 기록 삭제와 같은 .header-circle-btn
-// 재질·아이콘)은 지금 목록에 있는 태그를 한꺼번에 전부 지운다. 두 액션
-// 모두 확인 없이 바로 실행된다.
+// 재질·아이콘)은 지금 목록에 있는 태그를 한꺼번에 전부 지운다. 두 액션 모두 두
+// 번 눌러야 실행된다 — 첫 번째 누름은 그 버튼을 연한 빨간 배경으로 바꾸기만
+// 하고(useArmedConfirm), 한 번 더 눌러야 지워진다. 빈 공간을 누르면 풀린다.
 export default function TagsPage({ session, onBack }) {
   const [tags, setTags] = useState([]);
   const [state, setState] = useState("loading"); // loading | ready | error
   const [refreshKey, setRefreshKey] = useState(0);
+  const { isArmed, press } = useArmedConfirm();
 
   useEffect(() => {
     let cancelled = false;
@@ -60,11 +63,12 @@ export default function TagsPage({ session, onBack }) {
           </button>
           <h1 className="page-title">태그</h1>
           <button
-            className="header-circle-btn"
+            className={`header-circle-btn${isArmed("all") ? " is-armed" : ""}`}
             type="button"
             aria-label="태그 전체 삭제"
+            data-armed={isArmed("all") ? "true" : undefined}
             disabled={tags.length === 0}
-            onClick={removeAllTags}
+            onClick={press("all", removeAllTags)}
           >
             <TrashIcon size={20} />
           </button>
@@ -85,10 +89,11 @@ export default function TagsPage({ session, onBack }) {
                 <span className="trash-row-count">{count}개 항목</span>
                 <span className="trash-row-actions">
                   <button
-                    className="studio-toolkit-icon-btn"
+                    className={`studio-toolkit-icon-btn${isArmed(`tag:${tag}`) ? " is-armed" : ""}`}
                     type="button"
                     aria-label="태그 삭제"
-                    onClick={() => removeTag(tag)}
+                    data-armed={isArmed(`tag:${tag}`) ? "true" : undefined}
+                    onClick={press(`tag:${tag}`, () => removeTag(tag))}
                   >
                     <TrashIcon size={18} />
                   </button>

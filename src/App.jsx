@@ -8,6 +8,7 @@ import FilesPage from "./pages/FilesPage";
 import TransfersPage from "./pages/TransfersPage";
 import TrashPage from "./pages/TrashPage";
 import TagsPage from "./pages/TagsPage";
+import DuplicatesPage from "./pages/DuplicatesPage";
 import FileViewer from "./pages/FileViewer";
 import SplitCompareViewer from "./pages/SplitCompareViewer";
 import Toast from "./components/Toast";
@@ -121,6 +122,7 @@ export default function App() {
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [showTrash, setShowTrash] = useState(false);
   const [showTags, setShowTags] = useState(false);
+  const [showDuplicates, setShowDuplicates] = useState(false);
   // 스튜디오 툴킷의 삭제(휴지통) 아이콘을 누르면 켜진다. 이 동작만 별도
   // 모달 대신 하단 검색바가 위로 확장되며 그 자리에서 확인을 받는다
   // (BottomSearchBar 참고) — 다른 삭제·복원 확인은 전부 그대로 ConfirmModal.
@@ -1234,6 +1236,10 @@ export default function App() {
     return <TagsPage session={session} onBack={() => setShowTags(false)} />;
   }
 
+  if (showDuplicates) {
+    return <DuplicatesPage session={session} onBack={() => setShowDuplicates(false)} />;
+  }
+
   if (showSettings) {
     return (
       <SettingsPage
@@ -1246,6 +1252,7 @@ export default function App() {
         onResetToolkitLayout={() => changeToolkitLayout(BASE_TOOL_IDS, "reset")}
         onOpenTrash={() => setShowTrash(true)}
         onOpenTags={() => setShowTags(true)}
+        onOpenDuplicates={() => setShowDuplicates(true)}
         onBack={() => setShowSettings(false)}
         onLogout={() => {
           clearSession();

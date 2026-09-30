@@ -25,6 +25,7 @@ export default function SettingsPage({
   onResetToolkitLayout,
   onOpenTrash,
   onOpenTags,
+  onOpenDuplicates,
   onBack,
   onLogout,
 }) {
@@ -71,6 +72,10 @@ export default function SettingsPage({
               </span>
             </div>
           </div>
+          <button className="settings-row settings-row--link" type="button" onClick={onOpenDuplicates}>
+            <span className="settings-row-label">중복된 파일</span>
+            <ChevronRightIcon size={18} />
+          </button>
           <div className="settings-row settings-arrange-row">
             <button
               className="settings-arrange-toggle"
