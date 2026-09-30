@@ -711,17 +711,6 @@ main.page {
   height: 30px;
 }
 .search-bar-studio-icon-list,
-/* 최적화가 진행·완료돼 결과가 나오는 동안에는 기능 선택 줄 전체를 흐리게 하고
-   눌리지 않게 잠근다. */
-.search-bar-studio-switcher.is-running {
-  opacity: 0.4;
-  pointer-events: none;
-}
-.optimize-result-summary {
-  margin: 5px 0 0;
-  font-size: 13px;
-  color: var(--text-2-strong);
-}
 .search-bar-studio-detail {
   position: absolute;
   inset: 0;
@@ -1897,6 +1886,17 @@ main.page {
 :root[data-theme="dark"] .search-bar-confirm-extras-btn {
   background: rgba(255, 255, 255, 0.5);
   color: var(--bg);
+}
+/* 최적화가 진행·완료돼 결과가 나오는 동안에는 기능 선택 줄 전체를 흐리게 하고
+   눌리지 않게 잠근다. */
+.search-bar-studio-switcher.is-running {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.optimize-result-summary {
+  margin: 5px 0 0;
+  font-size: 13px;
+  color: var(--text-2-strong);
 }
 /* 확인을 누른 뒤 처리 중일 때 뜨는 진행 바 + "148 / 200" 카운트. */
 .optimize-progress-track {
