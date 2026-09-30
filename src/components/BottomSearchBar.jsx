@@ -200,6 +200,7 @@ export default function BottomSearchBar({
   onChangeStudioTag,
   onChangeStudioLevel,
   onOpenStudioHighlight,
+  onOpenStudioQuality,
   onChangeStudioHighlightStart,
   onChangeStudioHighlightEnd,
   onConfirmStudio,
@@ -737,7 +738,10 @@ export default function BottomSearchBar({
                         className="search-bar-studio-icon-btn"
                         aria-label="최적화"
                         disabled={!studioHasTarget || !studioAllOptimizable}
-                        onClick={() => setStudioSection("quality")}
+                        onClick={() => {
+                          setStudioSection("quality");
+                          onOpenStudioQuality?.();
+                        }}
                       >
                         <ZipFolderIcon size={16} />
                       </button>

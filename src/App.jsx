@@ -782,6 +782,14 @@ export default function App() {
     }
   };
 
+  // 최적화 섹션에 들어오면 그 자체가 "압축하겠다"는 뜻이다 — 기본값인 "중간"을
+  // 그대로 두고 확인해도 압축이 걸려야 하므로, 들어오는 순간 지금 대상 전부를
+  // 압축 대상(levelTouched)으로 표시한다. 일괄 지우기는 이 표시를 다시 푼다.
+  const markStudioLevelForOptimize = () => {
+    if (studioOpen) setStudioLevelTouched(true);
+    else if (multiStudioOpen) setMultiStudioItems((prev) => prev.map((it) => ({ ...it, levelTouched: true })));
+  };
+
   // 품질 세그먼트를 실제로 누른 항목만 확인 시 압축한다(levelTouched).
   const changeStudioLevel = (level) => {
     if (studioOpen) {
@@ -1482,6 +1490,7 @@ export default function App() {
             onChangeStudioTag={changeStudioTag}
             onChangeStudioLevel={changeStudioLevel}
             onOpenStudioHighlight={probeStudioHighlightDuration}
+            onOpenStudioQuality={markStudioLevelForOptimize}
             onChangeStudioHighlightStart={changeStudioHighlightStart}
             onChangeStudioHighlightEnd={changeStudioHighlightEnd}
             onConfirmStudio={confirmStudio}
