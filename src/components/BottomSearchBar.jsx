@@ -708,53 +708,11 @@ export default function BottomSearchBar({
             {displayMode === "newFolder" ? (
               <p className="search-bar-confirm-title search-bar-confirm-title--studio">새 폴더</p>
             ) : displayMode === "studio" || displayMode === "multiStudio" ? (
-              studioResult ? (
-                // 확인 후 압축까지 전부 끝났을 때: 단일·다중 공통으로 처리
-                // 시간·용량 변화·절약한 용량을 보여준다. 패널은 스크림을
-                // 누르거나 아이콘을 다시 눌러야 닫힌다(결과를 본 뒤 사용자가
-                // 직접).
-                <>
-                  <p className="search-bar-confirm-title search-bar-confirm-title--studio">스튜디오</p>
-                  <p className="search-bar-confirm-desc">{studioResult.total}개 파일 처리 완료</p>
-                  <div className="optimize-result-stats">
-                    <div className="optimize-result-row">
-                      <span className="optimize-result-label">처리 시간</span>
-                      <span className="optimize-result-value">{(studioResult.elapsedMs / 1000).toFixed(1)}초</span>
-                    </div>
-                    <div className="optimize-result-row">
-                      <span className="optimize-result-label">용량 변화</span>
-                      <span className="optimize-result-value">
-                        {formatBytes(studioResult.totalOriginal)} → {formatBytes(studioResult.totalCompressed)}
-                      </span>
-                    </div>
-                    <div className="optimize-result-row">
-                      <span className="optimize-result-label">절약한 용량</span>
-                      <span className="optimize-result-value">
-                        {formatBytes(Math.max(0, studioResult.totalOriginal - studioResult.totalCompressed))}
-                      </span>
-                    </div>
-                  </div>
-                </>
-              ) : studioProgress ? (
-                // 확인을 누른 직후부터 압축이 전부 끝나기 전까지: 파일 하나가
-                // 끝날 때마다 채워지는 진행 바 + "148 / 200" 카운트만 보여준다.
-                <>
-                  <p className="search-bar-confirm-title search-bar-confirm-title--studio">스튜디오</p>
-                  <div className="optimize-progress-track">
-                    <div
-                      className="optimize-progress-fill"
-                      style={{ width: `${Math.round((studioProgress.done / studioProgress.total) * 100)}%` }}
-                    />
-                  </div>
-                  <p className="optimize-progress-count">
-                    {studioProgress.done} / {studioProgress.total}
-                  </p>
-                </>
-              ) : (
+              (
                 <>
                   <p className="search-bar-confirm-title search-bar-confirm-title--studio">스튜디오</p>
                   <div className="search-bar-studio-divider" />
-                  <div className="search-bar-studio-switcher" data-mode={studioSection ? "detail" : "list"}>
+                  <div className={`search-bar-studio-switcher${studioRunning ? " is-running" : ""}`} data-mode={studioSection ? "detail" : "list"}>
                     <div className="search-bar-studio-icon-list">
                       <button
                         type="button"
@@ -852,7 +810,42 @@ export default function BottomSearchBar({
                     </div>
                   </div>
                   <div className="search-bar-studio-divider" />
-                  {studioSection === "compare" ? (
+                  {studioResult ? (
+                    // 최적화가 전부 끝났을 때: 본문 자리부터 처리 결과(개수·시간·용량
+                    // 변화·절약한 용량)를 보여준다. 패널은 스크림을 눌러 직접 닫는다.
+                    <div className="optimize-result-stats">
+                      <p className="optimize-result-summary">{studioResult.total}개 파일 처리 완료</p>
+                      <div className="optimize-result-row">
+                        <span className="optimize-result-label">처리 시간</span>
+                        <span className="optimize-result-value">{(studioResult.elapsedMs / 1000).toFixed(1)}초</span>
+                      </div>
+                      <div className="optimize-result-row">
+                        <span className="optimize-result-label">용량 변화</span>
+                        <span className="optimize-result-value">
+                          {formatBytes(studioResult.totalOriginal)} → {formatBytes(studioResult.totalCompressed)}
+                        </span>
+                      </div>
+                      <div className="optimize-result-row">
+                        <span className="optimize-result-label">절약한 용량</span>
+                        <span className="optimize-result-value">
+                          {formatBytes(Math.max(0, studioResult.totalOriginal - studioResult.totalCompressed))}
+                        </span>
+                      </div>
+                    </div>
+                  ) : studioProgress ? (
+                    // 확인 직후부터 끝나기 전까지: 본문 자리부터 진행 바 + "1 / 2" 카운트.
+                    <>
+                      <div className="optimize-progress-track">
+                        <div
+                          className="optimize-progress-fill"
+                          style={{ width: `${Math.round((studioProgress.done / studioProgress.total) * 100)}%` }}
+                        />
+                      </div>
+                      <p className="optimize-progress-count">
+                        {studioProgress.done} / {studioProgress.total}
+                      </p>
+                    </>
+                  ) : studioSection === "compare" ? (
                     <p className="search-bar-confirm-filename search-bar-confirm-filename--studio">{compareBodyText}</p>
                   ) : studioSection ? (
                     <p className="search-bar-confirm-filename search-bar-confirm-filename--studio">
@@ -863,7 +856,7 @@ export default function BottomSearchBar({
                     // 다른 섹션의 본문(파일명)과 같은 자리·스타일에 둔다.
                     <p className="search-bar-confirm-filename search-bar-confirm-filename--studio">강력한 웹 에디터를 이용해보세요</p>
                   )}
-                  {studioSection === "highlight" && (
+                  {studioSection === "highlight" && !studioRunning && (
                     <p className="search-bar-highlight-times-inline">
                       {formatDuration(currentStudioHighlightStart)}
                       {" - "}
