@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { BackIcon, ChevronRightIcon, FileIcon } from "./icons";
+import { BackIcon, CheckIcon, ChevronRightIcon, FileIcon } from "./icons";
 import Spinner from "./Spinner";
 import { isOptimizableFile, OPTIMIZE_LEVELS, OPTIMIZE_LEVEL_LABELS } from "../lib/optimize";
-import { displayName } from "../lib/filename";
+import { displayName, extensionOf } from "../lib/filename";
 import { formatBytes, formatDuration } from "../lib/format";
 import { looksLikeVideoFile } from "../lib/thumbnail";
 import useSegmentDrag from "../hooks/useSegmentDrag";
@@ -107,6 +107,9 @@ function CompareIcon({ size = 16 }) {
     </svg>
   );
 }
+
+// 폴더 썸네일로 지정할 수 있는 이미지 확장자.
+const THUMB_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp"]);
 
 const HIGHLIGHT_CLOSE_ANIMATION_MS = 160;
 
@@ -228,13 +231,28 @@ export default function BottomSearchBar({
   onMoveBack,
   onConfirmMove,
   onCancelMove,
+  thumbOpen,
+  thumbFolders,
+  thumbIndex,
+  thumbPath,
+  thumbRows,
+  thumbRowsState,
+  onPrevThumb,
+  onNextThumb,
+  onThumbInto,
+  onThumbBack,
+  onPickThumb,
+  onClearThumb,
+  onClearAllThumbs,
+  onConfirmThumb,
+  onCancelThumb,
 }) {
   const [busy, setBusy] = useState(false);
   const [folderBusy, setFolderBusy] = useState(false);
   const [studioBusy, setStudioBusy] = useState(false);
   const [multiStudioBusy, setMultiStudioBusy] = useState(false);
   const [moveBusy, setMoveBusy] = useState(false);
-  const panelOpen = confirmOpen || newFolderOpen || studioOpen || multiStudioOpen || moveOpen;
+  const panelOpen = confirmOpen || newFolderOpen || studioOpen || multiStudioOpen || moveOpen || thumbOpen;
 
   // 스튜디오 패널 안에서 지금 어떤 기능을 보고 있는지 — null이면 아이콘 줄,
   // "name"/"tag"/"quality"면 그 기능의 화면이다. 패널이 새로 열릴 때마다
@@ -281,9 +299,11 @@ export default function BottomSearchBar({
         ? "multiStudio"
         : moveOpen
           ? "move"
-          : confirmOpen
-            ? "confirm"
-            : null;
+          : thumbOpen
+            ? "thumb"
+            : confirmOpen
+              ? "confirm"
+              : null;
   const displayModeRef = useRef(liveMode ?? "confirm");
   if (liveMode !== null) displayModeRef.current = liveMode;
   const displayMode = displayModeRef.current;
@@ -415,6 +435,12 @@ export default function BottomSearchBar({
   // 막지만 목록에서 미리 눌리지 않게 해 둔다.
   const moveExcluded = moveExcludedIds ?? new Set();
 
+  // 썸네일 패널: 지금 넘겨 보고 있는 폴더, 그리고 목록에서 고를 수 있는(이미지
+  // 확장자) 파일 판정.
+  const thumbFolder = thumbFolders?.[thumbIndex] ?? null;
+  const thumbSelectable = (row) => !row.is_folder && THUMB_EXTENSIONS.has(extensionOf(row.name).toLowerCase());
+  const submitThumb = () => onConfirmThumb?.();
+
   const textValue = newFolderOpen
     ? newFolderName
     : studioSection === "name"
@@ -441,7 +467,9 @@ export default function BottomSearchBar({
         ? onCancelMultiStudio
         : moveOpen
           ? onCancelMove
-          : onCancelDelete;
+          : thumbOpen
+            ? onCancelThumb
+            : onCancelDelete;
 
   // 스크림이 화면 전체를 덮으면 그 밑에 있는 스튜디오 툴킷 바(전체 선택
   // 체크박스 + 도구 한 줄)도 가려져서 아이콘을 눌러 패널을
@@ -594,7 +622,12 @@ export default function BottomSearchBar({
                 { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiStudioHighlight },
                 { key: "applyAll", label: "일괄 적용", onClick: onApplyAllMultiStudioHighlight },
               ]
-            : [];
+            : displayMode === "thumb"
+              ? [
+                  { key: "clear", label: "지우기", onClick: onClearThumb },
+                  ...(thumbFolders?.length > 1 ? [{ key: "clearAll", label: "일괄 지우기", onClick: onClearAllThumbs }] : []),
+                ]
+              : [];
 
   const studioSectionIcon =
     studioSection === "tag" ? (
@@ -669,7 +702,7 @@ export default function BottomSearchBar({
       <div className="bottom-search-wrap">
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
           <div
-            className={`search-bar-confirm-panel${displayMode === "studio" || displayMode === "multiStudio" ? " mode-studio" : ""}${displayMode === "move" ? " mode-move" : ""}${extraActions.length > 0 ? " has-extras" : ""}${panelOpen ? " is-open" : ""}`}
+            className={`search-bar-confirm-panel${displayMode === "studio" || displayMode === "multiStudio" ? " mode-studio" : ""}${displayMode === "move" ? " mode-move" : ""}${displayMode === "thumb" ? " mode-thumb" : ""}${extraActions.length > 0 ? " has-extras" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
           >
             {displayMode === "newFolder" ? (
@@ -879,6 +912,82 @@ export default function BottomSearchBar({
                   )}
                 </ul>
               </>
+            ) : displayMode === "thumb" ? (
+              <>
+                <div className="thumb-title-row">
+                  <p className="search-bar-confirm-title search-bar-confirm-title--studio">썸네일</p>
+                  {thumbFolders?.length > 1 && (
+                    <div className="search-bar-confirm-nav">
+                      <button
+                        type="button"
+                        className="search-bar-confirm-nav-btn search-bar-confirm-nav-btn--prev"
+                        aria-label="이전 폴더"
+                        onClick={onPrevThumb}
+                        disabled={thumbIndex <= 0}
+                      >
+                        <ChevronRightIcon size={14} />
+                      </button>
+                      <span className="search-bar-confirm-nav-count">
+                        {thumbIndex + 1}/{thumbFolders.length}
+                      </span>
+                      <button
+                        type="button"
+                        className="search-bar-confirm-nav-btn"
+                        aria-label="다음 폴더"
+                        onClick={onNextThumb}
+                        disabled={thumbIndex >= thumbFolders.length - 1}
+                      >
+                        <ChevronRightIcon size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <p className="search-bar-confirm-desc">{thumbFolder?.name ?? ""}</p>
+                {thumbPath.length > 0 && (
+                  <div className="move-path">
+                    <button type="button" className="move-path-back" aria-label="상위 폴더로" onClick={onThumbBack}>
+                      <BackIcon size={16} />
+                    </button>
+                    <span className="move-path-name">{thumbPath[thumbPath.length - 1].name}</span>
+                  </div>
+                )}
+                <ul className="move-list">
+                  {thumbRowsState === "loading" ? (
+                    <li className="move-note">
+                      <Spinner />
+                    </li>
+                  ) : thumbRowsState === "error" ? (
+                    <li className="move-note">불러오지 못했습니다</li>
+                  ) : thumbRows.length === 0 ? (
+                    <li className="move-note">이 폴더는 비어 있습니다</li>
+                  ) : (
+                    thumbRows.map((row) => {
+                      const selectable = thumbSelectable(row);
+                      const current = selectable && Boolean(thumbFolder?.folder_thumb_key) && row.thumb_key === thumbFolder.folder_thumb_key;
+                      return (
+                        <li key={row.id}>
+                          <button
+                            type="button"
+                            className={`move-row thumb-row${current ? " is-current" : ""}`}
+                            disabled={!row.is_folder && !selectable}
+                            onClick={() => (row.is_folder ? onThumbInto?.(row) : onPickThumb?.(row))}
+                          >
+                            <span className="move-row-icon">
+                              {row.is_folder ? <FolderIcon size={16} /> : <FileIcon size={16} />}
+                            </span>
+                            <span className="move-row-name">{row.name}</span>
+                            {current && (
+                              <span className="thumb-row-check">
+                                <CheckIcon size={13} />
+                              </span>
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })
+                  )}
+                </ul>
+              </>
             ) : (
               <>
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">삭제</p>
@@ -988,7 +1097,9 @@ export default function BottomSearchBar({
                         ? submitMultiStudio
                         : moveOpen
                           ? submitMove
-                          : submitText
+                          : thumbOpen
+                            ? submitThumb
+                            : submitText
                 }
                 disabled={
                   confirmOpen
@@ -999,7 +1110,9 @@ export default function BottomSearchBar({
                         ? !canSubmitMultiStudio
                         : moveOpen
                           ? !canSubmitMove
-                          : !canSubmitText
+                          : thumbOpen
+                            ? false
+                            : !canSubmitText
                 }
               >
                 확인

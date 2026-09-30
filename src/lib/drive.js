@@ -80,6 +80,18 @@ export async function setInfoRevealed(token, ids, revealed) {
   return rpcResult(await supabase.rpc("set_info_revealed", { p_token: token, p_ids: ids, p_revealed: revealed }));
 }
 
+// ── 폴더 썸네일(스튜디오 툴킷의 블러 아이콘 → 썸네일) ──────────────────────
+// 고른 이미지 파일의 thumb_key를 대상 폴더의 folder_thumb_key로 복사해 그
+// 폴더의 대표 썸네일로 쓴다.
+export async function setFolderThumbnail(token, folderId, sourceId) {
+  return rpcResult(await supabase.rpc("set_folder_thumbnail", { p_token: token, p_folder_id: folderId, p_source_id: sourceId }));
+}
+
+// 지정해 둔 폴더 썸네일을 지운다(원래 폴더 아이콘으로 돌아간다).
+export async function clearFolderThumbnail(token, folderId) {
+  return rpcResult(await supabase.rpc("clear_folder_thumbnail", { p_token: token, p_folder_id: folderId }));
+}
+
 // ── 즐겨찾기 ───────────────────────────────────────────────────────────
 // 스튜디오 툴킷의 별 아이콘. 파일·폴더 모두 대상이며 홈 → 즐겨찾기 화면에
 // 폴더 우선으로 모아 보여준다.
