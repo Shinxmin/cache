@@ -99,6 +99,12 @@ export async function getStorageUsed(token) {
   return result?.total ?? 0;
 }
 
+// 설정 → 중복된 파일. 같은 종류·같은 크기의 파일 중 그룹마다 가장 먼저 올린 하나(원본)를
+// 뺀 나머지(중복본)만 돌려준다 — 서버(list_duplicate_files)가 계산한다.
+export async function listDuplicateFiles(token) {
+  return rpcResult(await supabase.rpc("list_duplicate_files", { p_token: token }));
+}
+
 // ── 태그 관리(설정 → 태그) ──────────────────────────────────────────────
 // 지금 쓰이고 있는(휴지통에 있지 않은 파일에 붙어 있는) 태그를 중복 없이
 // 나열한다. 각 항목은 { tag, count }(그 태그가 붙은 파일·폴더 개수) 형태다.

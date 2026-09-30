@@ -281,7 +281,9 @@ main.page {
   transition: width 0.45s var(--spring);
 }
 .header-more.open {
-  width: 150px;
+  /* 항목 개수가 화면마다 달라, 열렸을 때 폭은 PageMoreButton이 넘기는
+     --more-open-w를 따른다(넘기지 않는 기본 더 보기 버튼은 150px). */
+  width: var(--more-open-w, 150px);
 }
 .header-more::before {
   content: "";
@@ -308,6 +310,7 @@ main.page {
 .header-more-item {
   position: relative;
   flex: none;
+  border-radius: 999px;
   width: 48.5px;
   height: 100%;
   display: flex;
@@ -317,7 +320,7 @@ main.page {
   gap: 3px;
   color: var(--text-2);
   /* 이 헤더의 다른 원형 글래스 버튼들과 동일한 눌림 애니메이션 */
-  transition: transform 0.35s var(--spring);
+  transition: transform 0.35s var(--spring), background 0.2s var(--ease), color 0.2s var(--ease);
 }
 .header-more-item:active {
   transform: scale(0.94);
@@ -327,6 +330,19 @@ main.page {
 }
 .header-more-toggle {
   width: 45px;
+}
+
+/* 두 번 눌러야 실행되는 삭제·복원 버튼(useArmedConfirm)이 첫 번째로 눌려
+   "확인 대기" 상태가 되면 붙는 클래스 — 연한 빨간 배경으로 바뀐다. 한 번 더
+   누르면 실행되고, 빈 공간을 누르면 풀린다. */
+.header-more-item.is-armed,
+.header-circle-btn.is-armed,
+.studio-toolkit-icon-btn.is-armed {
+  background: color-mix(in srgb, var(--danger) 22%, transparent);
+  color: var(--danger);
+}
+.studio-toolkit-icon-btn.is-armed {
+  border-radius: 7px;
 }
 
 /* ── 원형 리퀴드글라스 설정 버튼: 더 보기(삼점) 버튼 바로 오른쪽, 같은 45px
@@ -1068,7 +1084,7 @@ main.page {
   width: 22px;
   height: 22px;
   color: inherit;
-  transition: transform 0.35s var(--spring);
+  transition: transform 0.35s var(--spring), background 0.2s var(--ease), color 0.2s var(--ease);
   scroll-snap-align: start;
 }
 .studio-toolkit-icon-btn:active {
@@ -1433,7 +1449,7 @@ main.page {
 }
 
 /* ── 휴지통 화면: 기본 리스트 행에 복원/영구 삭제 버튼만 오른쪽에 더한다.
-   전체 삭제·복원은 제목 우측의 삼점바(TrashMoreButton)가 맡는다. ── */
+   전체 삭제·복원은 제목 우측의 삼점바(PageMoreButton)가 맡는다. ── */
 .trash-row {
   display: flex;
   align-items: center;
