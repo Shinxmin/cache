@@ -712,7 +712,7 @@ main.page {
 /* 스튜디오 패널 제목은 22px(다른 패널 제목은 그대로 21px). */
 .search-bar-confirm-panel.mode-studio .search-bar-confirm-title--studio {
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 600;
 }
 /* 스튜디오 제목 밑, 그리고 기능 선택 줄(아이콘 줄/기능 화면) 밑에 긋는
    구분선 두 개 — 그 사이에 기능 선택 줄이 낀 샌드위치 모양이다. */
@@ -811,7 +811,7 @@ main.page {
   flex: 1;
   min-width: 0;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text);
 }
 /* 삭제 확인 보조 설명(고정 문구). 제목과의 간격을 조금 더 줄여 본문을
