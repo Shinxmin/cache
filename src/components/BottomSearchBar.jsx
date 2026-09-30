@@ -701,7 +701,7 @@ export default function BottomSearchBar({
           <div className="search-bar-scrim" onClick={handleScrimClick} onPointerDown={handleScrimPointerDown} />
         ))}
       <div className="bottom-search-wrap">
-        <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
+        <div className={`search-dock${panelOpen ? " has-confirm" : ""}${panelOpen && (displayMode === "studio" || displayMode === "multiStudio") ? " studio-mode" : ""}`}>
           <div
             className={`search-bar-confirm-panel${displayMode === "studio" || displayMode === "multiStudio" ? " mode-studio" : ""}${displayMode === "move" ? " mode-move" : ""}${displayMode === "thumb" ? " mode-thumb" : ""}${extraActions.length > 0 ? " has-extras" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
