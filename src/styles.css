@@ -663,6 +663,20 @@ main.page {
 .search-bar-confirm-panel.mode-move.is-open {
   max-height: 240px;
 }
+/* 썸네일 패널은 이동 패널 구성(경로 줄 + 목록)에 제목 옆 < 1/2 > 와 폴더
+   이름 본문, 그리고 맨 밑 지우기 줄까지 더 들어가 조금 더 길다. */
+.search-bar-confirm-panel.mode-thumb {
+  justify-content: flex-start;
+}
+.search-bar-confirm-panel.mode-thumb.is-open {
+  max-height: 300px;
+}
+.thumb-title-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 .search-bar-confirm-title {
   margin: 0;
   font-size: 15px;
@@ -1841,7 +1855,8 @@ main.page {
    지우기·일괄 지우기 줄은 왼쪽 정렬한다(그 외 패널의 부가 기능 줄은 계속
    확인 버튼 쪽인 오른쪽 정렬을 쓴다). */
 .search-bar-confirm-panel.mode-studio .search-bar-confirm-extras,
-.search-bar-confirm-panel.mode-move .search-bar-confirm-extras {
+.search-bar-confirm-panel.mode-move .search-bar-confirm-extras,
+.search-bar-confirm-panel.mode-thumb .search-bar-confirm-extras {
   justify-content: flex-start;
 }
 /* 스튜디오 패널 아이콘 줄(.search-bar-studio-icon-btn)과 똑같은 색·크기 —
@@ -2041,6 +2056,20 @@ main.page {
    만들지는 않고(툴킷 아이콘과 같은 결) 그냥 눌리지 않게만 둔다. */
 .move-row:disabled {
   cursor: default;
+}
+/* 썸네일 패널 목록: 이미지가 아닌 파일은 흐려져 눌리지 않고, 지금 폴더에 지정된
+   이미지는 이름 오른쪽에 체크가 붙는다. */
+.thumb-row:disabled {
+  opacity: 0.35;
+}
+.thumb-row.is-current .move-row-name {
+  font-weight: 700;
+}
+.thumb-row-check {
+  flex: none;
+  margin-left: auto;
+  display: flex;
+  color: var(--text-2-strong);
 }
 .move-row-icon {
   flex: none;

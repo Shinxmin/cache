@@ -22,6 +22,7 @@ import {
 import {
   createClip,
   createFolder,
+  clearFolderThumbnail,
   createSplitPreset,
   downloadFile,
   downloadFolderAsZip,
@@ -36,6 +37,7 @@ import {
   renameFiles,
   setBlur,
   setFavorite,
+  setFolderThumbnail,
   setInfoRevealed,
   setTag,
   splitPresetParts,
@@ -168,6 +170,16 @@ export default function App() {
   const [movePath, setMovePath] = useState([]); // [{ id, name }]
   const [moveRows, setMoveRows] = useState([]);
   const [moveRowsState, setMoveRowsState] = useState("loading"); // loading | ready | error
+  // 스튜디오 툴킷의 블러 아이콘은 선택이 전부 폴더일 때 "썸네일" 패널을 여는
+  // 아이콘으로 바뀐다(파일이 하나라도 섞여 있으면 원래 블러). 여러 폴더를
+  // 골랐으면 < 1/2 > 화살표로 하나씩 넘기며 지정한다(thumbIndex). 패널 안의
+  // 목록은 이동 패널과 같은 모양이고(thumbPath가 지금 보고 있는 폴더 경로,
+  // 빈 배열이면 최상위), 지금 지정 중인 폴더 안에서 시작한다.
+  const [thumbOpen, setThumbOpen] = useState(false);
+  const [thumbIndex, setThumbIndex] = useState(0);
+  const [thumbPath, setThumbPath] = useState([]); // [{ id, name }]
+  const [thumbRows, setThumbRows] = useState([]);
+  const [thumbRowsState, setThumbRowsState] = useState("loading"); // loading | ready | error
   // 헤더 삼점 버튼의 "새 폴더". 별도 모달 대신 삭제 확인과 같은 방식으로
   // 하단 검색바가 위로 확장되며 그 자리에서 이름을 입력받는다(BottomSearchBar
   // 참고). 둘 다 같은 패널 자리를 쓰므로 동시에 열리지 않는다.
@@ -393,6 +405,47 @@ export default function App() {
       cancelled = true;
     };
   }, [moveOpen, movePath, session?.token]);
+
+  // 썸네일 패널이 지정하는 대상 폴더들 — 지금 선택된 항목(선택한 순서). 패널이
+  // 열려 있는 동안 선택에 파일이 섞이거나 선택이 비면 더는 성립하지 않으므로
+  // 닫는다.
+  const thumbFolders = useMemo(
+    () => (thumbOpen ? [...selectedIds].map((id) => visibleItems.find((it) => it.id === id)).filter(Boolean) : []),
+    [thumbOpen, selectedIds, visibleItems]
+  );
+  const thumbFolderIndex = Math.min(thumbIndex, Math.max(0, thumbFolders.length - 1));
+  const thumbFolder = thumbFolders[thumbFolderIndex] ?? null;
+  const thumbFolderId = thumbFolder?.id ?? null;
+  useEffect(() => {
+    if (!thumbOpen) return;
+    if (thumbFolders.length === 0 || thumbFolders.some((it) => !it.is_folder)) setThumbOpen(false);
+  }, [thumbOpen, thumbFolders]);
+
+  // 지정 대상 폴더가 바뀔 때(열릴 때·< > 로 넘길 때)마다 그 폴더 안에서 목록을 다시 시작한다.
+  useEffect(() => {
+    if (!thumbOpen || !thumbFolderId) return;
+    setThumbPath([{ id: thumbFolderId, name: thumbFolder.name }]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [thumbOpen, thumbFolderId]);
+
+  useEffect(() => {
+    if (!thumbOpen || !session) return;
+    const destinationId = thumbPath.length ? thumbPath[thumbPath.length - 1].id : null;
+    let cancelled = false;
+    setThumbRowsState("loading");
+    listFiles(session.token, destinationId)
+      .then((data) => {
+        if (cancelled) return;
+        setThumbRows(data);
+        setThumbRowsState("ready");
+      })
+      .catch(() => {
+        if (!cancelled) setThumbRowsState("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [thumbOpen, thumbPath, session?.token]);
 
   const handleSearch = (value) => {
     setSearchQuery(value);
@@ -1070,6 +1123,7 @@ export default function App() {
     setDeleteConfirmOpen(false);
     setNewFolderOpen(false);
     cancelMove();
+    cancelThumb();
     cancelStudio();
     cancelMultiStudio();
   };
@@ -1091,6 +1145,49 @@ export default function App() {
 
   const cancelMove = () => {
     setMoveOpen(false);
+  };
+
+  // ── 폴더 썸네일 패널 ──
+  const cancelThumb = () => {
+    setThumbOpen(false);
+  };
+
+  const openThumbPanel = () => {
+    closeAllToolPanels();
+    setThumbIndex(0);
+    setThumbPath([]);
+    setThumbOpen(true);
+  };
+
+  const prevThumb = () => setThumbIndex(Math.max(0, thumbFolderIndex - 1));
+  const nextThumb = () => setThumbIndex(Math.min(thumbFolders.length - 1, thumbFolderIndex + 1));
+  const thumbNavigateInto = (row) => setThumbPath((p) => [...p, { id: row.id, name: row.name }]);
+  const thumbNavigateBack = () => setThumbPath((p) => p.slice(0, -1));
+
+  // 목록에서 이미지를 누르면 곧바로 지금 넘겨 보고 있는 폴더의 썸네일로 지정된다.
+  const pickThumb = async (row) => {
+    if (!thumbFolder) return;
+    try {
+      await setFolderThumbnail(session.token, thumbFolder.id, row.id);
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("썸네일을 지정하지 못했습니다");
+    }
+  };
+
+  const clearThumbs = async (folders) => {
+    if (!folders.length) return;
+    try {
+      await Promise.all(folders.map((f) => clearFolderThumbnail(session.token, f.id)));
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("썸네일을 지우지 못했습니다");
+    }
+  };
+
+  const confirmThumb = () => {
+    cancelThumb();
+    setSelectedIds(new Set());
   };
 
   const moveNavigateInto = (row) => {
@@ -1197,8 +1294,19 @@ export default function App() {
         return handleMoveSelected();
       case "view":
         return setViewMode((v) => (v === "gallery" ? "list" : "gallery"));
-      case "blur":
+      case "blur": {
+        // 선택이 전부 폴더면 블러 대신 썸네일 패널. 이미 열려 있으면 다시 눌러 닫는다.
+        if (thumbOpen) {
+          closeAllToolPanels();
+          return undefined;
+        }
+        const picked = [...selectedIds].map((id) => visibleItems.find((it) => it.id === id)).filter(Boolean);
+        if (picked.length > 0 && picked.length === selectedIds.size && picked.every((it) => it.is_folder)) {
+          openThumbPanel();
+          return undefined;
+        }
         return handleBlurSelected();
+      }
       case "favorite":
         // 아무것도 선택하지 않았으면 즐겨찾기 화면을 연다.
         if (selectedIds.size === 0) {
@@ -1405,6 +1513,21 @@ export default function App() {
             onMoveBack={moveNavigateBack}
             onConfirmMove={confirmMove}
             onCancelMove={cancelMove}
+            thumbOpen={thumbOpen}
+            thumbFolders={thumbFolders}
+            thumbIndex={thumbFolderIndex}
+            thumbPath={thumbPath}
+            thumbRows={thumbRows}
+            thumbRowsState={thumbRowsState}
+            onPrevThumb={prevThumb}
+            onNextThumb={nextThumb}
+            onThumbInto={thumbNavigateInto}
+            onThumbBack={thumbNavigateBack}
+            onPickThumb={pickThumb}
+            onClearThumb={() => clearThumbs(thumbFolder ? [thumbFolder] : [])}
+            onClearAllThumbs={() => clearThumbs(thumbFolders)}
+            onConfirmThumb={confirmThumb}
+            onCancelThumb={cancelThumb}
           />
         </>
       )}
