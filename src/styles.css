@@ -19,6 +19,7 @@
      같은 중간 회색이라 두 테마가 같은 값을 쓴다. 비활성·잠금 불투명도는 40%
      하나로 통일. */
   --studio-t80: color-mix(in srgb, var(--text) 80%, transparent);
+  --studio-t75: color-mix(in srgb, var(--text) 75%, transparent);
   --studio-t70: color-mix(in srgb, var(--text) 70%, transparent);
   --studio-t10: color-mix(in srgb, var(--text) 10%, transparent);
   --studio-gray-35: rgba(128, 128, 128, 0.35);
@@ -28,7 +29,7 @@
   --progress-fill: rgba(128, 128, 128, 0.58);
   --studio-gray-40: rgba(128, 128, 128, 0.4);
   --studio-gray-70: rgba(128, 128, 128, 0.7);
-  --studio-disabled: 0.4;
+  --studio-disabled: 0.38;
 }
 
 :root[data-theme="dark"] {
@@ -589,8 +590,8 @@ main.page {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  font-size: 10px;
-  font-weight: 400;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--studio-t80);
   white-space: nowrap;
   transition: background 0.2s var(--ease), color 0.2s var(--ease), transform 0.35s var(--spring);
@@ -599,7 +600,7 @@ main.page {
   /* 선택 칸은 원래 슬라이더 템플릿 그대로: 진한 채움(--slider-fill) + 반전 글자 + 볼드. */
   background: var(--slider-fill);
   color: var(--surface);
-  font-weight: 700;
+  font-weight: 500;
 }
 .search-bar-optimize-seg:active {
   transform: scale(0.94);
@@ -671,8 +672,9 @@ main.page {
   justify-content: flex-start;
 }
 .search-bar-confirm-panel.mode-studio.is-open {
-  max-height: 200px;
-  min-height: 200px;
+  /* 본문 14px로 커진 최적화 결과(4줄)까지 여유 있게 들어가도록 200px → 216px. */
+  max-height: 216px;
+  min-height: 216px;
 }
 /* 이동 패널은 경로 표시줄 + 스크롤되는 폴더 목록까지 들어가 가장 길다. */
 .search-bar-confirm-panel.mode-move {
@@ -710,6 +712,7 @@ main.page {
 /* 스튜디오 패널 제목은 22px(다른 패널 제목은 그대로 21px). */
 .search-bar-confirm-panel.mode-studio .search-bar-confirm-title--studio {
   font-size: 22px;
+  font-weight: 500;
 }
 /* 스튜디오 제목 밑, 그리고 기능 선택 줄(아이콘 줄/기능 화면) 밑에 긋는
    구분선 두 개 — 그 사이에 기능 선택 줄이 낀 샌드위치 모양이다. */
@@ -807,8 +810,8 @@ main.page {
 .search-bar-studio-detail-label {
   flex: 1;
   min-width: 0;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 500;
   color: var(--text);
 }
 /* 삭제 확인 보조 설명(고정 문구). 제목과의 간격을 조금 더 줄여 본문을
@@ -830,9 +833,9 @@ main.page {
    자르고 줄임표를 붙인다(패널 높이가 항목 이름 길이에 따라 흔들리지 않게). */
 .search-bar-confirm-filename {
   margin: 5px 0 0;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
-  color: var(--studio-t80);
+  color: var(--studio-t75);
   text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -938,8 +941,8 @@ main.page {
 .search-bar-highlight-times-inline {
   flex: none;
   margin: 4px 0 0;
-  font-size: 13px;
-  color: var(--studio-t80);
+  font-size: 12px;
+  color: var(--studio-t70);
   text-align: left;
 }
 .search-bar-confirm-nav {
@@ -968,8 +971,8 @@ main.page {
 .search-bar-confirm-nav-count {
   flex: none;
   min-width: 28px;
-  font-size: 13px;
-  color: var(--studio-t80);
+  font-size: 12px;
+  color: var(--studio-t70);
   text-align: center;
 }
 /* ── 체크박스: 네이티브 input은 투명 처리해 접근성/토글 동작만 맡기고, 시각
@@ -1891,9 +1894,9 @@ main.page {
   padding: 0 10px;
   border-radius: 999px;
   background: var(--studio-gray-35);
-  color: var(--studio-t70);
+  color: var(--text);
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 500;
   transition: transform 0.35s var(--spring);
 }
 .search-bar-confirm-extras-btn:active {
@@ -1920,9 +1923,9 @@ main.page {
 }
 .optimize-result-summary {
   margin: 5px 0 0;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
-  color: var(--studio-t80);
+  color: var(--studio-t75);
 }
 /* 확인을 누른 뒤 처리 중일 때 뜨는 진행 바 + "148 / 200" 카운트. */
 .optimize-progress-track {
@@ -1941,8 +1944,8 @@ main.page {
 }
 .optimize-progress-count {
   margin: 8px 0 0;
-  font-size: 13px;
-  color: var(--studio-t80);
+  font-size: 12px;
+  color: var(--studio-t70);
   text-align: left;
 }
 /* 전부 끝난 뒤 뜨는 결과 요약(처리 시간·용량 변화·절약한 용량). */
@@ -1958,16 +1961,16 @@ main.page {
   /* 오른쪽 끝에 붙는 정렬이 아니라, 라벨 바로 뒤에 띄어쓰기 대여섯 칸 정도
      간격만 두고 값이 이어지는 한 줄짜리 표기다. */
   gap: 18px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .optimize-result-label {
   flex: none;
-  font-weight: 700;
-  color: var(--studio-t80);
+  font-weight: 400;
+  color: var(--studio-t70);
 }
 .optimize-result-value {
-  color: var(--studio-t80);
-  font-weight: 700;
+  color: var(--text);
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2584,6 +2587,6 @@ main.page {
 .bottom-search-wrap .search-dock.studio-mode .search-bar-inline-confirm {
   background: var(--studio-gray-35);
   color: var(--text);
-  font-size: 15px;
-  font-weight: 400;
+  font-size: 14px;
+  font-weight: 500;
 }
