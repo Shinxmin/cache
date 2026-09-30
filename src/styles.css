@@ -592,9 +592,10 @@ main.page {
   transition: background 0.2s var(--ease), color 0.2s var(--ease), transform 0.35s var(--spring);
 }
 .search-bar-optimize-seg.active {
-  background: var(--studio-gray-70);
-  color: var(--studio-t80);
-  font-weight: 400;
+  /* 선택 칸은 원래 슬라이더 템플릿 그대로: 진한 채움(--fill-strong) + 반전 글자 + 볼드. */
+  background: var(--fill-strong);
+  color: var(--surface);
+  font-weight: 700;
 }
 .search-bar-optimize-seg:active {
   transform: scale(0.94);
@@ -878,7 +879,7 @@ main.page {
   width: 100%;
   height: 27px;
   border-radius: 999px;
-  background: var(--studio-gray-40);
+  background: var(--studio-gray-35);
   overflow: hidden;
   touch-action: none;
 }
@@ -899,7 +900,7 @@ main.page {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--studio-gray-70);
+  background: var(--fill-strong);
 }
 /* 구간 안쪽 왼쪽 끝의 < (시작), 오른쪽 끝의 > (끝) 손잡이. 이 아이콘을
    드래그해서 시작·끝 시간을 옮긴다. 진한 구간과 같은 세로 범위를 써서 그
@@ -915,7 +916,7 @@ main.page {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--studio-t70);
+  color: var(--bg);
   touch-action: none;
 }
 .search-bar-highlight-slider-handle--end {
