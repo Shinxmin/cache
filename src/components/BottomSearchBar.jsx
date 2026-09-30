@@ -390,8 +390,15 @@ export default function BottomSearchBar({
   // 스스로 판단하므로 여기서는 그대로 전달만 한다.
   const studioSegDrag = useSegmentDrag(OPTIMIZE_LEVELS.length, (level) => onChangeStudioLevel?.(level));
 
-  const canSubmitStudio = studioResult ? true : Boolean(studioName?.trim()) && !studioBusy;
+  // 선택된 항목이 없어 편집 대상이 없을 때(studioHasTarget이 false)의 확인은
+  // 할 일이 없으니 그냥 패널을 닫는 버튼으로 동작한다 — 비활성으로 두면 열린
+  // 패널의 확인이 죽어 있는 것처럼 보인다.
+  const canSubmitStudio = studioResult || !studioHasTarget ? true : Boolean(studioName?.trim()) && !studioBusy;
   const submitStudio = async () => {
+    if (!studioHasTarget && !studioResult) {
+      onCancelStudio?.();
+      return;
+    }
     if (studioBusy) return;
     setStudioBusy(true);
     try {

@@ -21,6 +21,7 @@
   --studio-t80: color-mix(in srgb, var(--text) 80%, transparent);
   --studio-t70: color-mix(in srgb, var(--text) 70%, transparent);
   --studio-t10: color-mix(in srgb, var(--text) 10%, transparent);
+  --studio-gray-35: rgba(128, 128, 128, 0.35);
   --studio-gray-40: rgba(128, 128, 128, 0.4);
   --studio-gray-70: rgba(128, 128, 128, 0.7);
   --studio-disabled: 0.4;
@@ -552,7 +553,7 @@ main.page {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: var(--studio-gray-40);
+  background: var(--studio-gray-35);
   color: var(--studio-t70);
   transition: transform 0.35s var(--spring);
 }
@@ -573,7 +574,7 @@ main.page {
   height: 26px;
   padding: 2px;
   border-radius: 999px;
-  background: var(--studio-gray-40);
+  background: var(--studio-gray-35);
   touch-action: none;
 }
 .search-bar-optimize-seg {
@@ -586,13 +587,13 @@ main.page {
   border-radius: 999px;
   font-size: 10px;
   font-weight: 400;
-  color: var(--studio-t70);
+  color: var(--studio-t80);
   white-space: nowrap;
   transition: background 0.2s var(--ease), color 0.2s var(--ease), transform 0.35s var(--spring);
 }
 .search-bar-optimize-seg.active {
   background: var(--studio-gray-70);
-  color: var(--studio-t70);
+  color: var(--studio-t80);
   font-weight: 400;
 }
 .search-bar-optimize-seg:active {
@@ -826,7 +827,7 @@ main.page {
   margin: 5px 0 0;
   font-size: 13px;
   font-weight: 400;
-  color: var(--studio-t70);
+  color: var(--studio-t80);
   text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -933,7 +934,7 @@ main.page {
   flex: none;
   margin: 4px 0 0;
   font-size: 13px;
-  color: var(--studio-t70);
+  color: var(--studio-t80);
   text-align: left;
 }
 .search-bar-confirm-nav {
@@ -963,7 +964,7 @@ main.page {
   flex: none;
   min-width: 28px;
   font-size: 13px;
-  color: var(--studio-t70);
+  color: var(--studio-t80);
   text-align: center;
 }
 /* ── 체크박스: 네이티브 input은 투명 처리해 접근성/토글 동작만 맡기고, 시각
@@ -1884,7 +1885,7 @@ main.page {
   height: 27px;
   padding: 0 10px;
   border-radius: 999px;
-  background: var(--studio-gray-40);
+  background: var(--studio-gray-35);
   color: var(--studio-t70);
   font-size: 12px;
   font-weight: 400;
@@ -1916,7 +1917,7 @@ main.page {
   margin: 5px 0 0;
   font-size: 13px;
   font-weight: 400;
-  color: var(--studio-t70);
+  color: var(--studio-t80);
 }
 /* 확인을 누른 뒤 처리 중일 때 뜨는 진행 바 + "148 / 200" 카운트. */
 .optimize-progress-track {
@@ -1936,7 +1937,7 @@ main.page {
 .optimize-progress-count {
   margin: 8px 0 0;
   font-size: 13px;
-  color: var(--studio-t70);
+  color: var(--studio-t80);
   text-align: left;
 }
 /* 전부 끝난 뒤 뜨는 결과 요약(처리 시간·용량 변화·절약한 용량). */
@@ -2576,7 +2577,7 @@ main.page {
 /* 스튜디오 패널이 열려 있을 때만 확인 버튼을 스튜디오 색 체계로(다른 패널의
    확인 버튼은 그대로): 회색 40% 배경, 15px·400·100% 글자. */
 .bottom-search-wrap .search-dock.studio-mode .search-bar-inline-confirm {
-  background: var(--studio-gray-40);
+  background: var(--studio-gray-35);
   color: var(--text);
   font-size: 15px;
   font-weight: 400;
