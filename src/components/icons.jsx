@@ -121,6 +121,15 @@ export function ChevronRightIcon({ size = 18 }) {
   );
 }
 
+// 폴더 썸네일 지정 아이콘(머터리얼 "person") — 정보 아이콘을 켠 단일 폴더에 뜬다.
+export function PersonIcon({ size = 12 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+    </svg>
+  );
+}
+
 // 복제(프리셋 저장) — 겹쳐진 두 사각형.
 export function DuplicateIcon({ size = 18 }) {
   return (
