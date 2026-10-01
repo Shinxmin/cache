@@ -825,9 +825,7 @@ export default function BottomSearchBar({
                     // 최적화가 전부 끝났을 때: 본문 자리부터 처리 결과(개수·시간·용량
                     // 변화·절약한 용량)를 보여준다. 패널은 스크림을 눌러 직접 닫는다.
                     <div className="optimize-result-stats">
-                      <p className="optimize-result-summary">
-                        {studioResult.kind === "compare" ? "이미지 비교 파일 생성 완료" : `${studioResult.total}개 파일 처리 완료`}
-                      </p>
+                      <p className="optimize-result-summary">{studioResult.total}개 파일 처리 완료</p>
                       <div className="optimize-result-row">
                         <span className="optimize-result-label">처리 시간</span>
                         <span className="optimize-result-value">{(studioResult.elapsedMs / 1000).toFixed(1)}초</span>
