@@ -3,7 +3,7 @@ import { folderSizes, listFavorites, listFiles, searchFiles, thumbnailUrls } fro
 import { formatBytes } from "../lib/format";
 import { isOptimizableFile } from "../lib/optimize";
 import { isSearchActive, parseSearchQuery } from "../lib/search";
-import { CheckIcon, FileIcon, FolderIcon } from "../components/icons";
+import { CheckIcon, FileIcon, FolderIcon, PersonIcon } from "../components/icons";
 import { StarIcon } from "../components/toolkitIcons";
 import Spinner from "../components/Spinner";
 import useLongPress from "../hooks/useLongPress";
@@ -18,6 +18,44 @@ function NameWithStar({ name, favorite, className }) {
         </span>
       )}
       {name}
+    </span>
+  );
+}
+
+// 폴더 썸네일로 지정할 수 있는 이미지 확장자(jpg·jpeg·png·webp).
+const THUMB_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp"]);
+function isThumbPickable(item) {
+  if (item.is_folder) return false;
+  const dot = item.name.lastIndexOf(".");
+  return dot > 0 && THUMB_EXTENSIONS.has(item.name.slice(dot + 1).toLowerCase());
+}
+
+// 정보(i) 아이콘을 켠 단일 폴더에 뜨는 작은 사람 아이콘 — 누르면 그 폴더 안에서
+// 썸네일로 쓸 이미지를 고르는 지정 모드로 들어간다. 타일/행(<button>) 안에 있어
+// 중첩 버튼을 피하려고 span으로 만들고, 꾹 누르기·탭 처리가 타일로 새지 않게
+// 포인터 이벤트를 여기서 끊는다.
+function ThumbPickIcon({ size, className, onPick }) {
+  return (
+    <span
+      className={`drive-thumb-pick ${className}`}
+      role="button"
+      tabIndex={0}
+      aria-label="썸네일 지정"
+      onPointerDown={(e) => e.stopPropagation()}
+      onPointerUp={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        onPick();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.stopPropagation();
+          onPick();
+        }
+      }}
+    >
+      <PersonIcon size={size} />
     </span>
   );
 }
@@ -38,12 +76,12 @@ function sizeLabel(item, revealed, folderSizeMap) {
 
 // 갤러리 타일 하나. 꾹 누르면 선택 모드로 들어가고(App.jsx가 스튜디오 툴킷을
 // 띄운다), 선택된 동안은 눌린 것처럼 살짝 눌려 보이며 체크 배지가 뜬다.
-function GalleryTile({ item, thumb, selected, size, onTap, onLongPress }) {
+function GalleryTile({ item, thumb, selected, size, pickIcon, onPickIcon, pickDim, onTap, onLongPress }) {
   const press = useLongPress(onTap, onLongPress);
   const optimizable = !item.is_folder && isOptimizableFile(item.name, item.mime);
   return (
     <button
-      className={`drive-tile-btn${selected ? " selected" : ""}`}
+      className={`drive-tile-btn${selected ? " selected" : ""}${pickDim ? " is-pick-dim" : ""}`}
       type="button"
       data-optimizable={optimizable ? "true" : "false"}
       {...press}
@@ -52,6 +90,7 @@ function GalleryTile({ item, thumb, selected, size, onTap, onLongPress }) {
         // 썸네일이 있는 이미지·영상: 타일을 꽉 채우고 제목은 좌하단에 겹친다.
         // 블러 처리된 항목은 썸네일에만 블러를 건다(실제로 열어 보면 원본 그대로).
         <span className="drive-tile drive-tile--thumb">
+          {pickIcon && <ThumbPickIcon size={11} className="drive-thumb-pick--tile" onPick={onPickIcon} />}
           <img
             className={item.blurred ? "drive-thumb-blurred" : undefined}
             src={thumb}
@@ -73,6 +112,7 @@ function GalleryTile({ item, thumb, selected, size, onTap, onLongPress }) {
         // 썸네일이 없는 폴더·일반 파일도 제목(+용량)을 타일 밖이 아니라 안쪽
         // 아래에 겹쳐서 보여준다(썸네일 타일과 같은 자리).
         <span className="drive-tile">
+          {pickIcon && <ThumbPickIcon size={12} className="drive-thumb-pick--tile" onPick={onPickIcon} />}
           {item.is_folder ? (
             <FolderIcon size={44} className="drive-tile-icon-small" />
           ) : (
@@ -95,19 +135,22 @@ function GalleryTile({ item, thumb, selected, size, onTap, onLongPress }) {
   );
 }
 
-function ListRow({ item, selected, size, onTap, onLongPress }) {
+function ListRow({ item, selected, size, pickIcon, onPickIcon, pickDim, onTap, onLongPress }) {
   const press = useLongPress(onTap, onLongPress);
   const optimizable = !item.is_folder && isOptimizableFile(item.name, item.mime);
   return (
     <button
-      className={`drive-row${selected ? " selected" : ""}`}
+      className={`drive-row${selected ? " selected" : ""}${pickDim ? " is-pick-dim" : ""}`}
       type="button"
       data-optimizable={optimizable ? "true" : "false"}
       {...press}
     >
       <span className="drive-row-icon">{item.is_folder ? <FolderIcon size={20} /> : <FileIcon size={20} />}</span>
       <span className="drive-row-text">
-        <NameWithStar className="drive-row-name" name={item.name} favorite={item.favorite} />
+        <span className="drive-row-title-line">
+          <NameWithStar className="drive-row-name" name={item.name} favorite={item.favorite} />
+          {pickIcon && <ThumbPickIcon size={15} className="drive-thumb-pick--row" onPick={onPickIcon} />}
+        </span>
         {size && <span className="drive-row-size">{size}</span>}
       </span>
       {selected && (
@@ -142,6 +185,9 @@ export default function FilesPage({
   onToggleSelect,
   onLongPressItem,
   onItemsChange,
+  thumbPickMode = false,
+  onPickThumb,
+  onOpenThumbPicker,
   onReady,
 }) {
   const [items, setItems] = useState([]);
@@ -233,8 +279,33 @@ export default function FilesPage({
     };
   }, [session.token, items]);
 
-  const openOrToggle = (item) =>
-    selectionMode ? onToggleSelect(item) : item.is_folder ? onOpenFolder(item) : onOpenFile(item);
+  const openOrToggle = (item) => {
+    // 썸네일 지정 모드: 이미지(jpg·jpeg·png·webp)만 눌리고 이미지를 누르면 그대로
+    // 폴더 썸네일로 지정된다. 나머지(다른 파일·폴더)는 눌려도 아무 일도 없다.
+    if (thumbPickMode) {
+      if (isThumbPickable(item)) onPickThumb?.(item);
+      return;
+    }
+    if (selectionMode) onToggleSelect(item);
+    else if (item.is_folder) onOpenFolder(item);
+    else onOpenFile(item);
+  };
+  const longPressItem = (item) => {
+    if (!thumbPickMode) onLongPressItem(item);
+  };
+  // 정보(i) 아이콘이 켜진 폴더 하나만 골라 둔 동안에만(그 폴더가 선택돼 있고, 선택이
+  // 그 하나뿐이며, 폴더의 세부 정보 보기가 켜져 있을 때) 썸네일 지정 아이콘이 뜬다.
+  // 검색 결과·즐겨찾기 화면에서는 "상위 폴더로 돌아오기"가 성립하지 않아 쓰지 않는다.
+  const showPickIcon = (item) =>
+    !thumbPickMode &&
+    !searching &&
+    !favorites &&
+    item.is_folder &&
+    Boolean(item.info_revealed) &&
+    selectionMode &&
+    selectedIds.size === 1 &&
+    selectedIds.has(item.id);
+  const pickDimmed = (item) => thumbPickMode && !isThumbPickable(item);
 
   if (state === "loading") return <p className="drive-note"><Spinner /></p>;
   if (state === "error") return <p className="drive-note">파일을 불러오지 못했습니다</p>;
@@ -255,8 +326,11 @@ export default function FilesPage({
               item={item}
               selected={selectionMode && selectedIds.has(item.id)}
               size={sizeLabel(item, item.info_revealed, folderSizeMap)}
+              pickIcon={showPickIcon(item)}
+              onPickIcon={() => onOpenThumbPicker?.(item)}
+              pickDim={pickDimmed(item)}
               onTap={() => openOrToggle(item)}
-              onLongPress={() => onLongPressItem(item)}
+              onLongPress={() => longPressItem(item)}
             />
           </li>
         ))}
@@ -273,8 +347,11 @@ export default function FilesPage({
             thumb={item.thumb_key ? thumbs[item.thumb_key] : item.folder_thumb_key ? thumbs[item.folder_thumb_key] : null}
             selected={selectionMode && selectedIds.has(item.id)}
             size={sizeLabel(item, item.info_revealed, folderSizeMap)}
+            pickIcon={showPickIcon(item)}
+            onPickIcon={() => onOpenThumbPicker?.(item)}
+            pickDim={pickDimmed(item)}
             onTap={() => openOrToggle(item)}
-            onLongPress={() => onLongPressItem(item)}
+            onLongPress={() => longPressItem(item)}
           />
         </li>
       ))}
