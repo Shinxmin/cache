@@ -299,7 +299,7 @@ export async function uploadFile({ token, userId, file, parentId = null, onProgr
 // 따로 남겨 둔다. 이 항목을 열면 다시 A/B 스플릿 비교 화면이 뜨고,
 // 다운로드하면 A·B가 각자 원래 이름으로 저장된다(downloadSplitPresetFiles).
 // 원본 A/B를 나중에 지워도 여기 복제된 바이트는 별개 객체라 영향받지 않는다.
-export async function createSplitPreset({ token, userId, itemA, itemB, parentId, name }) {
+export async function createSplitPreset({ token, userId, itemA, itemB, parentId, name, onStepDone }) {
   const [blobA, blobB] = await Promise.all([fetchFileBlob(token, itemA.r2_key), fetchFileBlob(token, itemB.r2_key)]);
 
   const baseKey = `${userId}/${crypto.randomUUID()}`;
@@ -312,8 +312,10 @@ export async function createSplitPreset({ token, userId, itemA, itemB, parentId,
 
   const { url: putA } = await presign(token, { action: "put", key: keyA, contentType: mimeA });
   await xhrPut(putA, blobA, mimeA);
+  onStepDone?.();
   const { url: putB } = await presign(token, { action: "put", key: keyB, contentType: mimeB });
   await xhrPut(putB, blobB, mimeB);
+  onStepDone?.();
 
   const thumb = await makeThumbnail(new File([blobA], itemA.name, { type: mimeA }));
   let thumbKey = null;

@@ -1101,12 +1101,24 @@ export default function App() {
   // 순서"로 담아 두므로, [0]이 A(왼쪽)다. 이름은 A 파일명에서 확장자를
   // 떼고 "_이미지비교"를 붙인다(예: "테스트_1.jpg" → "테스트_1_이미지비교").
   const handleConfirmCompare = async () => {
+    // 결과가 이미 떠 있으면 확인은 패널을 닫는 동작이다(최적화 결과 화면과 같다).
+    if (studioResult) {
+      cancelMultiStudio();
+      setSelectedIds(new Set());
+      return;
+    }
     if (multiStudioItems.length !== 2) return;
     const itemA = visibleItems.find((it) => it.id === multiStudioItems[0].id);
     const itemB = visibleItems.find((it) => it.id === multiStudioItems[1].id);
     if (!itemA || !itemB) return;
     const ext = extensionOf(itemA.name);
     const baseName = ext ? itemA.name.slice(0, -(ext.length + 1)) : itemA.name;
+    // 최적화와 같은 진행 화면: 두 이미지를 하나씩 복제할 때마다 "1 / 2"로 올라가고,
+    // 끝나면 같은 자리에 결과 텍스트가 뜬다.
+    const total = 2;
+    setStudioResult(null);
+    setStudioProgress({ done: 0, total });
+    const startedAt = performance.now();
     try {
       await createSplitPreset({
         token: session.token,
@@ -1115,11 +1127,18 @@ export default function App() {
         itemB,
         parentId,
         name: `${baseName}_이미지비교`,
+        onStepDone: () => setStudioProgress((p) => (p ? { ...p, done: Math.min(p.total, p.done + 1) } : p)),
       });
-      cancelMultiStudio();
-      setSelectedIds(new Set());
+      setStudioProgress(null);
+      setStudioResult({
+        kind: "compare",
+        total,
+        elapsedMs: performance.now() - startedAt,
+        totalSize: (itemA.size || 0) + (itemB.size || 0),
+      });
       setRefreshKey((k) => k + 1);
     } catch {
+      setStudioProgress(null);
       window.alert("이미지 비교 파일을 만들지 못했습니다");
     }
   };
