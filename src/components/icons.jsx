@@ -130,6 +130,25 @@ export function PersonIcon({ size = 12 }) {
   );
 }
 
+// 폴더 썸네일 지우기 아이콘 — 사람 아이콘(PersonIcon)과 같은 디자인에 대각선을 그은 모양.
+// 선 둘레는 마스크로 살짝 비워 사람과 선이 겹쳐 뭉개지지 않게 한다.
+export function PersonOffIcon({ size = 12 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <defs>
+        <mask id="person-off-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+          <rect width="24" height="24" fill="#fff" />
+          <path d="M2.5 2.5 21.5 21.5" stroke="#000" strokeWidth="4.6" strokeLinecap="round" />
+        </mask>
+      </defs>
+      <g mask="url(#person-off-mask)">
+        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+      </g>
+      <path d="M3 3 21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
 // 복제(프리셋 저장) — 겹쳐진 두 사각형.
 export function DuplicateIcon({ size = 18 }) {
   return (

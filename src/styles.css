@@ -29,7 +29,7 @@
   --progress-fill: rgba(128, 128, 128, 0.58);
   --studio-gray-40: rgba(128, 128, 128, 0.4);
   --studio-gray-70: rgba(128, 128, 128, 0.7);
-  --studio-disabled: 0.38;
+  --studio-disabled: 0.4;
 }
 
 :root[data-theme="dark"] {
@@ -343,7 +343,7 @@ main.page {
   transform: scale(0.94);
 }
 .header-more-item:disabled {
-  opacity: 0.35;
+  opacity: var(--studio-disabled);
 }
 .header-more-toggle {
   width: 45px;
@@ -1217,7 +1217,7 @@ main.page {
   transform: scale(0.88);
 }
 .header-back:disabled {
-  opacity: 0.35;
+  opacity: var(--studio-disabled);
 }
 
 /* ── 원형 리퀴드글라스 삭제 버튼: 제목 우측에서 .header-more(삼점 버튼)와
@@ -1244,7 +1244,7 @@ main.page {
   transform: scale(0.88);
 }
 .header-circle-btn:disabled {
-  opacity: 0.35;
+  opacity: var(--studio-disabled);
 }
 
 /* ── 웹드라이브(파일 탭) ─────────────────────────────────────────────────
@@ -1589,7 +1589,7 @@ main.page {
   transform: scale(0.88);
 }
 .viewer-preset:disabled {
-  opacity: 0.5;
+  opacity: var(--studio-disabled);
 }
 .viewer-content {
   width: 100%;
@@ -1896,7 +1896,7 @@ main.page {
   height: 30px;
   padding: 0;
   background: none;
-  color: var(--text);
+  color: var(--studio-t75);
   font-size: 12px;
   font-weight: 500;
   transition: opacity 0.2s var(--ease);
@@ -2431,7 +2431,7 @@ main.page {
   transform: scale(0.97);
 }
 .auth-submit:disabled {
-  opacity: 0.6;
+  opacity: var(--studio-disabled);
 }
 .auth-toggle-row {
   display: flex;
@@ -2586,18 +2586,26 @@ main.page {
   align-items: center;
   justify-content: center;
   flex: none;
-  color: var(--text);
+  /* 웹사이트 표준 아이콘 색(툴킷 아이콘과 같은 --text-2) */
+  color: var(--text-2);
   cursor: pointer;
   -webkit-touch-callout: none;
 }
 /* 갤러리 타일: 좌측 상단. 눌리는 면적을 넉넉히 하려고 패딩을 주고, 아이콘 자체는
    타일 모서리에서 6px 안쪽에 오도록 맞춘다. */
-.drive-thumb-pick--tile {
+.drive-thumb-actions--tile {
   position: absolute;
   top: 0;
   left: 0;
   z-index: 3;
-  padding: 6px;
+  display: flex;
+  align-items: center;
+}
+.drive-thumb-pick--tile {
+  padding: 6px 3px 6px 6px;
+}
+.drive-thumb-pick--tile + .drive-thumb-pick--tile {
+  padding-left: 3px;
 }
 .drive-tile--thumb .drive-thumb-pick {
   color: #fff;
@@ -2610,8 +2618,13 @@ main.page {
   align-items: center;
   gap: 6px;
 }
+.drive-thumb-actions--row {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
 .drive-thumb-pick--row {
-  padding: 4px;
+  padding: 4px 3px;
   margin: -4px 0;
 }
 .drive-tile-btn.is-pick-dim,

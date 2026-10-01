@@ -20,6 +20,7 @@ import {
   verifySession,
 } from "./lib/session";
 import {
+  clearFolderThumbnail,
   createClip,
   createFolder,
   createSplitPreset,
@@ -1155,6 +1156,15 @@ export default function App() {
     openFolder(folder);
   };
 
+  const clearThumb = async (folder) => {
+    try {
+      await clearFolderThumbnail(session.token, folder.id);
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("썸네일을 삭제하지 못했습니다");
+    }
+  };
+
   const pickThumb = async (image) => {
     const folder = thumbPickFolder;
     if (!folder) return;
@@ -1420,6 +1430,7 @@ export default function App() {
               thumbPickMode={Boolean(thumbPickFolder)}
               onPickThumb={pickThumb}
               onOpenThumbPicker={startThumbPick}
+              onClearThumb={clearThumb}
               onReady={() => setInitialFilesReady(true)}
             />
           </main>
