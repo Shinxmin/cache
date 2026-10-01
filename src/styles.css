@@ -573,16 +573,20 @@ main.page {
   flex: none;
   display: flex;
   gap: 2px;
-  height: 26px;
+  /* 세로 폭은 확인 버튼(32px)과 같게, 가로 폭은 예전(약 110px)의 1.2배(132px). */
+  width: 132px;
+  height: 32px;
+  box-sizing: border-box;
   padding: 2px;
   border-radius: 999px;
   background: var(--slider-track);
   touch-action: none;
 }
 .search-bar-optimize-seg {
-  flex: none;
+  flex: 1 1 0;
+  min-width: 0;
   height: 100%;
-  padding: 0 7px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -684,12 +688,6 @@ main.page {
   /* 위쪽 20px는 이 패딩을 그대로 물려 쓰는 스튜디오·이동 패널까지 포함해
      모든 패널의 제목 위 여백을 20px로 통일한다. */
   padding: 20px 16px 8px;
-}
-/* 일괄 적용·일괄 지우기 같은 부가 기능 줄이 있는 패널은 그 줄 자체가
-   바로 밑 검색바와의 여백을 갖게 되므로, 패널 고정 아래쪽 여백은 줄여
-   부가 기능 줄이 검색바 확인 버튼 바로 위에 맞닿도록 한다. */
-.search-bar-confirm-panel.has-extras.is-open {
-  padding-bottom: 0;
 }
 /* 스튜디오(이름·태그·압축·클립 통합) 패널은 제목 아래 구분선 + 기능 선택
    줄(아이콘 줄/기능 화면) + 구분선 + 본문(파일명 등)이 쌓이므로, 다른
@@ -860,104 +858,7 @@ main.page {
    사라지지 않게 한다. */
 .search-bar-confirm-filename--studio {
   flex: none;
-  margin-top: 14px;
-}
-/* 하이라이트 섹션이 열려 있을 때 검색바의 확인 버튼 바로 왼쪽에 뜨는
-   구간 슬라이더(품질 세그먼트와 같은 자리). 검색바가 align-items: center인
-   덕분에 세로 위치는 따로 잡지 않아도 수직 가운데 정렬된다(가로 위치는
-   그대로 확인 버튼 바로 왼쪽). 다른 일괄 적용 버튼들처럼 등장·퇴장에
-   페이드+스케일 애니메이션이 붙는다(퇴장 때는 HighlightSliderPanel이
-   실제 언마운트 전에 .is-closing을 잠깐 켜서 트랜지션이 끝날 시간을
-   준다). */
-.search-bar-highlight-col {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  width: 176px;
-  animation: highlight-col-in 0.22s var(--spring);
-}
-.search-bar-highlight-col.is-closing {
-  animation: highlight-col-out 0.16s var(--ease) forwards;
-}
-@keyframes highlight-col-in {
-  from {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-}
-@keyframes highlight-col-out {
-  to {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-}
-/* 알약(캡슐) 모양 트랙(연한 회색). 부모(.search-bar-highlight-col)의 폭을
-   그대로 채운다. overflow: hidden으로 안쪽 진한 회색 구간이 둥근 모서리
-   밖으로 삐져나오지 않게 잘라낸다. */
-.search-bar-highlight-slider {
-  position: relative;
-  flex: none;
-  width: 100%;
-  height: 27px;
-  border-radius: 999px;
-  background: var(--slider-track);
-  overflow: hidden;
-  touch-action: none;
-}
-/* 시작·끝 사이(선택된 구간). 트랙(연한 회색) 폭·높이는 그대로 두고, 이
-   구간의 세로 두께만 트랙 높이의 90%로 줄인다(위아래 여백 4.05px씩).
-   배경은 --fill-strong(순수 --text보다 약간 부드러운 색)로 채운다 —
-   라이트 모드에선 거의 검정, 다크 모드에선 거의 흰색이라 "진한 배경은
-   검정, 다크 모드에선 반대"가 테마 변수 하나로 자동으로 맞는다. */
-.search-bar-highlight-slider-range {
-  position: absolute;
-  top: 4.05px;
-  bottom: 4.05px;
-  border-radius: 999px;
-  pointer-events: none;
-}
-.search-bar-highlight-slider-range::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--slider-fill);
-}
-/* 구간 안쪽 왼쪽 끝의 < (시작), 오른쪽 끝의 > (끝) 손잡이. 이 아이콘을
-   드래그해서 시작·끝 시간을 옮긴다. 진한 구간과 같은 세로 범위를 써서 그
-   안에 계속 세로 가운데 정렬되게 맞춘다. 색은 var(--bg) — 구간 배경
-   (var(--text))과 항상 반대색이 되어 라이트 모드에선 흰색, 다크 모드에선
-   검정색 아이콘이 된다. */
-.search-bar-highlight-slider-handle {
-  position: absolute;
-  top: 4.05px;
-  bottom: 4.05px;
-  z-index: 1;
-  width: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--bg);
-  touch-action: none;
-}
-.search-bar-highlight-slider-handle--end {
-  transform: translateX(-100%);
-}
-.search-bar-highlight-slider.is-disabled {
-  opacity: var(--studio-disabled);
-}
-.search-bar-highlight-slider.is-disabled .search-bar-highlight-slider-handle {
-  pointer-events: none;
-}
-/* 파일명(.search-bar-confirm-filename--studio) 바로 밑에 뜨는 시작·끝
-   시간 — "0:00  -  0:10"처럼 대시 앞뒤로 두 칸씩 띄우고 왼쪽 정렬한다.
-   탭해서 고치던 입력창은 없앴고, 값 조정은 검색바 슬라이더로만 한다. */
-.search-bar-highlight-times-inline {
-  flex: none;
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: var(--studio-t70);
-  text-align: left;
+  margin-top: 2px;
 }
 .search-bar-confirm-nav {
   display: flex;
@@ -1878,18 +1779,19 @@ main.page {
 .rename-input::placeholder {
   color: var(--text-2);
 }
-/* 일괄 적용·일괄 지우기·번호 붙이기 같은 부가 기능(서브 버튼). 패널 맨 아래 —
-   바로 밑 검색바와 맞닿는 자리 — 에 붙이고(margin-top: auto), 그 위에 구분선
-   한 줄을 긋는다. 버튼은 배경 없이 글자만 있고, 글자 사이에 구분선은 없다.
-   왼쪽 정렬. 항목이 없는 패널에서는 아예 렌더링되지 않는다. */
-.search-bar-confirm-extras {
+/* 서브 버튼(일괄 지우기·일괄 적용·번호 붙이기)이 놓이는 줄 — 스튜디오의 기능 제목
+   줄 바로 밑. 구분선 없이 배경 없는 글자만 나란히 놓는다(글자 사이 구분선도
+   없다). 아이콘 줄에서는 같은 자리에 안내 문구가 온다. */
+.search-bar-studio-subrow {
+  flex: none;
+  height: 30px;
+  margin-top: 4px;
   display: flex;
-  justify-content: flex-start;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 18px;
-  margin-top: auto;
-  padding: 2px 0 6px;
-  border-top: 1px solid var(--studio-t10);
+}
+.search-bar-studio-subrow .search-bar-confirm-filename--studio {
+  margin: 0;
 }
 .search-bar-confirm-extras-btn {
   flex: none;
