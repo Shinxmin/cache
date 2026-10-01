@@ -162,7 +162,7 @@ function ListRow({ item, selected, size, pickIcon, onPickIcon, onClearIcon, pick
       <span className="drive-row-text">
         <span className="drive-row-title-line">
           <NameWithStar className="drive-row-name" name={item.name} favorite={item.favorite} />
-          {pickIcon && <ThumbActions variant="row" size={19} item={item} onPick={onPickIcon} onClear={onClearIcon} />}
+          {pickIcon && <ThumbActions variant="row" size={15} item={item} onPick={onPickIcon} onClear={onClearIcon} />}
         </span>
         {size && <span className="drive-row-size">{size}</span>}
       </span>
