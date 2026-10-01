@@ -573,9 +573,9 @@ main.page {
   flex: none;
   display: flex;
   gap: 2px;
-  /* 세로 폭은 확인 버튼(32px)과 같게, 가로 폭은 예전(약 110px)의 1.2배(132px). */
-  width: 132px;
-  height: 32px;
+  /* 인스펙터 안에서 전체 폭, 세로 36px. */
+  width: 100%;
+  height: 36px;
   box-sizing: border-box;
   padding: 2px;
   border-radius: 999px;
@@ -698,9 +698,9 @@ main.page {
   justify-content: flex-start;
 }
 .search-bar-confirm-panel.mode-studio.is-open {
-  /* 본문 14px로 커진 최적화 결과(4줄)까지 여유 있게 들어가도록 200px → 216px. */
-  max-height: 216px;
-  min-height: 216px;
+  /* 편집툴 레이아웃(헤더/도구 줄/인스펙터/액션 줄)에 맞춘 고정 높이 250px. */
+  max-height: 250px;
+  min-height: 250px;
 }
 /* 이동 패널은 경로 표시줄 + 스크롤되는 폴더 목록까지 들어가 가장 길다. */
 .search-bar-confirm-panel.mode-move {
@@ -739,92 +739,100 @@ main.page {
 .search-bar-confirm-title--studio + .search-bar-studio-divider {
   margin-top: 8px;
 }
-/* 두 구분선 사이의 기능 선택 줄. 아이콘 줄(.search-bar-studio-icon-list)과
-   기능 화면(.search-bar-studio-detail)이 같은 자리에 절대 위치로 겹쳐
-   있다가, data-mode에 따라 옆으로 밀려나며 접히듯 서로 자리를 바꾼다. */
-.search-bar-studio-switcher {
-  position: relative;
+/* ── 스튜디오 레이아웃(편집툴 느낌): 헤더 / 도구 줄 / 구분선 / 인스펙터 / 액션 줄.
+   패널 높이는 250px 고정이라 도구를 바꿔도 크기가 변하지 않는다. ── */
+.studio-head {
   flex: none;
-  height: 30px;
-}
-.search-bar-studio-icon-list,
-.search-bar-studio-detail {
-  position: absolute;
-  inset: 0;
   display: flex;
   align-items: center;
-  transition: transform 0.35s var(--spring), opacity 0.25s var(--ease);
+  justify-content: space-between;
 }
-.search-bar-studio-icon-list {
-  gap: 10px;
+.studio-head-count {
+  font-size: 12px;
+  color: var(--studio-t70);
 }
-.search-bar-studio-switcher[data-mode="list"] .search-bar-studio-icon-list {
-  transform: translateX(0);
-  opacity: 1;
-  pointer-events: auto;
-}
-.search-bar-studio-switcher[data-mode="list"] .search-bar-studio-detail {
-  transform: translateX(14px);
-  opacity: 0;
-  pointer-events: none;
-}
-.search-bar-studio-switcher[data-mode="detail"] .search-bar-studio-icon-list {
-  transform: translateX(-14px);
-  opacity: 0;
-  pointer-events: none;
-}
-.search-bar-studio-switcher[data-mode="detail"] .search-bar-studio-detail {
-  transform: translateX(0);
-  opacity: 1;
-  pointer-events: auto;
+.studio-tools {
+  flex: none;
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
 }
 .search-bar-studio-icon-btn {
-  flex: none;
-  width: 40px;
-  height: 27px;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
+  padding: 0 6px;
   border-radius: 999px;
   background: var(--studio-gray-40);
   color: var(--studio-t70);
-  transition: transform 0.35s var(--spring);
+  transition: transform 0.35s var(--spring), background 0.2s var(--ease), color 0.2s var(--ease);
 }
 .search-bar-studio-icon-btn:active {
-  transform: scale(0.9);
+  transform: scale(0.94);
 }
-/* 최적화 아이콘은 선택된 항목이 전부 압축 가능할 때만 눌리고, 그렇지
-   않으면(폴더·미지원 파일이 섞여 있으면) 이렇게 흐리게 보이기만 한다 —
-   자리는 그대로 차지한다. */
+/* 선택된 도구: 슬라이더 선택 칸과 같은 회색 70% 알약 + 진한 글자. */
+.search-bar-studio-icon-btn.is-active {
+  background: var(--studio-gray-70);
+  color: var(--text);
+}
 .search-bar-studio-icon-btn:disabled {
   opacity: var(--studio-disabled);
 }
-.search-bar-studio-detail {
-  gap: 8px;
+.studio-tab-label {
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-/* 오른쪽 화살표(ChevronRightIcon)를 뒤집어 왼쪽(뒤로) 화살표로 쓴다. */
-.search-bar-studio-back {
+/* 인스펙터: 선택한 도구의 대상 줄 + 조작부(진행·결과 화면도 이 자리). */
+.studio-inspector {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: 8px;
+}
+.studio-target {
   flex: none;
+  height: 28px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  font-size: 12px;
-  color: var(--studio-t70);
-  transform: scaleX(-1);
+  gap: 8px;
 }
-.search-bar-studio-detail-icon {
+.studio-target-icon {
   flex: none;
   display: flex;
   color: var(--studio-t70);
 }
-.search-bar-studio-detail-label {
+.studio-target-name {
   flex: 1;
   min-width: 0;
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text);
+  font-size: 14px;
+  color: var(--studio-t75);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.studio-inspector .search-bar-optimize-seg-group {
+  margin-top: 8px;
+}
+.studio-inspector .search-bar-confirm-filename--studio {
+  margin-top: 4px;
+}
+/* 액션 줄: 위에 구분선 한 줄 + 글자만 있는 서브 버튼(글자 사이 구분선 없음). */
+.studio-actions {
+  flex: none;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  border-top: 1px solid var(--studio-t10);
 }
 /* 삭제 확인 보조 설명(고정 문구). 제목과의 간격을 조금 더 줄여 본문을
    살짝 위로 올린다. */
@@ -1779,20 +1787,6 @@ main.page {
 .rename-input::placeholder {
   color: var(--text-2);
 }
-/* 서브 버튼(일괄 지우기·일괄 적용·번호 붙이기)이 놓이는 줄 — 스튜디오의 기능 제목
-   줄 바로 밑. 구분선 없이 배경 없는 글자만 나란히 놓는다(글자 사이 구분선도
-   없다). 아이콘 줄에서는 같은 자리에 안내 문구가 온다. */
-.search-bar-studio-subrow {
-  flex: none;
-  height: 30px;
-  margin-top: 4px;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-.search-bar-studio-subrow .search-bar-confirm-filename--studio {
-  margin: 0;
-}
 .search-bar-confirm-extras-btn {
   flex: none;
   height: 30px;
@@ -1815,14 +1809,14 @@ main.page {
   background: rgba(255, 255, 255, 0.5);
   color: var(--bg);
 }
-/* 최적화가 진행·완료돼 결과가 나오는 동안에는 기능 선택 줄 전체를 흐리게 하고
-   눌리지 않게 잠근다. */
-.search-bar-studio-switcher.is-running {
+/* 최적화가 진행·완료돼 결과가 나오는 동안에는 도구 줄 전체를 흐리게 하고 눌리지
+   않게 잠근다. */
+.studio-tools.is-running {
   opacity: var(--studio-disabled);
   pointer-events: none;
 }
-/* 잠긴 줄 안의 비활성 아이콘은 줄 자체의 40%에 또 40%가 곱해지지 않게 한다. */
-.search-bar-studio-switcher.is-running .search-bar-studio-icon-btn:disabled {
+/* 잠긴 줄 안의 비활성 도구는 줄 자체의 40%에 또 40%가 곱해지지 않게 한다. */
+.studio-tools.is-running .search-bar-studio-icon-btn:disabled {
   opacity: 1;
 }
 .optimize-result-summary {
