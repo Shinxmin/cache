@@ -21,18 +21,14 @@ import {
 } from "./lib/session";
 import {
   clearFolderThumbnail,
-  createClip,
   createFolder,
   createSplitPreset,
   downloadFile,
   downloadFolderAsZip,
   downloadSelectionAsZip,
   downloadSplitPresetFiles,
-  fileUrl,
-  listClips,
   listFiles,
   moveFiles,
-  nextClipName,
   optimizeFiles,
   renameFiles,
   setBlur,
@@ -44,7 +40,7 @@ import {
   trashFiles,
   uploadFile,
 } from "./lib/drive";
-import { isImage, isVideo, looksLikeVideoFile as isVideoLike } from "./lib/thumbnail";
+import { isImage, isVideo } from "./lib/thumbnail";
 import { isSearchActive } from "./lib/search";
 import { loadTheme, saveTheme } from "./lib/theme";
 import { BASE_TOOL_IDS, normalizeLayout } from "./lib/toolkit";
@@ -142,19 +138,8 @@ export default function App() {
   const [studioTag, setStudioTag] = useState("");
   const [studioLevel, setStudioLevel] = useState(1);
   const [studioLevelTouched, setStudioLevelTouched] = useState(false);
-  // 하이라이트 섹션(기존 "하이라이트 클립" 애드온의 구간 기록 기능을 그대로
-  // 재사용한다 — createClip 호출은 동일하고, 재생하며 시작·끝을 찍던 조작을
-  // 슬라이더 드래그 + 시작·끝 입력창 두 개를 직접 고치는 방식으로 바꾼
-  // 것뿐이다). start/end는 초 단위, duration은 하이라이트 섹션을 처음 열 때
-  // 실제 영상 메타데이터에서 읽어 채운다(probeStudioHighlightDuration).
-  // highlightTouched가 true일 때만(사용자가 실제로 슬라이더·입력을 만졌을
-  // 때만) 확인 시 실제로 생성한다.
-  const [studioHighlightStart, setStudioHighlightStart] = useState(0);
-  const [studioHighlightEnd, setStudioHighlightEnd] = useState(10);
-  const [studioHighlightDuration, setStudioHighlightDuration] = useState(0);
-  const [studioHighlightTouched, setStudioHighlightTouched] = useState(false);
   const [multiStudioOpen, setMultiStudioOpen] = useState(false);
-  const [multiStudioItems, setMultiStudioItems] = useState([]); // [{id,name,originalName,tag,level,levelTouched,mime,is_folder,highlightStart,highlightEnd,highlightDuration,highlightTouched}]
+  const [multiStudioItems, setMultiStudioItems] = useState([]); // [{id,name,originalName,tag,level,levelTouched,mime,is_folder}]
   const [multiStudioIndex, setMultiStudioIndex] = useState(0);
   // 확인을 누른 뒤 압축이 실제로 걸리면(levelTouched) 처리 중(진행률
   // 표시)과 완료(결과 요약) 두 화면을 보여준다. 단일·다중 공통. 하이라이트는
@@ -300,10 +285,6 @@ export default function App() {
       setStudioTag("");
       setStudioLevel(1);
       setStudioLevelTouched(false);
-      setStudioHighlightStart(0);
-      setStudioHighlightEnd(10);
-      setStudioHighlightDuration(0);
-      setStudioHighlightTouched(false);
       setStudioOpen(true);
       return;
     }
@@ -315,10 +296,6 @@ export default function App() {
           tag: fromMulti.tag,
           level: fromMulti.level,
           levelTouched: fromMulti.levelTouched,
-          highlightStart: fromMulti.highlightStart,
-          highlightEnd: fromMulti.highlightEnd,
-          highlightDuration: fromMulti.highlightDuration,
-          highlightTouched: fromMulti.highlightTouched,
         };
       }
       if (studioOpen && studioTargetId === it.id) {
@@ -327,10 +304,6 @@ export default function App() {
           tag: studioTag,
           level: studioLevel,
           levelTouched: studioLevelTouched,
-          highlightStart: studioHighlightStart,
-          highlightEnd: studioHighlightEnd,
-          highlightDuration: studioHighlightDuration,
-          highlightTouched: studioHighlightTouched,
         };
       }
       return {
@@ -338,10 +311,6 @@ export default function App() {
         tag: it.tag || "",
         level: 1,
         levelTouched: false,
-        highlightStart: 0,
-        highlightEnd: 10,
-        highlightDuration: 0,
-        highlightTouched: false,
       };
     };
     if (targets.length === 1) {
@@ -355,10 +324,6 @@ export default function App() {
       setStudioTag(f.tag);
       setStudioLevel(f.level);
       setStudioLevelTouched(f.levelTouched);
-      setStudioHighlightStart(f.highlightStart);
-      setStudioHighlightEnd(f.highlightEnd);
-      setStudioHighlightDuration(f.highlightDuration);
-      setStudioHighlightTouched(f.highlightTouched);
       setStudioOpen(true);
       return;
     }
@@ -371,10 +336,6 @@ export default function App() {
         tag: f.tag,
         level: f.level,
         levelTouched: f.levelTouched,
-        highlightStart: f.highlightStart,
-        highlightEnd: f.highlightEnd,
-        highlightDuration: f.highlightDuration,
-        highlightTouched: f.highlightTouched,
         mime: it.mime,
         is_folder: it.is_folder,
       };
@@ -683,10 +644,6 @@ export default function App() {
       setStudioTag(only?.tag || "");
       setStudioLevel(1);
       setStudioLevelTouched(false);
-      setStudioHighlightStart(0);
-      setStudioHighlightEnd(10);
-      setStudioHighlightDuration(0);
-      setStudioHighlightTouched(false);
       setStudioOpen(true);
       return;
     }
@@ -698,10 +655,6 @@ export default function App() {
         tag: it.tag || "",
         level: 1,
         levelTouched: false,
-        highlightStart: 0,
-        highlightEnd: 10,
-        highlightDuration: 0,
-        highlightTouched: false,
         mime: it.mime,
         is_folder: it.is_folder,
       }))
@@ -718,10 +671,6 @@ export default function App() {
     setStudioTag("");
     setStudioLevel(1);
     setStudioLevelTouched(false);
-    setStudioHighlightStart(0);
-    setStudioHighlightEnd(10);
-    setStudioHighlightDuration(0);
-    setStudioHighlightTouched(false);
     setStudioProgress(null);
     setStudioResult(null);
   };
@@ -765,87 +714,6 @@ export default function App() {
     } else if (multiStudioOpen) {
       setMultiStudioItems((prev) =>
         prev.map((it, i) => (i === multiStudioIndex ? { ...it, level, levelTouched: true } : it))
-      );
-    }
-  };
-
-  const HIGHLIGHT_MIN_GAP_SEC = 0.5;
-
-  // 하이라이트 섹션을 열 때(아이콘을 누르거나 다중에서 이전·다음으로 다른
-  // 영상으로 넘어갈 때) 딱 한 번 실제 영상 메타데이터에서 길이를 읽어 온다 —
-  // 캔버스로 읽는 게 아니라 <video>의 duration만 보는 것이므로 presigned
-  // URL을 직접 넣어도 오염(taint) 문제가 없다. 이미 읽어 둔 영상이면 다시
-  // 부르지 않는다.
-  const probeStudioHighlightDuration = async (explicitIndex) => {
-    if (!studioOpen && !multiStudioOpen) return;
-    // 다중 모드에서 이전·다음으로 넘어간 직후 부르면 multiStudioIndex
-    // state가 아직 리렌더 전이라(같은 이벤트 핸들러 안) 낡은 값을 볼 수
-    // 있으므로, 그 경우 BottomSearchBar.jsx가 이미 계산해 둔 다음 인덱스를
-    // explicitIndex로 직접 받는다.
-    const idx = typeof explicitIndex === "number" ? explicitIndex : multiStudioIndex;
-    const currentId = studioOpen ? studioTargetId : multiStudioItems[idx]?.id;
-    if (!currentId) return;
-    const alreadyLoaded = studioOpen ? studioHighlightDuration > 0 : (multiStudioItems[idx]?.highlightDuration ?? 0) > 0;
-    if (alreadyLoaded) return;
-    const sourceItem = visibleItems.find((it) => it.id === currentId);
-    if (!sourceItem?.r2_key || !isVideoLike(sourceItem.name, sourceItem.mime)) return;
-    try {
-      const url = await fileUrl(session.token, sourceItem.r2_key);
-      const duration = await new Promise((resolve) => {
-        const v = document.createElement("video");
-        v.preload = "metadata";
-        v.onloadedmetadata = () => resolve(v.duration || 0);
-        v.onerror = () => resolve(0);
-        v.src = url;
-      });
-      if (!duration) return;
-      if (studioOpen) {
-        setStudioHighlightDuration(duration);
-        setStudioHighlightEnd((prev) => Math.min(prev, duration));
-      } else if (multiStudioOpen) {
-        setMultiStudioItems((prev) =>
-          prev.map((it, i) =>
-            i === idx ? { ...it, highlightDuration: duration, highlightEnd: Math.min(it.highlightEnd, duration) } : it
-          )
-        );
-      }
-    } catch {
-      // 길이를 못 읽으면 슬라이더가 duration 0인 채로 비활성처럼 남는다 —
-      // 조용히 무시한다.
-    }
-  };
-
-  const changeStudioHighlightStart = (sec) => {
-    const clamped = Math.max(0, sec);
-    if (studioOpen) {
-      setStudioHighlightStart(Math.min(clamped, studioHighlightEnd - HIGHLIGHT_MIN_GAP_SEC));
-      setStudioHighlightTouched(true);
-    } else if (multiStudioOpen) {
-      setMultiStudioItems((prev) =>
-        prev.map((it, i) =>
-          i === multiStudioIndex
-            ? { ...it, highlightStart: Math.min(clamped, it.highlightEnd - HIGHLIGHT_MIN_GAP_SEC), highlightTouched: true }
-            : it
-        )
-      );
-    }
-  };
-
-  const changeStudioHighlightEnd = (sec) => {
-    if (studioOpen) {
-      setStudioHighlightEnd(Math.min(studioHighlightDuration || sec, Math.max(sec, studioHighlightStart + HIGHLIGHT_MIN_GAP_SEC)));
-      setStudioHighlightTouched(true);
-    } else if (multiStudioOpen) {
-      setMultiStudioItems((prev) =>
-        prev.map((it, i) =>
-          i === multiStudioIndex
-            ? {
-                ...it,
-                highlightEnd: Math.min(it.highlightDuration || sec, Math.max(sec, it.highlightStart + HIGHLIGHT_MIN_GAP_SEC)),
-                highlightTouched: true,
-              }
-            : it
-        )
       );
     }
   };
@@ -896,26 +764,6 @@ export default function App() {
   const clearAllMultiStudioLevel = () => {
     setMultiStudioItems((prev) => prev.map((it) => ({ ...it, level: 1, levelTouched: false })));
   };
-  // 지금 보고 있는 항목의 시작·끝 값을 그 항목부터 뒤쪽 전부에 적용한다
-  // (예: 4번째 항목에서 누르면 4~마지막에 적용, 1~3번째는 그대로 둔다) —
-  // 이름·태그·품질의 일괄 적용과 같은 규칙이다.
-  const applyAllMultiStudioHighlight = () => {
-    setMultiStudioItems((prev) => {
-      const current = prev[multiStudioIndex];
-      if (!current) return prev;
-      return prev.map((it, i) =>
-        i >= multiStudioIndex
-          ? { ...it, highlightStart: current.highlightStart, highlightEnd: current.highlightEnd, highlightTouched: true }
-          : it
-      );
-    });
-  };
-  const clearAllMultiStudioHighlight = () => {
-    setMultiStudioItems((prev) =>
-      prev.map((it) => ({ ...it, highlightStart: 0, highlightEnd: 10, highlightTouched: false }))
-    );
-  };
-
   // 확인을 누르면 그룹(품질 단계)별로 optimizeFiles를 병렬로 돌리되, 파일
   // 하나가 끝날 때마다 공통 진행률(진행 바 + "148 / 200")을 갱신하고, 전부
   // 끝나면 처리 시간·용량 변화로 바뀐 결과 화면을 보여준다. 압축이 없는
@@ -957,24 +805,9 @@ export default function App() {
     }
   };
 
-  // 하이라이트는 기존 "하이라이트 클립" 애드온과 완전히 같은 저장 방식이다
-  // (listClips로 다음 번호를 정하고 createClip으로 저장) — 서버 왕복
-  // 하나뿐이라 압축과 달리 진행률·결과 화면 없이 조용히 끝낸다. 각 파일은
-  // 자기 자신의 클립 목록 안에서만 번호를 매기므로 여러 개를 병렬로 돌려도
-  // 서로 섞이지 않는다.
-  const runStudioHighlight = async (items) => {
-    await Promise.all(
-      items.map(async ({ fileId, start, end }) => {
-        const existing = await listClips(session.token, fileId);
-        await createClip(session.token, { fileId, name: nextClipName(existing), start, end });
-      })
-    );
-  };
-
   // 이름·태그는 원래 두 패널처럼 값이 바뀌었든 아니든 현재 값을 그대로
-  // 저장한다. 압축·하이라이트는 사용자가 실제로 세그먼트·구간 입력을 만졌을
-  // 때만(levelTouched/highlightTouched), 그리고 그 파일이 실제로 가능할
-  // 때만 실행한다 — 폴더나 지원하지 않는 형식이면 조용히 건너뛴다.
+  // 저장한다. 압축은 최적화 섹션에 들어왔을 때(levelTouched), 그리고 그 파일이
+  // 실제로 가능할 때만 실행한다 — 폴더나 지원하지 않는 형식이면 조용히 건너뛴다.
   const confirmStudio = async () => {
     if (studioResult) {
       cancelStudio();
@@ -997,15 +830,6 @@ export default function App() {
     if (studioLevelTouched && optimizable) {
       await runStudioOptimizeGroups([{ files: [{ ...target, name }], ratioPercent: OPTIMIZE_LEVELS[studioLevel] }]);
       return;
-    }
-    const highlightable = !target.is_folder && isVideoLike(name, target.mime);
-    if (studioHighlightTouched && highlightable && studioHighlightEnd > studioHighlightStart) {
-      try {
-        await runStudioHighlight([{ fileId: target.id, start: studioHighlightStart, end: studioHighlightEnd }]);
-      } catch {
-        window.alert("하이라이트를 저장하지 못했습니다");
-        return;
-      }
     }
     cancelStudio();
     setSelectedIds(new Set());
@@ -1045,20 +869,6 @@ export default function App() {
       }
       await runStudioOptimizeGroups([...groups.entries()].map(([level, files]) => ({ files, ratioPercent: OPTIMIZE_LEVELS[level] })));
       return;
-    }
-    // 하이라이트 섹션은 선택된 항목이 전부 영상일 때만 켜지므로
-    // (BottomSearchBar.jsx의 studioAllHighlightable), 여기서 압축 대상과
-    // 겹칠 일은 없다.
-    const highlightTargets = multiStudioItems.filter(
-      (it) => it.highlightTouched && !it.is_folder && isVideoLike(it.name, it.mime) && it.highlightEnd > it.highlightStart
-    );
-    if (highlightTargets.length) {
-      try {
-        await runStudioHighlight(highlightTargets.map((it) => ({ fileId: it.id, start: it.highlightStart, end: it.highlightEnd })));
-      } catch {
-        window.alert("하이라이트를 저장하지 못했습니다");
-        return;
-      }
     }
     cancelMultiStudio();
     setSelectedIds(new Set());
@@ -1455,18 +1265,12 @@ export default function App() {
             studioTag={studioTag}
             studioLevel={studioLevel}
             studioLevelTouched={studioLevelTouched}
-            studioHighlightStart={studioHighlightStart}
-            studioHighlightEnd={studioHighlightEnd}
-            studioHighlightDuration={studioHighlightDuration}
             studioProgress={studioProgress}
             studioResult={studioResult}
             onChangeStudioName={changeStudioName}
             onChangeStudioTag={changeStudioTag}
             onChangeStudioLevel={changeStudioLevel}
-            onOpenStudioHighlight={probeStudioHighlightDuration}
             onOpenStudioQuality={markStudioLevelForOptimize}
-            onChangeStudioHighlightStart={changeStudioHighlightStart}
-            onChangeStudioHighlightEnd={changeStudioHighlightEnd}
             onConfirmStudio={confirmStudio}
             onCancelStudio={cancelStudio}
             multiStudioOpen={multiStudioOpen}
@@ -1481,8 +1285,6 @@ export default function App() {
             onClearAllMultiStudioTag={clearAllMultiStudioTag}
             onApplyAllMultiStudioLevel={applyAllMultiStudioLevel}
             onClearAllMultiStudioLevel={clearAllMultiStudioLevel}
-            onApplyAllMultiStudioHighlight={applyAllMultiStudioHighlight}
-            onClearAllMultiStudioHighlight={clearAllMultiStudioHighlight}
             onConfirmMultiStudio={confirmMultiStudio}
             onConfirmCompare={handleConfirmCompare}
             onCancelMultiStudio={cancelMultiStudio}

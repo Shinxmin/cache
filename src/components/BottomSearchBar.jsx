@@ -3,10 +3,8 @@ import { BackIcon, ChevronRightIcon, FileIcon } from "./icons";
 import Spinner from "./Spinner";
 import { isOptimizableFile, OPTIMIZE_LEVELS, OPTIMIZE_LEVEL_LABELS } from "../lib/optimize";
 import { displayName } from "../lib/filename";
-import { formatBytes, formatDuration } from "../lib/format";
-import { looksLikeVideoFile } from "../lib/thumbnail";
+import { formatBytes } from "../lib/format";
 import useSegmentDrag from "../hooks/useSegmentDrag";
-import HighlightRangeSlider from "./HighlightRangeSlider";
 
 // 하단바 아이콘(단일 solid fill, currentColor)과 같은 방식으로 그린 돋보기 아이콘.
 // 링은 두 원을 evenodd로 겹쳐 만든 진짜 구멍(반투명 색에서도 이중 톤이 생기지
@@ -86,17 +84,6 @@ function ZipFolderIcon({ size = 18 }) {
   );
 }
 
-// 스튜디오의 하이라이트 기능 아이콘 — 툴킷 바에 있던 예전 "하이라이트 클립"
-// 애드온과 같은 가위(content_cut) 모양을 그대로 쓴다(같은 기능이 옮겨온
-// 것이므로 아이콘도 그대로 이어간다).
-function ScissorsIcon({ size = 18 }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
-      <path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3z" />
-    </svg>
-  );
-}
-
 // 스튜디오의 이미지 비교 기능 아이콘 — 나란히 놓인 두 블록으로, 두 이미지를
 // 나란히 두고 비교하는 스플릿 비교 기능을 상징화한 모양이다.
 function CompareIcon({ size = 16 }) {
@@ -106,35 +93,6 @@ function CompareIcon({ size = 16 }) {
       <rect x="13" y="4" width="9" height="16" rx="2" />
     </svg>
   );
-}
-
-const HIGHLIGHT_CLOSE_ANIMATION_MS = 160;
-
-// 하이라이트 슬라이더(+시간 줄)를 다른 일괄 적용 버튼들처럼 등장·퇴장에
-// 페이드+스케일 애니메이션이 붙게 감싸는 래퍼. 등장할 땐 CSS 애니메이션이
-// 마운트와 동시에 자동 재생되지만, 사라질 땐 React가 DOM을 곧바로 지워버려
-// 트랜지션을 볼 틈이 없다. 그래서 ConfirmModal과 같은 방식으로, 실제 언마운트
-// 전에 "닫히는 중" 상태를 잠깐 켜서 퇴장 애니메이션(.is-closing)이 끝날
-// 시간을 준 뒤 사라진다.
-function HighlightSliderPanel({ visible, children }) {
-  const [mounted, setMounted] = useState(visible);
-  const [closing, setClosing] = useState(false);
-  const timerRef = useRef(null);
-
-  useEffect(() => {
-    clearTimeout(timerRef.current);
-    if (visible) {
-      setClosing(false);
-      setMounted(true);
-    } else {
-      setClosing(true);
-      timerRef.current = setTimeout(() => setMounted(false), HIGHLIGHT_CLOSE_ANIMATION_MS);
-    }
-    return () => clearTimeout(timerRef.current);
-  }, [visible]);
-
-  if (!mounted) return null;
-  return <div className={`search-bar-highlight-col${closing ? " is-closing" : ""}`}>{children}</div>;
 }
 
 // 예전 하단 내비바가 있던 자리에 고정된 검색바. position:fixed라 스크롤을
@@ -188,18 +146,12 @@ export default function BottomSearchBar({
   studioTag,
   studioLevel,
   studioLevelTouched,
-  studioHighlightStart,
-  studioHighlightEnd,
-  studioHighlightDuration,
   studioProgress,
   studioResult,
   onChangeStudioName,
   onChangeStudioTag,
   onChangeStudioLevel,
-  onOpenStudioHighlight,
   onOpenStudioQuality,
-  onChangeStudioHighlightStart,
-  onChangeStudioHighlightEnd,
   onConfirmStudio,
   onCancelStudio,
   multiStudioOpen,
@@ -214,8 +166,6 @@ export default function BottomSearchBar({
   onClearAllMultiStudioTag,
   onApplyAllMultiStudioLevel,
   onClearAllMultiStudioLevel,
-  onApplyAllMultiStudioHighlight,
-  onClearAllMultiStudioHighlight,
   onConfirmMultiStudio,
   onConfirmCompare,
   onCancelMultiStudio,
@@ -320,13 +270,6 @@ export default function BottomSearchBar({
   const currentStudioTag = studioOpen ? studioTag : isMultiStudio ? multiStudioCurrent?.tag ?? "" : "";
   const currentStudioLevel = studioOpen ? studioLevel : isMultiStudio ? multiStudioCurrent?.level ?? 1 : 1;
   const currentStudioMime = studioOpen ? studioTargetMime : isMultiStudio ? multiStudioCurrent?.mime ?? "" : "";
-  const currentStudioHighlightStart = studioOpen ? studioHighlightStart : isMultiStudio ? multiStudioCurrent?.highlightStart ?? 0 : 0;
-  const currentStudioHighlightEnd = studioOpen ? studioHighlightEnd : isMultiStudio ? multiStudioCurrent?.highlightEnd ?? 10 : 10;
-  const currentStudioHighlightDuration = studioOpen
-    ? studioHighlightDuration
-    : isMultiStudio
-      ? multiStudioCurrent?.highlightDuration ?? 0
-      : 0;
   const currentStudioOriginalName = studioOpen
     ? studioTargetName
     : isMultiStudio
@@ -344,13 +287,6 @@ export default function BottomSearchBar({
     ? !studioTargetIsFolder && isOptimizableFile(studioName || studioTargetName, studioTargetMime)
     : isMultiStudio
       ? Boolean(multiStudioItems?.length) && multiStudioItems.every((it) => !it.is_folder && isOptimizableFile(it.name, it.mime))
-      : false;
-  // 하이라이트 아이콘도 최적화와 같은 규칙 — 항상 뜨지만 선택된 항목이
-  // 전부 영상일 때만 눌린다(다중 선택에 영상·이미지가 섞이면 비활성).
-  const studioAllHighlightable = studioOpen
-    ? !studioTargetIsFolder && looksLikeVideoFile(studioName || studioTargetName, studioTargetMime)
-    : isMultiStudio
-      ? Boolean(multiStudioItems?.length) && multiStudioItems.every((it) => !it.is_folder && looksLikeVideoFile(it.name, it.mime))
       : false;
   // 이미지 비교는 단일 선택(studioOpen)에서는 애초에 성립하지 않고, 다중
   // 선택이어도 정확히 두 개가 선택돼 있고 둘 다 움짤·동영상 등이 아닌
@@ -563,18 +499,9 @@ export default function BottomSearchBar({
     onCancelScrim?.();
   };
 
-  // 검색바 아이콘은 삭제 패널만 빼고, 그 패널을 연 툴킷 아이콘과 똑같은
-  // 모양으로 바뀐다(새 폴더→폴더, 스튜디오 이름 섹션→연필, 태그 섹션→
-  // 북마크).
-  const searchBarIcon = !textEntryOpen ? (
-    <SearchIcon />
-  ) : newFolderOpen ? (
-    <FolderIcon />
-  ) : studioSection === "tag" ? (
-    <BookmarkIcon />
-  ) : (
-    <EditIcon />
-  );
+  // 검색바 아이콘은 새 폴더 패널에서만 폴더 아이콘으로 바뀐다. 스튜디오의 이름·
+  // 태그 같은 기능이 열려 있어도 기존 검색 아이콘을 그대로 유지한다.
+  const searchBarIcon = newFolderOpen ? <FolderIcon /> : <SearchIcon />;
 
   // 일괄 적용·일괄 지우기·번호 붙이기 같은 부가 기능은 지금 스튜디오에서
   // 보고 있는 기능(studioSection)에 맞는 것만 보여준다 — 다른 기능의
@@ -597,20 +524,13 @@ export default function BottomSearchBar({
               { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiStudioLevel },
               { key: "applyAll", label: "일괄 적용", onClick: onApplyAllMultiStudioLevel },
             ]
-          : displayMode === "multiStudio" && !studioRunning && studioSection === "highlight"
-            ? [
-                { key: "clearAll", label: "일괄 지우기", onClick: onClearAllMultiStudioHighlight },
-                { key: "applyAll", label: "일괄 적용", onClick: onApplyAllMultiStudioHighlight },
-              ]
-            : [];
+          : [];
 
   const studioSectionIcon =
     studioSection === "tag" ? (
       <BookmarkIcon size={16} />
     ) : studioSection === "quality" ? (
       <ZipFolderIcon size={16} />
-    ) : studioSection === "highlight" ? (
-      <ScissorsIcon size={16} />
     ) : studioSection === "compare" ? (
       <CompareIcon size={16} />
     ) : (
@@ -621,11 +541,9 @@ export default function BottomSearchBar({
       ? "태그"
       : studioSection === "quality"
         ? "최적화"
-        : studioSection === "highlight"
-          ? "하이라이트"
-          : studioSection === "compare"
-            ? "이미지 비교"
-            : "이름 바꾸기";
+        : studioSection === "compare"
+          ? "이미지 비교"
+          : "이름 바꾸기";
   // 이미지 비교는 정확히 두 장을 한 쌍으로 다루는 기능이라, 다른 기능처럼
   // 다중 선택 항목을 하나씩 넘겨보는 이전·다음 화살표(1/2 카운터)가 필요
   // 없다 — 그래서 다중 모드라도 이 섹션에서는 내비게이션을 아예 숨긴다.
@@ -677,7 +595,7 @@ export default function BottomSearchBar({
       <div className="bottom-search-wrap">
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}${panelOpen && (displayMode === "studio" || displayMode === "multiStudio") ? " studio-mode" : ""}`}>
           <div
-            className={`search-bar-confirm-panel${displayMode === "studio" || displayMode === "multiStudio" ? " mode-studio" : ""}${displayMode === "move" ? " mode-move" : ""}${extraActions.length > 0 ? " has-extras" : ""}${panelOpen ? " is-open" : ""}`}
+            className={`search-bar-confirm-panel${displayMode === "studio" || displayMode === "multiStudio" ? " mode-studio" : ""}${displayMode === "move" ? " mode-move" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
           >
             <div
@@ -726,18 +644,6 @@ export default function BottomSearchBar({
                       <button
                         type="button"
                         className="search-bar-studio-icon-btn"
-                        aria-label="하이라이트"
-                        disabled={!studioHasTarget || !studioAllHighlightable}
-                        onClick={() => {
-                          setStudioSection("highlight");
-                          onOpenStudioHighlight?.();
-                        }}
-                      >
-                        <ScissorsIcon size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        className="search-bar-studio-icon-btn"
                         aria-label="이미지 비교"
                         disabled={!studioAllComparable}
                         onClick={() => setStudioSection("compare")}
@@ -762,11 +668,7 @@ export default function BottomSearchBar({
                             type="button"
                             className="search-bar-confirm-nav-btn search-bar-confirm-nav-btn--prev"
                             aria-label="이전 항목"
-                            onClick={() => {
-                              const nextIndex = Math.max(0, multiStudioIndex - 1);
-                              onPrevMultiStudio?.();
-                              if (studioSection === "highlight") onOpenStudioHighlight?.(nextIndex);
-                            }}
+                            onClick={onPrevMultiStudio}
                             disabled={multiStudioIndex <= 0}
                           >
                             <ChevronRightIcon size={14} />
@@ -778,11 +680,7 @@ export default function BottomSearchBar({
                             type="button"
                             className="search-bar-confirm-nav-btn"
                             aria-label="다음 항목"
-                            onClick={() => {
-                              const nextIndex = Math.min((multiStudioItems?.length ?? 1) - 1, multiStudioIndex + 1);
-                              onNextMultiStudio?.();
-                              if (studioSection === "highlight") onOpenStudioHighlight?.(nextIndex);
-                            }}
+                            onClick={onNextMultiStudio}
                             disabled={isLastMultiStudio}
                           >
                             <ChevronRightIcon size={14} />
@@ -792,6 +690,28 @@ export default function BottomSearchBar({
                     </div>
                   </div>
                   <div className="search-bar-studio-divider" />
+                  {/* 기능 제목 줄 바로 밑 한 줄(서브 버튼 자리): 기능 화면에서는 일괄 지우기·
+                      일괄 적용·번호 붙이기 같은 서브 버튼(없는 기능·단일 선택이면 빈 줄로
+                      자리만 둔다), 아이콘 줄에서는 안내 문구가 이 자리에 온다. 본문(파일명)은
+                      그 밑으로 내려간다. 진행·결과 화면에서는 이 줄을 두지 않는다. */}
+                  {!studioProgress && !studioResult && (
+                    <div className="search-bar-studio-subrow">
+                      {studioSection ? (
+                        extraActions.map((action) => (
+                          <button
+                            key={action.key}
+                            type="button"
+                            className="search-bar-confirm-extras-btn"
+                            onClick={action.onClick}
+                          >
+                            {action.label}
+                          </button>
+                        ))
+                      ) : (
+                        <p className="search-bar-confirm-filename search-bar-confirm-filename--studio">강력한 웹 에디터를 이용해보세요</p>
+                      )}
+                    </div>
+                  )}
                   {studioResult ? (
                     // 최적화가 전부 끝났을 때: 본문 자리부터 처리 결과(개수·시간·용량
                     // 변화·절약한 용량)를 보여준다. 패널은 스크림을 눌러 직접 닫는다.
@@ -842,18 +762,7 @@ export default function BottomSearchBar({
                     <p className="search-bar-confirm-filename search-bar-confirm-filename--studio">
                       {displayName({ name: currentStudioOriginalName, mime: currentStudioMime })}
                     </p>
-                  ) : (
-                    // 기능을 아직 고르지 않은 아이콘 줄 상태의 안내 문구 —
-                    // 다른 섹션의 본문(파일명)과 같은 자리·스타일에 둔다.
-                    <p className="search-bar-confirm-filename search-bar-confirm-filename--studio">강력한 웹 에디터를 이용해보세요</p>
-                  )}
-                  {studioSection === "highlight" && !studioRunning && (
-                    <p className="search-bar-highlight-times-inline">
-                      {formatDuration(currentStudioHighlightStart)}
-                      {" - "}
-                      {formatDuration(currentStudioHighlightEnd)}
-                    </p>
-                  )}
+                  ) : null}
                 </>
               )
             ) : displayMode === "move" ? (
@@ -901,24 +810,6 @@ export default function BottomSearchBar({
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">삭제</p>
                 <p className="search-bar-confirm-desc search-bar-confirm-desc--bottom">해당 항목은 휴지통에서 복구 및 삭제할 수 있습니다</p>
               </>
-            )}
-            {/* 일괄 적용·일괄 지우기·번호 붙이기 같은 부가 기능은 패널 맨
-                아래, 바로 밑 검색바의 확인 버튼 쪽으로 붙여 오른쪽 정렬해
-                둔다 — 항목이 없는 패널(새 폴더, 스튜디오 단일·아이콘 줄,
-                이동, 삭제 확인 등)에서는 아무것도 뜨지 않는다. */}
-            {extraActions.length > 0 && (
-              <div className="search-bar-confirm-extras">
-                {extraActions.map((action) => (
-                  <button
-                    key={action.key}
-                    type="button"
-                    className="search-bar-confirm-extras-btn"
-                    onClick={action.onClick}
-                  >
-                    {action.label}
-                  </button>
-                ))}
-              </div>
             )}
             </div>
           </div>
@@ -979,20 +870,6 @@ export default function BottomSearchBar({
                 ))}
               </div>
             )}
-            {/* 하이라이트 섹션이 열려 있을 때만 확인 버튼 바로 왼쪽에 뜨는 구간
-                슬라이더 — 품질 세그먼트와 같은 자리다. 시작·끝 시간은
-                패널 본문의 파일명 밑으로 옮겼고, 값 조정은 이 슬라이더를
-                직접 드래그해서만 한다. */}
-            <HighlightSliderPanel visible={studioActive && studioSection === "highlight" && !studioRunning && panelOpen}>
-              <HighlightRangeSlider
-                duration={currentStudioHighlightDuration}
-                start={currentStudioHighlightStart}
-                end={currentStudioHighlightEnd}
-                onChangeStart={onChangeStudioHighlightStart}
-                onChangeEnd={onChangeStudioHighlightEnd}
-                disabled={!currentStudioHighlightDuration}
-              />
-            </HighlightSliderPanel>
             {panelOpen && (
               <button
                 type="button"
