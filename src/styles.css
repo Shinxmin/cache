@@ -350,16 +350,13 @@ main.page {
 }
 
 /* 두 번 눌러야 실행되는 삭제·복원 버튼(useArmedConfirm)이 첫 번째로 눌려
-   "확인 대기" 상태가 되면 붙는 클래스 — 연한 빨간 배경으로 바뀐다. 한 번 더
-   누르면 실행되고, 빈 공간을 누르면 풀린다. */
-.header-more-item.is-armed,
+   "확인 대기" 상태가 되면 붙는 클래스 — 배경은 그대로 두고 아이콘만 빨간
+   계열(--danger)로 바뀐다(삼점바 메뉴 항목은 아이콘만, 글자는 그대로). 한 번
+   더 누르면 실행되고, 빈 공간을 누르면 풀린다. */
+.header-more-item.is-armed .header-more-icon,
 .header-circle-btn.is-armed,
 .studio-toolkit-icon-btn.is-armed {
-  background: color-mix(in srgb, var(--danger) 22%, transparent);
   color: var(--danger);
-}
-.studio-toolkit-icon-btn.is-armed {
-  border-radius: 7px;
 }
 
 /* ── 원형 리퀴드글라스 설정 버튼: 더 보기(삼점) 버튼 바로 오른쪽, 같은 45px
