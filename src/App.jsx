@@ -37,6 +37,7 @@ import {
   setInfoRevealed,
   setTag,
   splitPresetParts,
+  thumbnailUrls,
   trashFiles,
   uploadFile,
 } from "./lib/drive";
@@ -50,7 +51,7 @@ import { dedupeStrings } from "./lib/dedupe";
 
 const TOAST_MS = 2000;
 
-const THEME_COLORS = { dark: "#1B1B1B", light: "#F5F5F7" };
+const THEME_COLORS = { dark: "#000000", light: "#F5F5F7" };
 
 export default function App() {
   // 설정의 테마 스위치가 고른 값 — "system"(기기 설정을 그대로 따름) |
@@ -372,6 +373,29 @@ export default function App() {
   useEffect(() => {
     if (thumbPickFolder && parentId !== thumbPickFolder.id) setThumbPickFolder(null);
   }, [parentId, thumbPickFolder]);
+
+  // 스튜디오 뷰포트 미리보기: 지금 보고 있는 선택 파일의 썸네일 주소를 받아 온다.
+  // 썸네일이 없는 파일(pdf·폴더 등)은 null이라 파일 아이콘이 뜬다.
+  const [studioPreviewUrl, setStudioPreviewUrl] = useState(null);
+  const studioCurrentId = studioOpen ? studioTargetId : multiStudioOpen ? multiStudioItems[multiStudioIndex]?.id : null;
+  useEffect(() => {
+    const key = studioCurrentId ? visibleItems.find((it) => it.id === studioCurrentId)?.thumb_key : null;
+    if (!key || !session) {
+      setStudioPreviewUrl(null);
+      return undefined;
+    }
+    let cancelled = false;
+    thumbnailUrls(session.token, [key])
+      .then((urls) => {
+        if (!cancelled) setStudioPreviewUrl(urls[key] ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setStudioPreviewUrl(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [studioCurrentId, visibleItems, session?.token]);
 
   const handleSearch = (value) => {
     setSearchQuery(value);
@@ -1288,6 +1312,7 @@ export default function App() {
             onConfirmMultiStudio={confirmMultiStudio}
             onConfirmCompare={handleConfirmCompare}
             onCancelMultiStudio={cancelMultiStudio}
+            studioPreviewUrl={studioPreviewUrl}
             moveOpen={moveOpen}
             moveItemCount={selectedIds.size}
             movePath={movePath}
