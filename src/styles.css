@@ -2546,24 +2546,3 @@ main.page {
 .studio-file-menu-item:active {
   background: var(--studio-gray-35);
 }
-
-/* ── 불러오기 모드: 폴더 타일·행의 "열기" 화살표 ── */
-.drive-folder-enter {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-2);
-  cursor: pointer;
-}
-.drive-folder-enter--tile {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  z-index: 3;
-  padding: 8px 6px;
-  transform: translateY(-50%);
-}
-.drive-folder-enter--row {
-  flex: none;
-  padding: 8px;
-}
