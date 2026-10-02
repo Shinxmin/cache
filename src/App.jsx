@@ -139,6 +139,17 @@ export default function App() {
   const [studioTag, setStudioTag] = useState("");
   const [studioLevel, setStudioLevel] = useState(1);
   const [studioLevelTouched, setStudioLevelTouched] = useState(false);
+  // 스튜디오 메뉴 파일 > 불러오기. 불러오기 모드에서는 스튜디오 패널이 닫히고, 드라이브를
+  // 폴더를 옮겨 다니며 터치만으로 파일·폴더를 고른다(폴더의 하위 내용은 따라오지
+  // 않는다). 고른 항목은 폴더가 바뀌어도 유지돼야 해서 목록 선택(selectedIds)과 따로
+  // id→항목 Map으로 들고 있다. 확인을 누르면 그 항목들로 스튜디오가 다시 열린다.
+  const [importMode, setImportMode] = useState(false);
+  const [importMap, setImportMap] = useState(() => new Map());
+  // 불러오기로 연 스튜디오는 현재 폴더의 선택(selectedIds)과 무관한 항목을 쓰므로, 선택이
+  // 바뀔 때 스튜디오 대상을 다시 계산하는 효과를 건너뛰고(studioFromImport), 미리보기용
+  // 항목 정보를 따로 들고 있는다(studioSourceItems).
+  const [studioFromImport, setStudioFromImport] = useState(false);
+  const [studioSourceItems, setStudioSourceItems] = useState([]);
   const [multiStudioOpen, setMultiStudioOpen] = useState(false);
   const [multiStudioItems, setMultiStudioItems] = useState([]); // [{id,name,originalName,tag,level,levelTouched,mime,is_folder}]
   const [multiStudioIndex, setMultiStudioIndex] = useState(0);
@@ -267,6 +278,7 @@ export default function App() {
   // 줄면 단일 패널로, 2개 이상이면 다중 패널로, 0개가 되면 패널을 닫는다.
   useEffect(() => {
     if (!studioOpen && !multiStudioOpen) return;
+    if (studioFromImport) return;
     // 선택이 바뀌면 지금 보여주던 압축 진행률·결과 화면은 더 이상 이
     // 선택을 대표하지 않으니 지운다.
     if (studioProgress || studioResult) {
@@ -379,7 +391,8 @@ export default function App() {
   const [studioPreviewUrl, setStudioPreviewUrl] = useState(null);
   const studioCurrentId = studioOpen ? studioTargetId : multiStudioOpen ? multiStudioItems[multiStudioIndex]?.id : null;
   useEffect(() => {
-    const key = studioCurrentId ? visibleItems.find((it) => it.id === studioCurrentId)?.thumb_key : null;
+    const pool = studioFromImport ? studioSourceItems : visibleItems;
+    const key = studioCurrentId ? pool.find((it) => it.id === studioCurrentId)?.thumb_key : null;
     if (!key || !session) {
       setStudioPreviewUrl(null);
       return undefined;
@@ -395,7 +408,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [studioCurrentId, visibleItems, session?.token]);
+  }, [studioCurrentId, visibleItems, studioFromImport, studioSourceItems, session?.token]);
 
   const handleSearch = (value) => {
     setSearchQuery(value);
@@ -637,6 +650,68 @@ export default function App() {
     setDeleteConfirmOpen(false);
   };
 
+  // ── 스튜디오 메뉴 > 불러오기 ──
+  const startImport = () => {
+    closeAllToolPanels();
+    setSelectedIds(new Set());
+    setImportMap(new Map());
+    setImportMode(true);
+  };
+  const cancelImport = () => {
+    setImportMode(false);
+    setImportMap(new Map());
+  };
+  const toggleImport = (item) => {
+    setImportMap((prev) => {
+      const next = new Map(prev);
+      if (next.has(item.id)) next.delete(item.id);
+      else next.set(item.id, item);
+      return next;
+    });
+  };
+  const importIds = useMemo(() => new Set(importMap.keys()), [importMap]);
+  // 확인: 고른 항목(고른 순서 그대로)으로 스튜디오 패널을 다시 연다. 하나면 단일, 여러 개면
+  // 다중(< 1/N >)으로 연다.
+  const confirmImport = () => {
+    const items = [...importMap.values()];
+    setImportMode(false);
+    setImportMap(new Map());
+    if (!items.length) return;
+    setStudioSourceItems(items);
+    setStudioFromImport(true);
+    if (items.length === 1) {
+      const only = items[0];
+      setMultiStudioOpen(false);
+      setMultiStudioItems([]);
+      setMultiStudioIndex(0);
+      setStudioTargetId(only.id);
+      setStudioName(only.name);
+      setStudioTag(only.tag || "");
+      setStudioLevel(1);
+      setStudioLevelTouched(false);
+      setStudioOpen(true);
+      return;
+    }
+    setStudioOpen(false);
+    setStudioTargetId(null);
+    setStudioName("");
+    setStudioTag("");
+    setMultiStudioItems(
+      items.map((it) => ({
+        id: it.id,
+        name: it.name,
+        originalName: it.name,
+        tag: it.tag || "",
+        level: 1,
+        levelTouched: false,
+        mime: it.mime,
+        is_folder: it.is_folder,
+      }))
+    );
+    setMultiStudioIndex(0);
+    setMultiStudioOpen(true);
+  };
+
   // 선택된 항목으로 Studio(이름·태그·압축·클립 통합) 패널을 연다. 단일
   // 선택이면 studioOpen 하나를, 여러 개면 이전·다음 화살표로 하나씩 넘기며
   // 편집하는 multiStudioOpen을 연다. 선택이 하나도 없어도 열리지만
@@ -688,6 +763,8 @@ export default function App() {
   };
 
   const cancelStudio = () => {
+    setStudioFromImport(false);
+    setStudioSourceItems([]);
     if (studioRunRef.current) studioRunRef.current.detached = true;
     setStudioOpen(false);
     setStudioTargetId(null);
@@ -700,6 +777,8 @@ export default function App() {
   };
 
   const cancelMultiStudio = () => {
+    setStudioFromImport(false);
+    setStudioSourceItems([]);
     if (studioRunRef.current) studioRunRef.current.detached = true;
     setMultiStudioOpen(false);
     setMultiStudioItems([]);
@@ -1246,6 +1325,8 @@ export default function App() {
               toolkitLayout={toolkitLayout}
               onTool={handleTool}
               onOpenSettings={favoritesView ? undefined : () => setShowSettings(true)}
+              importMode={importMode}
+              onCancelImport={cancelImport}
             />
             <FilesPage
               session={session}
@@ -1256,10 +1337,11 @@ export default function App() {
               onOpenFolder={openFolder}
               onOpenFile={handleOpenFile}
               refreshKey={refreshKey}
-              selectionMode={selectedIds.size > 0}
-              selectedIds={selectedIds}
-              onToggleSelect={toggleSelect}
-              onLongPressItem={toggleSelect}
+              selectionMode={importMode || selectedIds.size > 0}
+              selectedIds={importMode ? importIds : selectedIds}
+              onToggleSelect={importMode ? toggleImport : toggleSelect}
+              onLongPressItem={importMode ? toggleImport : toggleSelect}
+              importMode={importMode}
               onItemsChange={setVisibleItems}
               thumbPickMode={Boolean(thumbPickFolder)}
               onPickThumb={pickThumb}
@@ -1313,6 +1395,10 @@ export default function App() {
             onConfirmCompare={handleConfirmCompare}
             onCancelMultiStudio={cancelMultiStudio}
             studioPreviewUrl={studioPreviewUrl}
+            importMode={importMode}
+            importCount={importMap.size}
+            onStartImport={startImport}
+            onConfirmImport={confirmImport}
             moveOpen={moveOpen}
             moveItemCount={selectedIds.size}
             movePath={movePath}
