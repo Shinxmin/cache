@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BackIcon, ChevronRightIcon, CloseIcon, FileIcon } from "./icons";
 import Spinner from "./Spinner";
-import { isOptimizableFile } from "../lib/optimize";
+import { isOptimizableFile, OPTIMIZE_LEVELS } from "../lib/optimize";
 import { displayName } from "../lib/filename";
 import { formatBytes } from "../lib/format";
 
@@ -192,6 +192,8 @@ export default function BottomSearchBar({
   saveAsName,
   onChangeSaveAsName,
   studioSaving,
+  studioQuality,
+  onChangeStudioQuality,
   moveOpen,
   moveItemCount,
   movePath,
@@ -214,6 +216,11 @@ export default function BottomSearchBar({
   // 스튜디오 메뉴바의 드롭다운(파일·이미지·편집: 글자 대각선 오른쪽 아래에 뜨는 작은 불투명
   // 팝업). 바깥을 누르거나 패널이 닫히면 닫힌다.
   const [openMenu, setOpenMenu] = useState(null);
+  // 설정 > 품질처럼 항목이 하위 메뉴를 가질 때 지금 펼쳐진 항목의 key.
+  const [openSub, setOpenSub] = useState(null);
+  useEffect(() => {
+    if (!openMenu) setOpenSub(null);
+  }, [openMenu]);
   // 메뉴 항목이 넘칠 때 마우스로도 끌어서 위아래로 스크롤한다(터치는 브라우저 기본 스와이프). 실제로
   // 끈 뒤에 이어지는 클릭은 무시해 항목이 잘못 눌리지 않게 한다.
   const menuDragRef = useRef(null);
@@ -592,6 +599,19 @@ export default function BottomSearchBar({
       { key: "tag", label: "태그", disabled: !studioHasTarget, run: () => selectSection("tag") },
       { key: "quality", label: "최적화", disabled: !studioHasTarget || !studioAllOptimizable, run: () => selectSection("quality") },
     ],
+    // 설정 > 품질 > 낮음·중간·높음: 최적화 때 남길 용량 비율(기본 중간). 현재 값은 볼드.
+    settings: [
+      {
+        key: "quality",
+        label: "품질 ›",
+        sub: ["낮음", "중간", "높음"].map((name, i) => ({
+          key: String(i),
+          label: `${name} (${OPTIMIZE_LEVELS[i]}%)`,
+          active: studioQuality === i,
+          run: () => onChangeStudioQuality?.(i),
+        })),
+      },
+    ],
     // 편집: 지우기·적용은 지금 선택된 기능의 현재 항목 하나에, 일괄 지우기·일괄 적용은 여러 개를 불러왔을
     // 때만 쓸 수 있고(현재 항목부터 뒤쪽 전부 / 전체), 번호 붙이기는 이름 바꾸기 중에만 쓸 수 있다.
     edit: [
@@ -735,9 +755,15 @@ export default function BottomSearchBar({
                                   key={item.key}
                                   type="button"
                                   role="menuitem"
+                                  aria-haspopup={item.sub ? "menu" : undefined}
+                                  aria-expanded={item.sub ? openSub === item.key : undefined}
                                   className={`studio-file-menu-item${menu.key === "image" && studioSection === item.key ? " is-active" : ""}`}
                                   disabled={item.disabled}
                                   onClick={() => {
+                                    if (item.sub) {
+                                      setOpenSub((v) => (v === item.key ? null : item.key));
+                                      return;
+                                    }
                                     setOpenMenu(null);
                                     item.run();
                                   }}
@@ -745,6 +771,27 @@ export default function BottomSearchBar({
                                   {item.label}
                                 </button>
                               ))}
+                            </div>
+                          )}
+                          {openMenu === menu.key && openSub && (
+                            <div className="studio-file-menu studio-submenu" role="menu" {...menuDrag}>
+                              {MENU_ITEMS[menu.key]
+                                .find((it) => it.key === openSub)
+                                ?.sub.map((sub) => (
+                                  <button
+                                    key={sub.key}
+                                    type="button"
+                                    role="menuitemradio"
+                                    aria-checked={sub.active}
+                                    className={`studio-file-menu-item${sub.active ? " is-active" : ""}`}
+                                    onClick={() => {
+                                      setOpenMenu(null);
+                                      sub.run();
+                                    }}
+                                  >
+                                    {sub.label}
+                                  </button>
+                                ))}
                             </div>
                           )}
                         </div>
