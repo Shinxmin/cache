@@ -189,6 +189,8 @@ export default function BottomSearchBar({
   onApplyCurrentStudio,
   onSaveStudio,
   onStartSaveAs,
+  saveAsName,
+  onChangeSaveAsName,
   studioSaving,
   moveOpen,
   moveItemCount,
@@ -212,6 +214,37 @@ export default function BottomSearchBar({
   // 스튜디오 메뉴바의 드롭다운(파일·이미지·편집: 글자 대각선 오른쪽 아래에 뜨는 작은 불투명
   // 팝업). 바깥을 누르거나 패널이 닫히면 닫힌다.
   const [openMenu, setOpenMenu] = useState(null);
+  // 메뉴 항목이 넘칠 때 마우스로도 끌어서 위아래로 스크롤한다(터치는 브라우저 기본 스와이프). 실제로
+  // 끈 뒤에 이어지는 클릭은 무시해 항목이 잘못 눌리지 않게 한다.
+  const menuDragRef = useRef(null);
+  const menuSuppressRef = useRef(false);
+  const menuDrag = {
+    onPointerDown: (e) => {
+      if (e.pointerType !== "mouse") return;
+      menuDragRef.current = { y: e.clientY, top: e.currentTarget.scrollTop, moved: false };
+    },
+    onPointerMove: (e) => {
+      const st = menuDragRef.current;
+      if (!st) return;
+      if (!st.moved && Math.abs(e.clientY - st.y) < 4) return;
+      st.moved = true;
+      e.currentTarget.scrollTop = st.top - (e.clientY - st.y);
+    },
+    onPointerUp: () => {
+      if (menuDragRef.current?.moved) menuSuppressRef.current = true;
+      menuDragRef.current = null;
+    },
+    onPointerLeave: () => {
+      menuDragRef.current = null;
+    },
+    onClickCapture: (e) => {
+      if (menuSuppressRef.current) {
+        menuSuppressRef.current = false;
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    },
+  };
   useEffect(() => {
     if (!panelOpen) setOpenMenu(null);
   }, [panelOpen]);
@@ -238,7 +271,9 @@ export default function BottomSearchBar({
   // 검색바가 검색 대신 값을 입력받는 상태 — 새 폴더, 그리고 스튜디오의
   // 이름·태그 섹션(압축 섹션·아이콘 줄에서는 입력창을 쓰지 않는다).
   const studioTextSection = studioActive && (studioSection === "name" || studioSection === "tag");
-  const textEntryOpen = newFolderOpen || studioTextSection;
+  // 다른이름으로 저장 모드(importMode이면서 saveAsName이 있을 때)에서는 검색바가 저장할 이름 입력창이다.
+  const saveNameEntry = Boolean(importMode) && typeof saveAsName === "string";
+  const textEntryOpen = newFolderOpen || studioTextSection || saveNameEntry;
   // 입력창을 쓰지 않는 패널(삭제 확인·이동·스튜디오 아이콘 줄/압축)이 열려
   // 있을 때는 검색바 입력을 아예 비활성화한다 — 패널이 열려 있는 동안
   // 검색어를 바꿔 지금 폴더 목록 자체가 통째로 달라지는 걸 막기 위해서다.
@@ -385,7 +420,9 @@ export default function BottomSearchBar({
   // 막지만 목록에서 미리 눌리지 않게 해 둔다.
   const moveExcluded = moveExcludedIds ?? new Set();
 
-  const textValue = newFolderOpen
+  const textValue = saveNameEntry
+    ? saveAsName
+    : newFolderOpen
     ? newFolderName
     : studioSection === "name"
       ? currentStudioName
@@ -393,7 +430,8 @@ export default function BottomSearchBar({
         ? currentStudioTag
         : searchQuery;
   const onTextChange = (value) => {
-    if (newFolderOpen) onChangeNewFolderName?.(value);
+    if (saveNameEntry) onChangeSaveAsName?.(value);
+    else if (newFolderOpen) onChangeNewFolderName?.(value);
     else if (studioActive && studioSection === "name") onChangeStudioName?.(value);
     else if (studioActive && studioSection === "tag") onChangeStudioTag?.(value);
     else onSearch?.(value);
@@ -572,7 +610,6 @@ export default function BottomSearchBar({
       { key: "numbers", label: "번호 붙이기", disabled: studioSection !== "name" || !studioActive, run: () => onAttachNumbersMultiStudio?.() },
     ],
   };
-  const activeFunctionLabel = hasSection ? SECTION_LABELS[studioSection] : null;
 
   // 이미지 비교는 정확히 두 장을 한 쌍으로 다루는 기능이라, 다른 기능처럼
   // 다중 선택 항목을 하나씩 넘겨보는 이전·다음 화살표(1/2 카운터)가 필요
@@ -692,13 +729,13 @@ export default function BottomSearchBar({
                             {menu.label}
                           </button>
                           {openMenu === menu.key && (
-                            <div className="studio-file-menu" role="menu">
+                            <div className="studio-file-menu" role="menu" {...menuDrag}>
                               {MENU_ITEMS[menu.key].map((item) => (
                                 <button
                                   key={item.key}
                                   type="button"
                                   role="menuitem"
-                                  className={`studio-file-menu-item${studioSection === item.key ? " is-active" : ""}`}
+                                  className="studio-file-menu-item"
                                   disabled={item.disabled}
                                   onClick={() => {
                                     setOpenMenu(null);
@@ -726,13 +763,6 @@ export default function BottomSearchBar({
                     ) : (
                       <span className="studio-viewport-empty">
                         <FileIcon size={40} />
-                      </span>
-                    )}
-                    {/* 지금 쓰고 있는 기능과 파일 이름을 뷰포트 아래쪽에 작게 알려 준다. */}
-                    {activeFunctionLabel && (
-                      <span className="studio-viewport-caption">
-                        {activeFunctionLabel}
-                        {multiStudioCurrent ? ` · ${multiStudioCurrent.originalName}` : ""}
                       </span>
                     )}
                   </div>
@@ -797,7 +827,7 @@ export default function BottomSearchBar({
               type={textEntryOpen ? "text" : "search"}
               inputMode={textEntryOpen ? "text" : "search"}
               enterKeyHint={textEntryOpen ? "done" : "search"}
-              placeholder={textEntryOpen ? "여기에 입력하세요" : "검색"}
+              placeholder={saveNameEntry ? "저장할 이름" : textEntryOpen ? "여기에 입력하세요" : "검색"}
               maxLength={studioSection === "tag" ? 24 : undefined}
               value={textValue}
               disabled={inputDisabled}
