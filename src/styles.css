@@ -698,9 +698,9 @@ main.page {
   justify-content: flex-start;
 }
 .search-bar-confirm-panel.mode-studio.is-open {
-  /* 편집툴 레이아웃(헤더/도구 줄/인스펙터/액션 줄)에 맞춘 고정 높이 250px. */
-  max-height: 250px;
-  min-height: 250px;
+  /* 스튜디오 패널 고정 높이 270px(헤더 + 메뉴바 + 뷰포트). 늘어난 높이는 뷰포트가 가져간다. */
+  max-height: 270px;
+  min-height: 270px;
 }
 /* 이동 패널은 경로 표시줄 + 스크롤되는 폴더 목록까지 들어가 가장 길다. */
 .search-bar-confirm-panel.mode-move {
@@ -763,6 +763,7 @@ main.page {
   cursor: default;
 }
 .studio-viewport {
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
   margin: 8px 0 6px;
@@ -775,8 +776,18 @@ main.page {
   overflow: hidden;
 }
 .studio-viewport-img {
-  width: 100%;
+  /* 높이는 뷰포트 세로폭에 딱 맞추고 가로는 원본 비율대로(가로 100%·세로 200 파일이
+     뷰포트 높이 100이면 50). 너무 넓은 이미지는 뷰포트 폭에서 멈춰 전체가 보이게 한다.
+     뷰포트가 flex 가운데 정렬이라 항상 중앙에 놓인다. */
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
   height: 100%;
+  width: auto;
+  max-width: 100%;
   object-fit: contain;
   display: block;
   pointer-events: none;
