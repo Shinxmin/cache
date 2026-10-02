@@ -2529,8 +2529,8 @@ main.page {
   top: 100%;
   left: calc(100% - 4px);
   z-index: 5;
-  /* 폭은 예전(150px)보다 20% 줄인 120px. 항목이 많으면 스크롤(터치 스와이프·마우스 드래그)된다. */
-  width: 120px;
+  /* 폭 135px. 항목이 많으면 스크롤(터치 스와이프·마우스 드래그)된다. */
+  width: 135px;
   max-height: 112px;
   display: flex;
   flex-direction: column;
@@ -2551,9 +2551,12 @@ main.page {
   padding: 8px 9px;
   text-align: left;
   white-space: nowrap;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--text);
+}
+.studio-file-menu-item.is-active {
+  font-weight: 700;
 }
 .studio-file-menu-item + .studio-file-menu-item {
   border-top: 1px solid var(--studio-t10);
