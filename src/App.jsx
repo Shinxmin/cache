@@ -140,8 +140,8 @@ export default function App() {
   const [studioLevel, setStudioLevel] = useState(1);
   const [studioLevelTouched, setStudioLevelTouched] = useState(false);
   // 스튜디오 메뉴 파일 > 불러오기. 불러오기 모드에서는 스튜디오 패널이 닫히고, 드라이브를
-  // 폴더를 옮겨 다니며 터치만으로 파일·폴더를 고른다(폴더의 하위 내용은 따라오지
-  // 않는다). 고른 항목은 폴더가 바뀌어도 유지돼야 해서 목록 선택(selectedIds)과 따로
+  // 폴더를 눌러 들어가며 터치만으로 파일을 고른다(폴더는 선택할 수 없고 들어가기만
+  // 된다). 고른 항목은 폴더가 바뀌어도 유지돼야 해서 목록 선택(selectedIds)과 따로
   // id→항목 Map으로 들고 있다. 확인을 누르면 그 항목들로 스튜디오가 다시 열린다.
   const [importMode, setImportMode] = useState(false);
   const [importMap, setImportMap] = useState(() => new Map());
@@ -662,6 +662,7 @@ export default function App() {
     setImportMap(new Map());
   };
   const toggleImport = (item) => {
+    if (item.is_folder) return;
     setImportMap((prev) => {
       const next = new Map(prev);
       if (next.has(item.id)) next.delete(item.id);

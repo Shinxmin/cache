@@ -3,7 +3,7 @@ import { folderSizes, listFavorites, listFiles, searchFiles, thumbnailUrls } fro
 import { formatBytes } from "../lib/format";
 import { isOptimizableFile } from "../lib/optimize";
 import { isSearchActive, parseSearchQuery } from "../lib/search";
-import { CheckIcon, ChevronRightIcon, FileIcon, FolderIcon, PersonIcon, PersonOffIcon } from "../components/icons";
+import { CheckIcon, FileIcon, FolderIcon, PersonIcon, PersonOffIcon } from "../components/icons";
 import { StarIcon } from "../components/toolkitIcons";
 import Spinner from "../components/Spinner";
 import useLongPress from "../hooks/useLongPress";
@@ -60,28 +60,6 @@ function ThumbPickIcon({ size, className, onPick, label = "썸네일 지정", of
   );
 }
 
-// 불러오기 모드에서 폴더 타일·행에 붙는 "열기" 화살표. 폴더는 터치하면 선택되므로(폴더 안의
-// 내용은 따라오지 않는다), 안으로 들어가려면 이 화살표를 누른다. 타일(<button>) 안이라
-// 중첩 버튼 대신 span으로 만들고 포인터 이벤트가 타일로 새지 않게 끊는다.
-function FolderEnterIcon({ size, className, onEnter }) {
-  return (
-    <span
-      className={`drive-folder-enter ${className}`}
-      role="button"
-      tabIndex={0}
-      aria-label="폴더 열기"
-      onPointerDown={(e) => e.stopPropagation()}
-      onPointerUp={(e) => e.stopPropagation()}
-      onClick={(e) => {
-        e.stopPropagation();
-        onEnter();
-      }}
-    >
-      <ChevronRightIcon size={size} />
-    </span>
-  );
-}
-
 // 썸네일 지정(사람) 아이콘과, 이미 썸네일이 지정된 폴더면 그 바로 오른쪽에 붙는
 // 썸네일 삭제(사람에 대각선) 아이콘 묶음. 같은 크기·색을 쓴다.
 function ThumbActions({ variant, size, item, onPick, onClear }) {
@@ -111,7 +89,7 @@ function sizeLabel(item, revealed, folderSizeMap) {
 
 // 갤러리 타일 하나. 꾹 누르면 선택 모드로 들어가고(App.jsx가 스튜디오 툴킷을
 // 띄운다), 선택된 동안은 눌린 것처럼 살짝 눌려 보이며 체크 배지가 뜬다.
-function GalleryTile({ item, thumb, selected, size, pickIcon, onPickIcon, onClearIcon, pickDim, enterIcon, onEnter, onTap, onLongPress }) {
+function GalleryTile({ item, thumb, selected, size, pickIcon, onPickIcon, onClearIcon, pickDim, onTap, onLongPress }) {
   const press = useLongPress(onTap, onLongPress);
   const optimizable = !item.is_folder && isOptimizableFile(item.name, item.mime);
   return (
@@ -125,7 +103,6 @@ function GalleryTile({ item, thumb, selected, size, pickIcon, onPickIcon, onClea
         // 썸네일이 있는 이미지·영상: 타일을 꽉 채우고 제목은 좌하단에 겹친다.
         // 블러 처리된 항목은 썸네일에만 블러를 건다(실제로 열어 보면 원본 그대로).
         <span className="drive-tile drive-tile--thumb">
-          {enterIcon && <FolderEnterIcon size={16} className="drive-folder-enter--tile" onEnter={onEnter} />}
           {pickIcon && <ThumbActions variant="tile" size={14} item={item} onPick={onPickIcon} onClear={onClearIcon} />}
           <img
             className={item.blurred ? "drive-thumb-blurred" : undefined}
@@ -148,7 +125,6 @@ function GalleryTile({ item, thumb, selected, size, pickIcon, onPickIcon, onClea
         // 썸네일이 없는 폴더·일반 파일도 제목(+용량)을 타일 밖이 아니라 안쪽
         // 아래에 겹쳐서 보여준다(썸네일 타일과 같은 자리).
         <span className="drive-tile">
-          {enterIcon && <FolderEnterIcon size={16} className="drive-folder-enter--tile" onEnter={onEnter} />}
           {pickIcon && <ThumbActions variant="tile" size={15} item={item} onPick={onPickIcon} onClear={onClearIcon} />}
           {item.is_folder ? (
             <FolderIcon size={44} className="drive-tile-icon-small" />
@@ -172,7 +148,7 @@ function GalleryTile({ item, thumb, selected, size, pickIcon, onPickIcon, onClea
   );
 }
 
-function ListRow({ item, selected, size, pickIcon, onPickIcon, onClearIcon, pickDim, enterIcon, onEnter, onTap, onLongPress }) {
+function ListRow({ item, selected, size, pickIcon, onPickIcon, onClearIcon, pickDim, onTap, onLongPress }) {
   const press = useLongPress(onTap, onLongPress);
   const optimizable = !item.is_folder && isOptimizableFile(item.name, item.mime);
   return (
@@ -190,7 +166,6 @@ function ListRow({ item, selected, size, pickIcon, onPickIcon, onClearIcon, pick
         </span>
         {size && <span className="drive-row-size">{size}</span>}
       </span>
-      {enterIcon && <FolderEnterIcon size={18} className="drive-folder-enter--row" onEnter={onEnter} />}
       {selected && (
         <span className="drive-row-check">
           <CheckIcon />
@@ -326,12 +301,21 @@ export default function FilesPage({
       if (isThumbPickable(item)) onPickThumb?.(item);
       return;
     }
+    // 불러오기 모드: 폴더는 선택하지 않고 눌러서 안으로 들어가고(드라이브 전체를 옮겨 다니며
+    // 고른다), 파일만 터치로 선택·해제된다.
+    if (importMode) {
+      if (item.is_folder) onOpenFolder(item);
+      else onToggleSelect(item);
+      return;
+    }
     if (selectionMode) onToggleSelect(item);
     else if (item.is_folder) onOpenFolder(item);
     else onOpenFile(item);
   };
   const longPressItem = (item) => {
-    if (!thumbPickMode) onLongPressItem(item);
+    if (thumbPickMode) return;
+    if (importMode && item.is_folder) return;
+    onLongPressItem(item);
   };
   // 정보(i) 아이콘이 켜진 폴더 하나만 골라 둔 동안에만(그 폴더가 선택돼 있고, 선택이
   // 그 하나뿐이며, 폴더의 세부 정보 보기가 켜져 있을 때) 썸네일 지정 아이콘이 뜬다.
@@ -371,8 +355,6 @@ export default function FilesPage({
               onPickIcon={() => onOpenThumbPicker?.(item)}
               onClearIcon={() => onClearThumb?.(item)}
               pickDim={pickDimmed(item)}
-              enterIcon={importMode && item.is_folder}
-              onEnter={() => onOpenFolder(item)}
               onTap={() => openOrToggle(item)}
               onLongPress={() => longPressItem(item)}
             />
@@ -395,8 +377,6 @@ export default function FilesPage({
             onPickIcon={() => onOpenThumbPicker?.(item)}
               onClearIcon={() => onClearThumb?.(item)}
             pickDim={pickDimmed(item)}
-            enterIcon={importMode && item.is_folder}
-            onEnter={() => onOpenFolder(item)}
             onTap={() => openOrToggle(item)}
             onLongPress={() => longPressItem(item)}
           />
