@@ -180,6 +180,7 @@ export default function BottomSearchBar({
   onConfirmCompare,
   onCancelMultiStudio,
   studioPreviewUrl,
+  studioSessionHidden,
   importMode,
   importCount,
   onStartImport,
@@ -603,6 +604,9 @@ export default function BottomSearchBar({
           <div className="search-bar-scrim" onClick={handleScrimClick} onPointerDown={handleScrimPointerDown} />
         ))}
       <div className="bottom-search-wrap">
+        {/* 스튜디오 세션이 숨겨져 있을 때(패널을 닫아 둔 채 대상이 남아 있을 때) 검색바 바로 위에
+            안내를 띄운다. 다른 패널이 열려 있는 동안은 숨긴다. */}
+        {studioSessionHidden && !panelOpen && <p className="studio-session-note">저장되지 않은 세션이 있습니다</p>}
         <div className={`search-dock${panelOpen ? " has-confirm" : ""}${(panelOpen && (displayMode === "studio" || displayMode === "multiStudio")) || importMode ? " studio-mode" : ""}`}>
           <div
             className={`search-bar-confirm-panel${displayMode === "studio" || displayMode === "multiStudio" ? " mode-studio" : ""}${displayMode === "move" ? " mode-move" : ""}${panelOpen ? " is-open" : ""}`}

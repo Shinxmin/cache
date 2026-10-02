@@ -1422,6 +1422,7 @@ export default function App() {
             onConfirmCompare={handleConfirmCompare}
             onCancelMultiStudio={() => setStudioVisible(false)}
             studioPreviewUrl={studioPreviewUrl}
+            studioSessionHidden={!studioVisible && ((studioOpen && Boolean(studioTargetId)) || (multiStudioOpen && multiStudioItems.length > 0))}
             importMode={importMode}
             importCount={importMap.size}
             onStartImport={startImport}

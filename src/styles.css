@@ -36,12 +36,17 @@
   color-scheme: dark;
   --bg: #000000;
   --bg-rgb: 0, 0, 0;
-  --text: #f5f5f7;
-  --text-2: rgba(245, 245, 247, 0.56);
+  /* 다크 모드는 검정 배경 위에서 회색으로 보이지 않도록 글자·아이콘 계열을 한 단계 더
+     하얗게 둔다(글자 #f5f5f7 → 흰색, 보조색 불투명도 56→72%·66→84%). */
+  --text: #ffffff;
+  --text-2: rgba(255, 255, 255, 0.72);
   /* 검색바 패널의 본문 텍스트·부가 버튼(일괄 지우기 등)만 --text-2보다
      아주 조금 더 진하게 — 품질·하이라이트 슬라이더는 이 변수를 쓰지
      않으므로 그대로다. */
-  --text-2-strong: rgba(245, 245, 247, 0.66);
+  --text-2-strong: rgba(255, 255, 255, 0.84);
+  --studio-t80: color-mix(in srgb, var(--text) 93%, transparent);
+  --studio-t75: color-mix(in srgb, var(--text) 89%, transparent);
+  --studio-t70: color-mix(in srgb, var(--text) 85%, transparent);
   --glass: rgba(255, 255, 255, 0.07);
   --glass-strong: rgba(255, 255, 255, 0.11);
   --glass-border: rgba(255, 255, 255, 0.1);
@@ -2567,4 +2572,19 @@ main.page {
 }
 .studio-close-btn:active {
   transform: scale(0.88);
+}
+
+/* 숨겨진 스튜디오 세션 안내: 검색바 바로 위 가운데. 패널이 없을 때만 보이고, 눌리지 않는다. */
+.studio-session-note {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  margin: 0 0 8px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2-strong);
+  text-shadow: 0 0 8px var(--bg), 0 0 3px var(--bg);
+  pointer-events: none;
 }
