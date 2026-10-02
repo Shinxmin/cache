@@ -149,6 +149,11 @@ export default function App() {
   // 바뀔 때 스튜디오 대상을 다시 계산하는 효과를 건너뛰고(studioFromImport), 미리보기용
   // 항목 정보를 따로 들고 있는다(studioSourceItems).
   const [studioFromImport, setStudioFromImport] = useState(false);
+  // 스튜디오 세션(열어 둔 대상·입력값·진행 상황)은 패널을 잠시 닫아도(스크림을 누르거나 스튜디오
+  // 버튼을 다시 눌러도) 종료되지 않고 그대로 유지된다. 패널이 보이는지만 studioVisible이
+  // 정하고, 세션은 오직 패널의 X 버튼(endStudio)으로만 종료된다. 스튜디오 버튼은 세션이 있으면
+  // 숨김/복원을 오간다.
+  const [studioVisible, setStudioVisible] = useState(true);
   const [studioSourceItems, setStudioSourceItems] = useState([]);
   const [multiStudioOpen, setMultiStudioOpen] = useState(false);
   const [multiStudioItems, setMultiStudioItems] = useState([]); // [{id,name,originalName,tag,level,levelTouched,mime,is_folder}]
@@ -279,6 +284,8 @@ export default function App() {
   useEffect(() => {
     if (!studioOpen && !multiStudioOpen) return;
     if (studioFromImport) return;
+    // 패널을 닫아 둔 동안은 세션을 그대로 보존한다(선택이 바뀌어도 다시 계산하지 않는다).
+    if (!studioVisible) return;
     // 선택이 바뀌면 지금 보여주던 압축 진행률·결과 화면은 더 이상 이
     // 선택을 대표하지 않으니 지운다.
     if (studioProgress || studioResult) {
@@ -678,6 +685,9 @@ export default function App() {
     setImportMode(false);
     setImportMap(new Map());
     if (!items.length) return;
+    setStudioProgress(null);
+    setStudioResult(null);
+    setStudioVisible(true);
     setStudioSourceItems(items);
     setStudioFromImport(true);
     if (items.length === 1) {
@@ -723,7 +733,12 @@ export default function App() {
     // 다시 누르면 여는 대신 닫는다 — 빈 화면을 눌러 취소하는 것과 같은
     // 처리다.
     if (studioOpen || multiStudioOpen) {
-      closeAllToolPanels();
+      if (studioVisible) {
+        setStudioVisible(false);
+      } else {
+        closeAllToolPanels();
+        setStudioVisible(true);
+      }
       return;
     }
     // 정확히 두 개를 선택했을 때는 이미지 비교가 먼저 선택한 쪽을
@@ -737,6 +752,7 @@ export default function App() {
         ? [...selectedIds].map((id) => visibleItems.find((it) => it.id === id)).filter(Boolean)
         : visibleItems.filter((it) => selectedIds.has(it.id));
     closeAllToolPanels();
+    setStudioVisible(true);
     if (targets.length <= 1) {
       const only = targets[0];
       setStudioTargetId(only?.id ?? null);
@@ -1041,8 +1057,15 @@ export default function App() {
     setDeleteConfirmOpen(false);
     setNewFolderOpen(false);
     cancelMove();
+    // 스튜디오는 종료하지 않고 패널만 숨긴다(세션 유지).
+    setStudioVisible(false);
+  };
+
+  // 패널의 X 버튼: 스튜디오 세션 전체를 종료한다(대상·입력값·진행·결과 모두 지움).
+  const endStudio = () => {
     cancelStudio();
     cancelMultiStudio();
+    setStudioVisible(true);
   };
 
   // 선택된 항목으로 이동 패널을 연다(항상 최상위에서 시작). 폴더를 옮기면
@@ -1366,7 +1389,7 @@ export default function App() {
             onConfirmNewFolder={confirmNewFolder}
             onCancelNewFolder={cancelNewFolder}
             onOpenStudio={handleStudioSelected}
-            studioOpen={studioOpen}
+            studioOpen={studioOpen && studioVisible}
             studioTargetName={visibleItems.find((it) => it.id === studioTargetId)?.name ?? ""}
             studioTargetMime={visibleItems.find((it) => it.id === studioTargetId)?.mime ?? ""}
             studioTargetIsFolder={visibleItems.find((it) => it.id === studioTargetId)?.is_folder ?? false}
@@ -1381,8 +1404,9 @@ export default function App() {
             onChangeStudioLevel={changeStudioLevel}
             onOpenStudioQuality={markStudioLevelForOptimize}
             onConfirmStudio={confirmStudio}
-            onCancelStudio={cancelStudio}
-            multiStudioOpen={multiStudioOpen}
+            onCancelStudio={() => setStudioVisible(false)}
+            onEndStudio={endStudio}
+            multiStudioOpen={multiStudioOpen && studioVisible}
             multiStudioItems={multiStudioItems}
             multiStudioIndex={multiStudioIndex}
             onPrevMultiStudio={prevMultiStudio}
@@ -1396,7 +1420,7 @@ export default function App() {
             onClearAllMultiStudioLevel={clearAllMultiStudioLevel}
             onConfirmMultiStudio={confirmMultiStudio}
             onConfirmCompare={handleConfirmCompare}
-            onCancelMultiStudio={cancelMultiStudio}
+            onCancelMultiStudio={() => setStudioVisible(false)}
             studioPreviewUrl={studioPreviewUrl}
             importMode={importMode}
             importCount={importMap.size}

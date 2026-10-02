@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BackIcon, ChevronRightIcon, FileIcon } from "./icons";
+import { BackIcon, ChevronRightIcon, CloseIcon, FileIcon } from "./icons";
 import Spinner from "./Spinner";
 import { isOptimizableFile, OPTIMIZE_LEVELS, OPTIMIZE_LEVEL_LABELS } from "../lib/optimize";
 import { displayName } from "../lib/filename";
@@ -163,6 +163,7 @@ export default function BottomSearchBar({
   onOpenStudioQuality,
   onConfirmStudio,
   onCancelStudio,
+  onEndStudio,
   multiStudioOpen,
   multiStudioItems,
   multiStudioIndex,
@@ -618,6 +619,7 @@ export default function BottomSearchBar({
                 <>
                   <div className="studio-head">
                     <p className="search-bar-confirm-title search-bar-confirm-title--studio">스튜디오</p>
+                    <div className="studio-head-right">
                     {showMultiStudioNav && (
                       <div className="search-bar-confirm-nav">
                         <button
@@ -643,6 +645,12 @@ export default function BottomSearchBar({
                         </button>
                       </div>
                     )}
+                      {/* 스튜디오 세션 종료: 패널을 닫고 열어 둔 대상·입력값·진행을 전부 지운다.
+                          (스크림이나 스튜디오 버튼으로 닫는 건 임시 숨김이라 세션이 유지된다.) */}
+                      <button type="button" className="studio-close-btn" aria-label="스튜디오 종료" onClick={onEndStudio}>
+                        <CloseIcon size={16} />
+                      </button>
+                    </div>
                   </div>
                   <div className="search-bar-studio-divider" />
                   {/* 메뉴바: 일시적 미구현 — 모양만 있고 눌러도 아무 일도 일어나지 않는다. */}
