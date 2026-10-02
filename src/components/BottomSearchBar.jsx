@@ -95,6 +95,9 @@ function CompareIcon({ size = 16 }) {
   );
 }
 
+// 스튜디오 메뉴바 항목(일시적 미구현 — 모양만).
+const STUDIO_MENUS = ["파일", "편집", "보기", "설정"];
+
 // 예전 하단 내비바가 있던 자리에 고정된 검색바. position:fixed라 스크롤을
 // 아무리 올리고 내려도 그 자리에서 전혀 움직이지 않는다. 파일 화면(과 그
 // 안에서 연 즐겨찾기 화면)에서 항상 떠 있다 — "검색바 항상 활성화" 설정은
@@ -169,6 +172,7 @@ export default function BottomSearchBar({
   onConfirmMultiStudio,
   onConfirmCompare,
   onCancelMultiStudio,
+  studioPreviewUrl,
   moveOpen,
   moveItemCount,
   movePath,
@@ -526,28 +530,10 @@ export default function BottomSearchBar({
             ]
           : [];
 
-  const studioSectionIcon =
-    studioSection === "tag" ? (
-      <BookmarkIcon size={16} />
-    ) : studioSection === "quality" ? (
-      <ZipFolderIcon size={16} />
-    ) : studioSection === "compare" ? (
-      <CompareIcon size={16} />
-    ) : (
-      <EditIcon size={16} />
-    );
-  const studioSectionLabel =
-    studioSection === "tag"
-      ? "태그"
-      : studioSection === "quality"
-        ? "최적화"
-        : studioSection === "compare"
-          ? "이미지 비교"
-          : "이름 바꾸기";
   // 이미지 비교는 정확히 두 장을 한 쌍으로 다루는 기능이라, 다른 기능처럼
   // 다중 선택 항목을 하나씩 넘겨보는 이전·다음 화살표(1/2 카운터)가 필요
   // 없다 — 그래서 다중 모드라도 이 섹션에서는 내비게이션을 아예 숨긴다.
-  const showMultiStudioNav = isMultiStudio && studioSection !== "compare";
+  const showMultiStudioNav = isMultiStudio;
   // "테스트_1.jpg 외 1개 파일"처럼, 먼저 선택한 파일 이름(확장자는 메타데이터로
   // 보정)에 나머지 개수를 붙인다. 이미지 비교는 항상 정확히 두 장이므로
   // "외 1개"로 고정된다.
@@ -607,162 +593,95 @@ export default function BottomSearchBar({
             ) : displayMode === "studio" || displayMode === "multiStudio" ? (
               (
                 <>
-                  <p className="search-bar-confirm-title search-bar-confirm-title--studio">스튜디오</p>
-                  <div className="search-bar-studio-divider" />
-                  <div className={`search-bar-studio-switcher${studioRunning ? " is-running" : ""}`} data-mode={studioSection ? "detail" : "list"}>
-                    <div className="search-bar-studio-icon-list">
-                      <button
-                        type="button"
-                        className="search-bar-studio-icon-btn"
-                        aria-label="이름 바꾸기"
-                        disabled={!studioHasTarget}
-                        onClick={() => setStudioSection("name")}
-                      >
-                        <EditIcon size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        className="search-bar-studio-icon-btn"
-                        aria-label="태그"
-                        disabled={!studioHasTarget}
-                        onClick={() => setStudioSection("tag")}
-                      >
-                        <BookmarkIcon size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        className="search-bar-studio-icon-btn"
-                        aria-label="최적화"
-                        disabled={!studioHasTarget || !studioAllOptimizable}
-                        onClick={() => {
-                          setStudioSection("quality");
-                          onOpenStudioQuality?.();
-                        }}
-                      >
-                        <ZipFolderIcon size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        className="search-bar-studio-icon-btn"
-                        aria-label="이미지 비교"
-                        disabled={!studioAllComparable}
-                        onClick={() => setStudioSection("compare")}
-                      >
-                        <CompareIcon size={16} />
-                      </button>
-                    </div>
-                    <div className="search-bar-studio-detail">
-                      <button
-                        type="button"
-                        className="search-bar-studio-back"
-                        aria-label="뒤로"
-                        onClick={() => setStudioSection(null)}
-                      >
-                        <ChevronRightIcon size={14} />
-                      </button>
-                      <span className="search-bar-studio-detail-icon">{studioSectionIcon}</span>
-                      <span className="search-bar-studio-detail-label">{studioSectionLabel}</span>
-                      {showMultiStudioNav && (
-                        <div className="search-bar-confirm-nav">
-                          <button
-                            type="button"
-                            className="search-bar-confirm-nav-btn search-bar-confirm-nav-btn--prev"
-                            aria-label="이전 항목"
-                            onClick={onPrevMultiStudio}
-                            disabled={multiStudioIndex <= 0}
-                          >
-                            <ChevronRightIcon size={14} />
-                          </button>
-                          <span className="search-bar-confirm-nav-count">
-                            {multiStudioIndex + 1}/{multiStudioItems?.length ?? 0}
-                          </span>
-                          <button
-                            type="button"
-                            className="search-bar-confirm-nav-btn"
-                            aria-label="다음 항목"
-                            onClick={onNextMultiStudio}
-                            disabled={isLastMultiStudio}
-                          >
-                            <ChevronRightIcon size={14} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                  <div className="studio-head">
+                    <p className="search-bar-confirm-title search-bar-confirm-title--studio">스튜디오</p>
+                    {showMultiStudioNav && (
+                      <div className="search-bar-confirm-nav">
+                        <button
+                          type="button"
+                          className="search-bar-confirm-nav-btn search-bar-confirm-nav-btn--prev"
+                          aria-label="이전 항목"
+                          onClick={onPrevMultiStudio}
+                          disabled={multiStudioIndex <= 0}
+                        >
+                          <ChevronRightIcon size={14} />
+                        </button>
+                        <span className="search-bar-confirm-nav-count">
+                          {multiStudioIndex + 1}/{multiStudioItems?.length ?? 0}
+                        </span>
+                        <button
+                          type="button"
+                          className="search-bar-confirm-nav-btn"
+                          aria-label="다음 항목"
+                          onClick={onNextMultiStudio}
+                          disabled={isLastMultiStudio}
+                        >
+                          <ChevronRightIcon size={14} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div className="search-bar-studio-divider" />
-                  {/* 기능 제목 줄 바로 밑 한 줄(서브 버튼 자리): 기능 화면에서는 일괄 지우기·
-                      일괄 적용·번호 붙이기 같은 서브 버튼(없는 기능·단일 선택이면 빈 줄로
-                      자리만 둔다), 아이콘 줄에서는 안내 문구가 이 자리에 온다. 본문(파일명)은
-                      그 밑으로 내려간다. 진행·결과 화면에서는 이 줄을 두지 않는다. */}
-                  {!studioProgress && !studioResult && (
-                    <div className="search-bar-studio-subrow">
-                      {studioSection ? (
-                        extraActions.map((action) => (
-                          <button
-                            key={action.key}
-                            type="button"
-                            className="search-bar-confirm-extras-btn"
-                            onClick={action.onClick}
-                          >
-                            {action.label}
-                          </button>
-                        ))
-                      ) : (
-                        <p className="search-bar-confirm-filename search-bar-confirm-filename--studio">강력한 웹 에디터를 이용해보세요</p>
-                      )}
-                    </div>
-                  )}
-                  {studioResult ? (
-                    // 최적화가 전부 끝났을 때: 본문 자리부터 처리 결과(개수·시간·용량
-                    // 변화·절약한 용량)를 보여준다. 패널은 스크림을 눌러 직접 닫는다.
-                    <div className="optimize-result-stats">
-                      <p className="optimize-result-summary">{studioResult.total}개 파일 처리 완료</p>
-                      <div className="optimize-result-row">
-                        <span className="optimize-result-label">처리 시간</span>
-                        <span className="optimize-result-value">{(studioResult.elapsedMs / 1000).toFixed(1)}초</span>
-                      </div>
-                      {studioResult.kind === "compare" ? (
+                  {/* 메뉴바: 일시적 미구현 — 모양만 있고 눌러도 아무 일도 일어나지 않는다. */}
+                  <div className="studio-menubar" role="menubar">
+                    {STUDIO_MENUS.map((label) => (
+                      <button key={label} type="button" role="menuitem" className="studio-menubar-item">
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="search-bar-studio-divider" />
+                  {/* 뷰포트: 지금 넘겨 보고 있는 선택 파일의 미리보기(이미지가 아니면 파일 아이콘). */}
+                  <div className="studio-viewport">
+                    {studioResult ? (
+                      <div className="optimize-result-stats">
+                        <p className="optimize-result-summary">{studioResult.total}개 파일 처리 완료</p>
                         <div className="optimize-result-row">
-                          <span className="optimize-result-label">파일 용량</span>
-                          <span className="optimize-result-value">{formatBytes(studioResult.totalSize)}</span>
+                          <span className="optimize-result-label">처리 시간</span>
+                          <span className="optimize-result-value">{(studioResult.elapsedMs / 1000).toFixed(1)}초</span>
                         </div>
-                      ) : (
-                        <>
+                        {studioResult.kind === "compare" ? (
                           <div className="optimize-result-row">
-                            <span className="optimize-result-label">용량 변화</span>
-                            <span className="optimize-result-value">
-                              {formatBytes(studioResult.totalOriginal)} → {formatBytes(studioResult.totalCompressed)}
-                            </span>
+                            <span className="optimize-result-label">파일 용량</span>
+                            <span className="optimize-result-value">{formatBytes(studioResult.totalSize)}</span>
                           </div>
-                          <div className="optimize-result-row">
-                            <span className="optimize-result-label">절약한 용량</span>
-                            <span className="optimize-result-value">
-                              {formatBytes(Math.max(0, studioResult.totalOriginal - studioResult.totalCompressed))}
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ) : studioProgress ? (
-                    // 확인 직후부터 끝나기 전까지: 본문 자리부터 진행 바 + "1 / 2" 카운트.
-                    <>
-                      <div className="optimize-progress-track">
-                        <div
-                          className="optimize-progress-fill"
-                          style={{ width: `${Math.round((studioProgress.done / studioProgress.total) * 100)}%` }}
-                        />
+                        ) : (
+                          <>
+                            <div className="optimize-result-row">
+                              <span className="optimize-result-label">용량 변화</span>
+                              <span className="optimize-result-value">
+                                {formatBytes(studioResult.totalOriginal)} → {formatBytes(studioResult.totalCompressed)}
+                              </span>
+                            </div>
+                            <div className="optimize-result-row">
+                              <span className="optimize-result-label">절약한 용량</span>
+                              <span className="optimize-result-value">
+                                {formatBytes(Math.max(0, studioResult.totalOriginal - studioResult.totalCompressed))}
+                              </span>
+                            </div>
+                          </>
+                        )}
                       </div>
-                      <p className="optimize-progress-count">
-                        {studioProgress.done} / {studioProgress.total}
-                      </p>
-                    </>
-                  ) : studioSection === "compare" ? (
-                    <p className="search-bar-confirm-filename search-bar-confirm-filename--studio">{compareBodyText}</p>
-                  ) : studioSection ? (
-                    <p className="search-bar-confirm-filename search-bar-confirm-filename--studio">
-                      {displayName({ name: currentStudioOriginalName, mime: currentStudioMime })}
-                    </p>
-                  ) : null}
+                    ) : studioProgress ? (
+                      <>
+                        <div className="optimize-progress-track">
+                          <div
+                            className="optimize-progress-fill"
+                            style={{ width: `${Math.round((studioProgress.done / studioProgress.total) * 100)}%` }}
+                          />
+                        </div>
+                        <p className="optimize-progress-count">
+                          {studioProgress.done} / {studioProgress.total}
+                        </p>
+                      </>
+                    ) : studioPreviewUrl ? (
+                      <img className="studio-viewport-img" src={studioPreviewUrl} alt="" draggable={false} />
+                    ) : (
+                      <span className="studio-viewport-empty">
+                        <FileIcon size={40} />
+                      </span>
+                    )}
+                  </div>
                 </>
               )
             ) : displayMode === "move" ? (
@@ -851,24 +770,6 @@ export default function BottomSearchBar({
               >
                 <LayersIcon size={18} />
               </button>
-            )}
-            {/* 압축 섹션이 열려 있을 때만 확인 버튼 바로 왼쪽에 품질 세그먼트가
-                뜬다 — 패널 본문이 아니라 검색바 쪽에 있던 예전 최적화 패널
-                자리 그대로다. */}
-            {studioActive && studioSection === "quality" && !studioRunning && (
-              <div className="search-bar-optimize-seg-group" role="group" aria-label="압축 비율" {...studioSegDrag}>
-                {OPTIMIZE_LEVELS.map((pct, i) => (
-                  <button
-                    key={pct}
-                    type="button"
-                    className={`search-bar-optimize-seg${currentStudioLevel === i ? " active" : ""}`}
-                    aria-pressed={currentStudioLevel === i}
-                    onClick={() => onChangeStudioLevel?.(i)}
-                  >
-                    {OPTIMIZE_LEVEL_LABELS[i]}
-                  </button>
-                ))}
-              </div>
             )}
             {panelOpen && (
               <button
