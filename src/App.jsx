@@ -162,6 +162,26 @@ export default function App() {
   const studioProgressTimerRef = useRef(0);
   // 저장·다른이름으로 저장이 도는 동안 스튜디오를 잠근다.
   const [studioSaving, setStudioSaving] = useState(false);
+  // 스튜디오 설정 > 품질: 최적화 때 원본 용량 대비 남길 비율(0=낮음 25%, 1=중간 50%, 2=높음 75%).
+  // 기본은 중간이고, 한 번 고르면 이 기기에 저장돼 다음에도 유지된다.
+  const [studioQuality, setStudioQualityState] = useState(() => {
+    try {
+      const raw = localStorage.getItem("cache_studio_quality");
+      return raw === "0" || raw === "1" || raw === "2" ? Number(raw) : 1;
+    } catch {
+      return 1;
+    }
+  });
+  const changeStudioQuality = (level) => {
+    setStudioQualityState(level);
+    try {
+      localStorage.setItem("cache_studio_quality", String(level));
+    } catch {
+      /* 저장소를 못 쓰는 환경이면 이번 세션에서만 유지된다 */
+    }
+    // 이전 품질로 미리 만들어 둔 최적화 결과는 더 이상 맞지 않으니 버린다(다음 확인·저장에서 새로 만든다).
+    studioStagedRef.current = new Map();
+  };
   // 파일 > 다른이름으로 저장: 불러오기처럼 드라이브를 폴더로 옮겨 다니며 저장할 폴더(지금 열려
   // 있는 폴더)를 고른 뒤 확인을 누르면 거기에 새 파일로 저장한다.
   const [saveAsMode, setSaveAsMode] = useState(false);
@@ -902,7 +922,7 @@ export default function App() {
           const out = await compressItemBlob({
             token: session.token,
             item: src,
-            ratioPercent: OPTIMIZE_LEVELS[1],
+            ratioPercent: OPTIMIZE_LEVELS[studioQuality],
             onProgress: (f) => report(i, f),
           });
           staged.set(it.id, out);
@@ -952,7 +972,7 @@ export default function App() {
     const cached = studioStagedRef.current.get(it.id);
     if (cached) return cached;
     try {
-      return await compressItemBlob({ token: session.token, item: src, ratioPercent: OPTIMIZE_LEVELS[1] });
+      return await compressItemBlob({ token: session.token, item: src, ratioPercent: OPTIMIZE_LEVELS[studioQuality] });
     } catch {
       return null;
     }
@@ -1486,6 +1506,8 @@ export default function App() {
             onSaveStudio={saveStudio}
             onStartSaveAs={startSaveAs}
             studioSaving={studioSaving}
+            studioQuality={studioQuality}
+            onChangeStudioQuality={changeStudioQuality}
             saveAsName={saveAsMode ? saveAsName : undefined}
             onChangeSaveAsName={setSaveAsName}
             onConfirmCompare={handleConfirmCompare}

@@ -2648,3 +2648,10 @@ main.page {
 .search-bar-confirm-panel.is-locked .search-bar-confirm-content {
   pointer-events: none;
 }
+
+/* 설정 > 품질 하위 메뉴: 같은 디자인의 작은 메뉴를 상위 메뉴 왼쪽에 나란히 띄운다(설정이 메뉴바
+   맨 오른쪽이라 오른쪽에는 자리가 없다). */
+.studio-submenu {
+  left: auto;
+  right: 2px;
+}
