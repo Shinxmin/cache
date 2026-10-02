@@ -2588,3 +2588,71 @@ main.page {
   text-shadow: 0 0 8px var(--bg), 0 0 3px var(--bg);
   pointer-events: none;
 }
+
+/* 이미지 메뉴에서 지금 쓰고 있는 기능은 굵게, 비활성 항목(조건이 안 맞는 편집·저장 항목)은 표준
+   비활성 불투명도로 낮추고 눌리지 않게 한다. */
+.studio-file-menu-item.is-active {
+  font-weight: 700;
+}
+.studio-file-menu-item:disabled {
+  opacity: var(--studio-disabled);
+  pointer-events: none;
+}
+/* 뷰포트 아래쪽의 "지금 쓰는 기능 · 파일 이름" 안내. */
+.studio-viewport-caption {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  max-width: calc(100% - 16px);
+  transform: translateX(-50%);
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 62%, transparent);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+/* 스튜디오/불러오기 확인 버튼은 폭을 56px로 고정한다(진행 막대 폭의 기준). */
+.search-dock.studio-mode .search-bar-inline-confirm {
+  box-sizing: border-box;
+  width: 56px;
+  padding: 0;
+}
+/* 확인 진행 막대: 확인 버튼 세로 32px의 1/2(16px), 가로는 확인 버튼 56px의 3배(168px). */
+.studio-confirm-progress {
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  width: 168px;
+  height: 16px;
+  margin-right: 0;
+  border-radius: 999px;
+  background: var(--slider-track);
+  overflow: hidden;
+}
+.studio-confirm-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: var(--progress-fill);
+  transition: width 0.2s var(--ease);
+}
+.studio-confirm-progress-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text);
+}
+/* 진행 막대가 있는 동안(또는 저장 중) 스튜디오 안의 모든 기능·버튼·텍스트 터치를 막는다. */
+.search-bar-confirm-panel.is-locked .search-bar-confirm-content {
+  pointer-events: none;
+}

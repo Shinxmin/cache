@@ -203,6 +203,7 @@ export default function FilesPage({
   onOpenThumbPicker,
   onClearThumb,
   importMode = false,
+  saveAsMode = false,
   onReady,
 }) {
   const [items, setItems] = useState([]);
@@ -303,6 +304,11 @@ export default function FilesPage({
     }
     // 불러오기 모드: 폴더는 선택하지 않고 눌러서 안으로 들어가고(드라이브 전체를 옮겨 다니며
     // 고른다), 파일만 터치로 선택·해제된다.
+    // 다른이름으로 저장 모드: 저장할 폴더를 고르는 화면이라 폴더만 눌러 들어가고, 파일은 눌리지 않는다.
+    if (saveAsMode) {
+      if (item.is_folder) onOpenFolder(item);
+      return;
+    }
     if (importMode) {
       if (item.is_folder) onOpenFolder(item);
       else onToggleSelect(item);
@@ -313,7 +319,7 @@ export default function FilesPage({
     else onOpenFile(item);
   };
   const longPressItem = (item) => {
-    if (thumbPickMode) return;
+    if (thumbPickMode || saveAsMode) return;
     if (importMode && item.is_folder) return;
     onLongPressItem(item);
   };
@@ -323,6 +329,7 @@ export default function FilesPage({
   const showPickIcon = (item) =>
     !thumbPickMode &&
     !importMode &&
+    !saveAsMode &&
     !searching &&
     !favorites &&
     item.is_folder &&
@@ -330,7 +337,7 @@ export default function FilesPage({
     selectionMode &&
     selectedIds.size === 1 &&
     selectedIds.has(item.id);
-  const pickDimmed = (item) => thumbPickMode && !isThumbPickable(item);
+  const pickDimmed = (item) => (thumbPickMode && !isThumbPickable(item)) || (saveAsMode && !item.is_folder);
 
   if (state === "loading") return <p className="drive-note"><Spinner /></p>;
   if (state === "error") return <p className="drive-note">파일을 불러오지 못했습니다</p>;
