@@ -2546,3 +2546,25 @@ main.page {
 .studio-file-menu-item:active {
   background: var(--studio-gray-35);
 }
+
+/* 스튜디오 제목 줄 오른쪽: < 1/N > 와 세션 종료 원형 X 버튼. */
+.studio-head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.studio-close-btn {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--studio-gray-35);
+  color: var(--studio-t70);
+  transition: transform 0.35s var(--spring);
+}
+.studio-close-btn:active {
+  transform: scale(0.88);
+}
