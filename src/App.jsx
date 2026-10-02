@@ -29,8 +29,10 @@ import {
   downloadSplitPresetFiles,
   listFiles,
   moveFiles,
-  optimizeFiles,
+  compressItemBlob,
+  copyFileTo,
   renameFiles,
+  replaceFileContent,
   setBlur,
   setFavorite,
   setFolderThumbnail,
@@ -154,6 +156,15 @@ export default function App() {
   // 정하고, 세션은 오직 패널의 X 버튼(endStudio)으로만 종료된다. 스튜디오 버튼은 세션이 있으면
   // 숨김/복원을 오간다.
   const [studioVisible, setStudioVisible] = useState(true);
+  // 확인(적용)으로 미리 만들어 둔 최적화 결과(id → { blob, mime, originalSize })는 실제 파일에 쓰지
+  // 않고 메모리에만 둔다. 파일 > 저장하기·다른이름으로 저장하기에서 비로소 파일에 반영된다.
+  const studioStagedRef = useRef(new Map());
+  const studioProgressTimerRef = useRef(0);
+  // 저장·다른이름으로 저장이 도는 동안 스튜디오를 잠근다.
+  const [studioSaving, setStudioSaving] = useState(false);
+  // 파일 > 다른이름으로 저장: 불러오기처럼 드라이브를 폴더로 옮겨 다니며 저장할 폴더(지금 열려
+  // 있는 폴더)를 고른 뒤 확인을 누르면 거기에 새 파일로 저장한다.
+  const [saveAsMode, setSaveAsMode] = useState(false);
   const [studioSourceItems, setStudioSourceItems] = useState([]);
   const [multiStudioOpen, setMultiStudioOpen] = useState(false);
   const [multiStudioItems, setMultiStudioItems] = useState([]); // [{id,name,originalName,tag,level,levelTouched,mime,is_folder}]
@@ -163,7 +174,6 @@ export default function App() {
   // 서버 왕복 하나뿐인 가벼운 동작이라 별도 진행률·결과 화면 없이 바로 닫힌다.
   const [studioProgress, setStudioProgress] = useState(null); // { done, total } | null
   const [studioResult, setStudioResult] = useState(null); // { total, totalOriginal, totalCompressed, elapsedMs } | null
-  const studioStatsRef = useRef({ done: 0, totalOriginal: 0, totalCompressed: 0 });
   // 최적화·이미지 비교가 돌고 있는 동안 빈 공간을 눌러 패널을 닫아도 작업은 그대로
   // 이어진다. 다만 닫힌 뒤에 진행률·결과를 상태에 다시 써 넣으면 패널이 닫혀
   // 있는데도 진행 바가 되살아나거나 다음에 열 때 옛 결과가 뜨므로, 패널을 닫는
@@ -297,6 +307,7 @@ export default function App() {
       // 선택이 다 풀려도 패널을 닫지 않는다 — 대상 없는 단일 모드로 남아
       // 모든 기능이 비활성화된 채로 계속 떠 있는다(App.jsx가 아니라
       // BottomSearchBar.jsx가 studioTargetId 없음을 보고 비활성화를 그린다).
+      setStudioSourceItems([]);
       setMultiStudioOpen(false);
       setMultiStudioItems([]);
       setMultiStudioIndex(0);
@@ -333,20 +344,6 @@ export default function App() {
         levelTouched: false,
       };
     };
-    if (targets.length === 1) {
-      const only = targets[0];
-      const f = fieldsFor(only);
-      setMultiStudioOpen(false);
-      setMultiStudioItems([]);
-      setMultiStudioIndex(0);
-      setStudioTargetId(only.id);
-      setStudioName(f.name);
-      setStudioTag(f.tag);
-      setStudioLevel(f.level);
-      setStudioLevelTouched(f.levelTouched);
-      setStudioOpen(true);
-      return;
-    }
     const nextItems = targets.map((it) => {
       const f = fieldsFor(it);
       return {
@@ -354,12 +351,14 @@ export default function App() {
         name: f.name,
         originalName: it.name,
         tag: f.tag,
+        originalTag: it.tag || "",
         level: f.level,
         levelTouched: f.levelTouched,
         mime: it.mime,
         is_folder: it.is_folder,
       };
     });
+    setStudioSourceItems(targets);
     setStudioOpen(false);
     setStudioTargetId(null);
     setMultiStudioItems(nextItems);
@@ -398,7 +397,7 @@ export default function App() {
   const [studioPreviewUrl, setStudioPreviewUrl] = useState(null);
   const studioCurrentId = studioOpen ? studioTargetId : multiStudioOpen ? multiStudioItems[multiStudioIndex]?.id : null;
   useEffect(() => {
-    const pool = studioFromImport ? studioSourceItems : visibleItems;
+    const pool = studioSourceItems.length ? studioSourceItems : visibleItems;
     const key = studioCurrentId ? pool.find((it) => it.id === studioCurrentId)?.thumb_key : null;
     if (!key || !session) {
       setStudioPreviewUrl(null);
@@ -657,6 +656,20 @@ export default function App() {
     setDeleteConfirmOpen(false);
   };
 
+  // 스튜디오가 다루는 항목 하나. 이름·태그는 편집 중인 값(name·tag)과 원래 값(originalName·
+  // originalTag)을 따로 들고 있어, 저장할 때 바뀐 것만 반영한다.
+  const makeStudioItem = (it) => ({
+    id: it.id,
+    name: it.name,
+    originalName: it.name,
+    tag: it.tag || "",
+    originalTag: it.tag || "",
+    level: 1,
+    levelTouched: false,
+    mime: it.mime,
+    is_folder: it.is_folder,
+  });
+
   // ── 스튜디오 메뉴 > 불러오기 ──
   const startImport = () => {
     closeAllToolPanels();
@@ -690,35 +703,12 @@ export default function App() {
     setStudioVisible(true);
     setStudioSourceItems(items);
     setStudioFromImport(true);
-    if (items.length === 1) {
-      const only = items[0];
-      setMultiStudioOpen(false);
-      setMultiStudioItems([]);
-      setMultiStudioIndex(0);
-      setStudioTargetId(only.id);
-      setStudioName(only.name);
-      setStudioTag(only.tag || "");
-      setStudioLevel(1);
-      setStudioLevelTouched(false);
-      setStudioOpen(true);
-      return;
-    }
     setStudioOpen(false);
     setStudioTargetId(null);
     setStudioName("");
     setStudioTag("");
-    setMultiStudioItems(
-      items.map((it) => ({
-        id: it.id,
-        name: it.name,
-        originalName: it.name,
-        tag: it.tag || "",
-        level: 1,
-        levelTouched: false,
-        mime: it.mime,
-        is_folder: it.is_folder,
-      }))
-    );
+    studioStagedRef.current = new Map();
+    setMultiStudioItems(items.map(makeStudioItem));
     setMultiStudioIndex(0);
     setMultiStudioOpen(true);
   };
@@ -753,33 +743,30 @@ export default function App() {
         : visibleItems.filter((it) => selectedIds.has(it.id));
     closeAllToolPanels();
     setStudioVisible(true);
-    if (targets.length <= 1) {
-      const only = targets[0];
-      setStudioTargetId(only?.id ?? null);
-      setStudioName(only?.name ?? "");
-      setStudioTag(only?.tag || "");
+    studioStagedRef.current = new Map();
+    setStudioFromImport(false);
+    setStudioSourceItems(targets);
+    if (targets.length === 0) {
+      // 선택이 없으면 대상 없는 빈 스튜디오로 열린다.
+      setStudioTargetId(null);
+      setStudioName("");
+      setStudioTag("");
       setStudioLevel(1);
       setStudioLevelTouched(false);
       setStudioOpen(true);
       return;
     }
-    setMultiStudioItems(
-      targets.map((it) => ({
-        id: it.id,
-        name: it.name,
-        originalName: it.name,
-        tag: it.tag || "",
-        level: 1,
-        levelTouched: false,
-        mime: it.mime,
-        is_folder: it.is_folder,
-      }))
-    );
+    // 하나든 여러 개든 같은 방식(< 1/N >)으로 다룬다 — 하나면 넘기기 표시만 없다.
+    setStudioOpen(false);
+    setStudioTargetId(null);
+    setMultiStudioItems(targets.map(makeStudioItem));
     setMultiStudioIndex(0);
     setMultiStudioOpen(true);
   };
 
   const cancelStudio = () => {
+    studioStagedRef.current = new Map();
+    clearTimeout(studioProgressTimerRef.current);
     setStudioFromImport(false);
     setStudioSourceItems([]);
     if (studioRunRef.current) studioRunRef.current.detached = true;
@@ -794,6 +781,8 @@ export default function App() {
   };
 
   const cancelMultiStudio = () => {
+    studioStagedRef.current = new Map();
+    clearTimeout(studioProgressTimerRef.current);
     setStudioFromImport(false);
     setStudioSourceItems([]);
     if (studioRunRef.current) studioRunRef.current.detached = true;
@@ -884,115 +873,175 @@ export default function App() {
   const clearAllMultiStudioLevel = () => {
     setMultiStudioItems((prev) => prev.map((it) => ({ ...it, level: 1, levelTouched: false })));
   };
-  // 확인을 누르면 그룹(품질 단계)별로 optimizeFiles를 병렬로 돌리되, 파일
-  // 하나가 끝날 때마다 공통 진행률(진행 바 + "148 / 200")을 갱신하고, 전부
-  // 끝나면 처리 시간·용량 변화로 바뀐 결과 화면을 보여준다. 압축이 없는
-  // 확인(이름·태그만 바뀐 경우)에서는 이 함수를 부르지 않는다.
-  const runStudioOptimizeGroups = async (groups) => {
-    const total = groups.reduce((sum, g) => sum + g.files.length, 0);
-    if (!total) return;
+  // ── 스튜디오 확인(적용) ──
+  // 확인은 실제 파일을 바꾸지 않는다. 이름·태그는 편집 중인 값 그대로 스튜디오 안에 보관돼 있고,
+  // 최적화로 표시된 항목은 여기서 압축 결과(blob)를 미리 만들어 메모리에 둔다(고정 품질: 중간).
+  // 진행률은 확인 버튼 왼쪽 막대에 %로 나오고, 다 끝나면 1초 뒤 사라진다. 막대가 있는 동안 스튜디오는
+  // 잠긴다. 실제 파일에 반영되는 건 파일 > 저장하기·다른이름으로 저장하기뿐이다.
+  const stageStudio = async () => {
+    const items = multiStudioItems;
+    if (!items.length || studioProgress || studioSaving) return;
+    if (!items.every((it) => it.name.trim().length > 0)) return;
+    clearTimeout(studioProgressTimerRef.current);
     const run = { detached: false };
     studioRunRef.current = run;
-    const stats = { done: 0, totalOriginal: 0, totalCompressed: 0 };
-    studioStatsRef.current = stats;
-    setStudioResult(null);
-    setStudioProgress({ done: 0, total });
-    const startedAt = performance.now();
-    const onFileDone = ({ originalSize, compressedSize }) => {
-      stats.done += 1;
-      if (originalSize) stats.totalOriginal += originalSize;
-      if (compressedSize) stats.totalCompressed += compressedSize;
-      if (!run.detached) setStudioProgress({ done: stats.done, total });
+    const total = items.length;
+    const staged = new Map(studioStagedRef.current);
+    const report = (done, frac) => {
+      if (!run.detached) setStudioProgress({ done, total, fraction: (done + frac) / total });
     };
-    try {
-      await Promise.all(
-        groups.map((g) => optimizeFiles({ token: session.token, items: g.files, ratioPercent: g.ratioPercent, onFileDone }))
-      );
-      const elapsedMs = performance.now() - startedAt;
-      if (!run.detached) {
-        setStudioProgress(null);
-        setStudioResult({
-          total,
-          totalOriginal: stats.totalOriginal,
-          totalCompressed: stats.totalCompressed,
-          elapsedMs,
-        });
+    report(0, 0);
+    for (let i = 0; i < total; i += 1) {
+      const it = items[i];
+      const src = studioSourceItems.find((x) => x.id === it.id);
+      const wants = Boolean(it.levelTouched && !it.is_folder && isOptimizableFile(it.name, it.mime) && src?.r2_key);
+      if (wants && !staged.has(it.id)) {
+        try {
+          const out = await compressItemBlob({
+            token: session.token,
+            item: src,
+            ratioPercent: OPTIMIZE_LEVELS[1],
+            onProgress: (f) => report(i, f),
+          });
+          staged.set(it.id, out);
+        } catch {
+          // 이 파일만 건너뛴다(캔버스가 못 읽는 형식).
+        }
+      } else if (!wants) {
+        staged.delete(it.id);
       }
-      setRefreshKey((k) => k + 1);
-    } catch {
+      if (run.detached) return;
+      report(i + 1, 0);
+    }
+    studioStagedRef.current = staged;
+    setStudioProgress({ done: total, total, fraction: 1, finished: true });
+    studioProgressTimerRef.current = setTimeout(() => {
       if (!run.detached) setStudioProgress(null);
-      window.alert("용량을 줄이지 못했습니다");
-    }
+    }, 1000);
   };
 
-  // 이름·태그는 원래 두 패널처럼 값이 바뀌었든 아니든 현재 값을 그대로
-  // 저장한다. 압축은 최적화 섹션에 들어왔을 때(levelTouched), 그리고 그 파일이
-  // 실제로 가능할 때만 실행한다 — 폴더나 지원하지 않는 형식이면 조용히 건너뛴다.
-  const confirmStudio = async () => {
-    if (studioResult) {
-      cancelStudio();
-      return;
-    }
-    const target = visibleItems.find((it) => it.id === studioTargetId);
-    if (!target) return;
-    const name = studioName.trim();
-    if (!name) return;
+  // 편집 메뉴: 지금 보고 있는 항목 하나의 값을 지운다(이름·태그는 빈 값, 최적화는 표시 해제).
+  const clearCurrentStudio = (section) => {
+    const cur = multiStudioItems[multiStudioIndex];
+    if (!cur) return;
+    if (section === "quality") studioStagedRef.current.delete(cur.id);
+    setMultiStudioItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== multiStudioIndex) return it;
+        if (section === "name") return { ...it, name: "" };
+        if (section === "tag") return { ...it, tag: "" };
+        if (section === "quality") return { ...it, levelTouched: false };
+        return it;
+      })
+    );
+  };
+  // 편집 메뉴: 지금 보고 있는 항목 하나에 적용한다. 이름·태그는 입력하는 대로 이미 반영돼 있어
+  // (입력창 확정만 UI에서 처리) 따로 할 일이 없고, 최적화는 이 항목을 압축 대상으로 표시한다.
+  const applyCurrentStudio = (section) => {
+    if (section !== "quality") return;
+    setMultiStudioItems((prev) => prev.map((it, i) => (i === multiStudioIndex ? { ...it, levelTouched: true } : it)));
+  };
+
+  // 저장·다른이름으로 저장 공통: 이 항목에 쓸 최적화 결과(없으면 null). 확인 때 만들어 둔 게 없으면
+  // 지금 만든다.
+  const stagedBlobFor = async (it, src) => {
+    const wants = Boolean(it.levelTouched && !it.is_folder && isOptimizableFile(it.name, it.mime) && src?.r2_key);
+    if (!wants) return null;
+    const cached = studioStagedRef.current.get(it.id);
+    if (cached) return cached;
     try {
-      await Promise.all([
-        renameFiles(session.token, [{ id: target.id, name }]),
-        setTag(session.token, [target.id], studioTag.trim()),
-      ]);
+      return await compressItemBlob({ token: session.token, item: src, ratioPercent: OPTIMIZE_LEVELS[1] });
     } catch {
-      window.alert("저장하지 못했습니다");
-      return;
+      return null;
     }
-    const optimizable = !target.is_folder && isOptimizableFile(name, target.mime);
-    if (studioLevelTouched && optimizable) {
-      await runStudioOptimizeGroups([{ files: [{ ...target, name }], ratioPercent: OPTIMIZE_LEVELS[studioLevel] }]);
-      return;
-    }
-    cancelStudio();
-    setSelectedIds(new Set());
-    setRefreshKey((k) => k + 1);
   };
 
-  const confirmMultiStudio = async () => {
-    if (studioResult) {
-      cancelMultiStudio();
+  // 파일 > 저장하기: 스튜디오에서 바꾼 이름·태그·최적화를 원래 파일(원래 위치)에 실제로 적용한다.
+  // 끝나면 스튜디오 세션을 종료한다.
+  const saveStudio = async () => {
+    const items = multiStudioItems;
+    if (!items.length || studioSaving || studioProgress) return;
+    if (!items.every((it) => it.name.trim().length > 0)) {
+      window.alert("이름을 입력해 주세요");
       return;
     }
-    if (!multiStudioItems.every((it) => it.name.trim().length > 0)) return;
+    setStudioSaving(true);
     try {
-      const finalNames = dedupeStrings(multiStudioItems.map((it) => it.name.trim()));
-      await renameFiles(session.token, multiStudioItems.map((it, i) => ({ id: it.id, name: finalNames[i] })));
+      const finalNames = dedupeStrings(items.map((it) => it.name.trim()));
+      const renames = items
+        .map((it, i) => ({ id: it.id, name: finalNames[i], changed: finalNames[i] !== it.originalName }))
+        .filter((r) => r.changed)
+        .map(({ id, name }) => ({ id, name }));
+      if (renames.length) await renameFiles(session.token, renames);
       const tagGroups = new Map();
-      for (const it of multiStudioItems) {
+      for (const it of items) {
+        if ((it.tag || "") === (it.originalTag || "")) continue;
         const key = it.tag || "";
         if (!tagGroups.has(key)) tagGroups.set(key, []);
         tagGroups.get(key).push(it.id);
       }
       await Promise.all([...tagGroups.entries()].map(([tag, ids]) => setTag(session.token, ids, tag)));
+      for (const it of items) {
+        const src = studioSourceItems.find((x) => x.id === it.id);
+        const out = await stagedBlobFor(it, src);
+        if (out) await replaceFileContent({ token: session.token, item: src, blob: out.blob, mime: out.mime });
+      }
+      endStudio();
+      setSelectedIds(new Set());
+      setRefreshKey((k) => k + 1);
+      showToast("저장했습니다");
     } catch {
       window.alert("저장하지 못했습니다");
-      return;
+    } finally {
+      setStudioSaving(false);
     }
-    const optimizeTargets = multiStudioItems.filter(
-      (it) => it.levelTouched && !it.is_folder && isOptimizableFile(it.name, it.mime)
-    );
-    if (optimizeTargets.length) {
-      const groups = new Map();
-      for (const it of optimizeTargets) {
-        const file = visibleItems.find((v) => v.id === it.id);
-        if (!file) continue;
-        if (!groups.has(it.level)) groups.set(it.level, []);
-        groups.get(it.level).push({ ...file, name: it.name });
-      }
-      await runStudioOptimizeGroups([...groups.entries()].map(([level, files]) => ({ files, ratioPercent: OPTIMIZE_LEVELS[level] })));
-      return;
-    }
-    cancelMultiStudio();
+  };
+
+  // 파일 > 다른이름으로 저장: 불러오기처럼 스튜디오가 닫히고 드라이브를 폴더로 옮겨 다니며 저장할
+  // 폴더(지금 열려 있는 폴더)를 고른다. 파일은 흐리게 눌리지 않고 폴더만 눌러 들어간다.
+  const startSaveAs = () => {
+    if (!multiStudioItems.length) return;
+    closeAllToolPanels();
     setSelectedIds(new Set());
-    setRefreshKey((k) => k + 1);
+    setSaveAsMode(true);
+  };
+  const cancelSaveAs = () => setSaveAsMode(false);
+  // 확인: 스튜디오의 항목들을 지금 열려 있는 폴더에 새 파일로 저장한다(원본은 그대로).
+  const confirmSaveAs = async () => {
+    const items = multiStudioItems;
+    if (!items.length || studioSaving) {
+      setSaveAsMode(false);
+      return;
+    }
+    setStudioSaving(true);
+    try {
+      const finalNames = dedupeStrings(items.map((it) => it.name.trim()));
+      for (let i = 0; i < items.length; i += 1) {
+        const it = items[i];
+        const src = studioSourceItems.find((x) => x.id === it.id);
+        if (!src?.r2_key) continue;
+        const out = await stagedBlobFor(it, src);
+        const newId = await copyFileTo({
+          token: session.token,
+          userId: session.userId,
+          item: src,
+          blob: out?.blob,
+          mime: out?.mime,
+          name: finalNames[i],
+          parentId,
+        });
+        if (newId && it.tag) await setTag(session.token, [newId], it.tag);
+      }
+      setSaveAsMode(false);
+      endStudio();
+      setSelectedIds(new Set());
+      setRefreshKey((k) => k + 1);
+      showToast("저장했습니다");
+    } catch {
+      window.alert("저장하지 못했습니다");
+    } finally {
+      setStudioSaving(false);
+    }
   };
 
   // 스튜디오 패널의 "이미지 비교" 확인: 지금 다중 선택 중인 두 이미지를
@@ -1292,9 +1341,7 @@ export default function App() {
     ? "즐겨찾기"
     : folderPath.length
       ? folderPath[folderPath.length - 1].name
-      : importMode
-        ? "불러오기"
-        : "파일";
+      : "파일";
 
   // 검색 결과·즐겨찾기에서 연 폴더는 지금 폴더 경로의 하위가 아니라 드라이브
   // 어디에나 있을 수 있으므로, 기존 경로에 이어 붙이지 않고 즐겨찾기를
@@ -1351,8 +1398,8 @@ export default function App() {
               toolkitLayout={toolkitLayout}
               onTool={handleTool}
               onOpenSettings={favoritesView ? undefined : () => setShowSettings(true)}
-              importMode={importMode}
-              onCancelImport={cancelImport}
+              importMode={importMode || saveAsMode}
+              onCancelImport={saveAsMode ? cancelSaveAs : cancelImport}
             />
             <FilesPage
               session={session}
@@ -1368,6 +1415,7 @@ export default function App() {
               onToggleSelect={importMode ? toggleImport : toggleSelect}
               onLongPressItem={importMode ? toggleImport : toggleSelect}
               importMode={importMode}
+              saveAsMode={saveAsMode}
               onItemsChange={setVisibleItems}
               thumbPickMode={Boolean(thumbPickFolder)}
               onPickThumb={pickThumb}
@@ -1403,7 +1451,7 @@ export default function App() {
             onChangeStudioTag={changeStudioTag}
             onChangeStudioLevel={changeStudioLevel}
             onOpenStudioQuality={markStudioLevelForOptimize}
-            onConfirmStudio={confirmStudio}
+            onConfirmStudio={() => setStudioVisible(false)}
             onCancelStudio={() => setStudioVisible(false)}
             onEndStudio={endStudio}
             multiStudioOpen={multiStudioOpen && studioVisible}
@@ -1418,15 +1466,20 @@ export default function App() {
             onClearAllMultiStudioTag={clearAllMultiStudioTag}
             onApplyAllMultiStudioLevel={applyAllMultiStudioLevel}
             onClearAllMultiStudioLevel={clearAllMultiStudioLevel}
-            onConfirmMultiStudio={confirmMultiStudio}
+            onConfirmMultiStudio={stageStudio}
+            onClearCurrentStudio={clearCurrentStudio}
+            onApplyCurrentStudio={applyCurrentStudio}
+            onSaveStudio={saveStudio}
+            onStartSaveAs={startSaveAs}
+            studioSaving={studioSaving}
             onConfirmCompare={handleConfirmCompare}
             onCancelMultiStudio={() => setStudioVisible(false)}
             studioPreviewUrl={studioPreviewUrl}
             studioSessionHidden={!studioVisible && ((studioOpen && Boolean(studioTargetId)) || (multiStudioOpen && multiStudioItems.length > 0))}
-            importMode={importMode}
-            importCount={importMap.size}
+            importMode={importMode || saveAsMode}
+            importCount={saveAsMode ? (studioSaving ? 0 : 1) : importMap.size}
             onStartImport={startImport}
-            onConfirmImport={confirmImport}
+            onConfirmImport={saveAsMode ? confirmSaveAs : confirmImport}
             moveOpen={moveOpen}
             moveItemCount={selectedIds.size}
             movePath={movePath}

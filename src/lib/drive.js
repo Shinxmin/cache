@@ -442,6 +442,66 @@ export async function optimizeFiles({ token, items, ratioPercent, onFileDone }) 
   }
 }
 
+// 스튜디오 "확인" 단계: 파일을 내려받아 ratioPercent만큼의 용량으로 다시 인코딩한 blob만
+// 만든다(서버에는 아무것도 쓰지 않는다). 실제 파일에 반영되는 건 스튜디오의 저장·다른이름으로
+// 저장에서 replaceFileContent / copyFileTo를 부를 때다. onProgress(0~1)는 내려받기(0~0.5)와
+// 압축(0.5~1) 구간을 합쳐 알려 준다.
+export async function compressItemBlob({ token, item, ratioPercent, onProgress }) {
+  const { url } = await presign(token, { action: "get", key: item.r2_key });
+  const original = await xhrGetBlob(url, (p) => onProgress?.(p * 0.5));
+  onProgress?.(0.5);
+  const targetSize = Math.max(1, Math.round(original.size * (ratioPercent / 100)));
+  const compressed = await compressImageTo(original, targetSize);
+  onProgress?.(1);
+  return { blob: compressed, mime: "image/jpeg", originalSize: original.size };
+}
+
+// 스튜디오 저장하기(원래 위치): 같은 r2_key에 새 내용을 덮어쓰고 DB의 용량·mime을 갱신한다.
+export async function replaceFileContent({ token, item, blob, mime = "image/jpeg" }) {
+  const { url } = await presign(token, { action: "put", key: item.r2_key, contentType: mime });
+  await xhrPut(url, blob, mime);
+  await rpcResult(
+    await supabase.rpc("update_file_content", { p_token: token, p_id: item.id, p_size: blob.size, p_mime: mime })
+  );
+}
+
+// 스튜디오 다른이름으로 저장: 파일(blob이 없으면 원본)을 새 R2 객체로 복제해 지정 폴더에 새
+// 항목으로 만든다. 썸네일은 원본 것을 공유하면 한쪽을 영구 삭제할 때 다른 쪽 썸네일이 깨지므로 새로
+// 만든다. 만들어진 항목의 id를 돌려준다.
+export async function copyFileTo({ token, userId, item, blob, mime, name, parentId = null }) {
+  const data = blob ?? (await fetchFileBlob(token, item.r2_key));
+  const type = mime || item.mime || data.type || "application/octet-stream";
+  const base = `${userId}/${crypto.randomUUID()}`;
+  const ext = extensionOf(name);
+  const key = ext ? `${base}.${ext}` : base;
+  const { url } = await presign(token, { action: "put", key, contentType: type });
+  await xhrPut(url, data, type);
+
+  let thumbKey = null;
+  const thumb = await makeThumbnail(new File([data], name, { type }));
+  if (thumb) {
+    thumbKey = `${base}.thumb.jpg`;
+    try {
+      const signed = await presign(token, { action: "put", key: thumbKey, contentType: "image/jpeg" });
+      await xhrPut(signed.url, thumb, "image/jpeg");
+    } catch {
+      thumbKey = null;
+    }
+  }
+  const row = await rpcResult(
+    await supabase.rpc("create_file", {
+      p_token: token,
+      p_name: name,
+      p_r2_key: key,
+      p_mime: type,
+      p_size: data.size,
+      p_parent_id: parentId,
+      p_thumb_key: thumbKey,
+    })
+  );
+  return row?.id ?? null;
+}
+
 // 일반적인 "브라우저 다운로드" 방식(a[download] 클릭) — Downloads 폴더나
 // 파일 앱으로 저장된다. 공유 시트를 쓸 수 없거나 사용자가 공유 자체에
 // 실패했을 때(취소는 제외) 대체 경로로도 쓰인다.
