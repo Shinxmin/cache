@@ -91,24 +91,24 @@ export default function PageHeader({
           </button>
           {/* key={resetKey}: 파일 화면↔즐겨찾기 화면을 오가면 새로 마운트되어
               열려 있던 상태가 닫힌 채로 초기화된다 */}
-          {/* 스튜디오 불러오기 모드에서는 삼점 버튼이 X 아이콘으로 바뀌고, 누르면 불러오기가
-              취소된다. */}
-          {importMode ? (
-            <button className="header-circle-btn" type="button" aria-label="불러오기 취소" onClick={onCancelImport}>
-              <CloseIcon size={20} />
-            </button>
-          ) : (
-            <HeaderMoreButton key={resetKey} onUpload={onUpload} onNewFolder={onNewFolder} />
-          )}
+          {/* 스튜디오 불러오기 모드: 삼점 버튼은 사라지고, 설정 원형 버튼이 있던 자리(같은 위치)에
+              불러오기를 취소하는 X 아이콘 버튼이 뜬다. */}
+          {!importMode && <HeaderMoreButton key={resetKey} onUpload={onUpload} onNewFolder={onNewFolder} />}
           {/* 더 보기(삼점) 바로 오른쪽의 설정 버튼. 더 보기처럼 옆으로 늘어나지
               않는 고정 45px 원이며, 누르면 바로 설정 화면이 열린다. 파일 화면
               (홈 탭이 사라진 뒤로는 이 화면이 유일한 기본 화면이다)에서만
               뜨고, 그 안에서 연 즐겨찾기 화면에서는 뜨지 않는다(onOpenSettings
               를 안 넘기면 아예 렌더링되지 않는다). */}
-          {onOpenSettings && (
-            <button className="header-settings" type="button" aria-label="설정" onClick={onOpenSettings}>
-              <SettingsIcon size={19} />
+          {importMode ? (
+            <button className="header-settings" type="button" aria-label="불러오기 취소" onClick={onCancelImport}>
+              <CloseIcon size={20} />
             </button>
+          ) : (
+            onOpenSettings && (
+              <button className="header-settings" type="button" aria-label="설정" onClick={onOpenSettings}>
+                <SettingsIcon size={19} />
+              </button>
+            )
           )}
         </div>
       </div>

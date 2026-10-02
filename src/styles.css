@@ -2511,6 +2511,13 @@ main.page {
    팝업. 항목은 글자만 있고 구분선으로 나뉜다. ── */
 .studio-menu-wrap {
   position: relative;
+  /* 안의 버튼이 인라인 줄 높이(베이스라인 여백)를 만들면 다른 메뉴와 세로 중심이 어긋난다. */
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+.studio-menubar-item {
+  line-height: 1.2;
 }
 .studio-file-menu {
   position: absolute;

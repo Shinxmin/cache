@@ -1268,7 +1268,9 @@ export default function App() {
     ? "즐겨찾기"
     : folderPath.length
       ? folderPath[folderPath.length - 1].name
-      : "파일";
+      : importMode
+        ? "불러오기"
+        : "파일";
 
   // 검색 결과·즐겨찾기에서 연 폴더는 지금 폴더 경로의 하위가 아니라 드라이브
   // 어디에나 있을 수 있으므로, 기존 경로에 이어 붙이지 않고 즐겨찾기를

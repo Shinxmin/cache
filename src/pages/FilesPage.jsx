@@ -338,6 +338,7 @@ export default function FilesPage({
   // 검색 결과·즐겨찾기 화면에서는 "상위 폴더로 돌아오기"가 성립하지 않아 쓰지 않는다.
   const showPickIcon = (item) =>
     !thumbPickMode &&
+    !importMode &&
     !searching &&
     !favorites &&
     item.is_folder &&
