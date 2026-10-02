@@ -747,6 +747,10 @@ main.page {
   align-items: center;
   justify-content: space-between;
 }
+.studio-head + .search-bar-studio-divider {
+  /* 제목과 그 밑 구분선 사이 여백을 조금 더 준다. */
+  margin-top: 8px;
+}
 .studio-menubar {
   flex: none;
   height: 32px;
@@ -774,6 +778,10 @@ main.page {
   border-radius: 12px;
   background: var(--studio-gray-35);
   overflow: hidden;
+}
+/* 파일이 있을 때는 뷰포트 배경을 없앤다(없을 땐 그대로 유지). */
+.studio-viewport.has-file {
+  background: none;
 }
 .studio-viewport-img {
   /* 높이는 뷰포트 세로폭에 딱 맞추고 가로는 원본 비율대로(가로 100%·세로 200 파일이
@@ -2497,4 +2505,58 @@ main.page {
 .drive-row.is-pick-dim {
   opacity: var(--studio-disabled);
   pointer-events: none;
+}
+
+/* ── 스튜디오 메뉴바의 파일 메뉴: 파일 글자 바로 대각선 오른쪽 아래에 뜨는 작은 불투명
+   팝업. 항목은 글자만 있고 구분선으로 나뉜다. ── */
+.studio-menu-wrap {
+  position: relative;
+}
+.studio-file-menu {
+  position: absolute;
+  top: 100%;
+  left: calc(100% - 4px);
+  z-index: 5;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28), 0 0 0 1px var(--studio-t10);
+  overflow: hidden;
+}
+.studio-file-menu-item {
+  padding: 10px 14px;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+.studio-file-menu-item + .studio-file-menu-item {
+  border-top: 1px solid var(--studio-t10);
+}
+.studio-file-menu-item:active {
+  background: var(--studio-gray-35);
+}
+
+/* ── 불러오기 모드: 폴더 타일·행의 "열기" 화살표 ── */
+.drive-folder-enter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.drive-folder-enter--tile {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  z-index: 3;
+  padding: 8px 6px;
+  transform: translateY(-50%);
+}
+.drive-folder-enter--row {
+  flex: none;
+  padding: 8px;
 }

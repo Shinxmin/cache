@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import HeaderMoreButton from "./HeaderMoreButton";
 import StudioToolkitBar from "./StudioToolkitBar";
-import { BackIcon, DownloadIcon, SettingsIcon, UploadIcon } from "./icons";
+import { BackIcon, CloseIcon, DownloadIcon, SettingsIcon, UploadIcon } from "./icons";
 
 // 전송 버튼(45px 원) 테두리에 그리는 진행도 게이지. 버튼 지름보다 살짝 안쪽에
 // 그려서 원형 버튼 테두리를 따라 도는 것처럼 보이게 한다.
@@ -32,6 +32,8 @@ export default function PageHeader({
   toolkitLayout,
   onTool,
   onOpenSettings,
+  importMode,
+  onCancelImport,
   resetKey,
 }) {
   const ref = useRef(null);
@@ -89,7 +91,15 @@ export default function PageHeader({
           </button>
           {/* key={resetKey}: 파일 화면↔즐겨찾기 화면을 오가면 새로 마운트되어
               열려 있던 상태가 닫힌 채로 초기화된다 */}
-          <HeaderMoreButton key={resetKey} onUpload={onUpload} onNewFolder={onNewFolder} />
+          {/* 스튜디오 불러오기 모드에서는 삼점 버튼이 X 아이콘으로 바뀌고, 누르면 불러오기가
+              취소된다. */}
+          {importMode ? (
+            <button className="header-circle-btn" type="button" aria-label="불러오기 취소" onClick={onCancelImport}>
+              <CloseIcon size={20} />
+            </button>
+          ) : (
+            <HeaderMoreButton key={resetKey} onUpload={onUpload} onNewFolder={onNewFolder} />
+          )}
           {/* 더 보기(삼점) 바로 오른쪽의 설정 버튼. 더 보기처럼 옆으로 늘어나지
               않는 고정 45px 원이며, 누르면 바로 설정 화면이 열린다. 파일 화면
               (홈 탭이 사라진 뒤로는 이 화면이 유일한 기본 화면이다)에서만
@@ -102,7 +112,8 @@ export default function PageHeader({
           )}
         </div>
       </div>
-      {/* 스튜디오 툴킷은 항상 떠 있다. */}
+      {/* 스튜디오 툴킷은 항상 떠 있다(불러오기 모드에서는 목록 선택과 충돌하므로 숨긴다). */}
+      {!importMode && (
       <StudioToolkitBar
         layout={toolkitLayout}
         viewMode={viewMode}
@@ -112,6 +123,7 @@ export default function PageHeader({
         infoVisible={infoVisible}
         onTool={onTool}
       />
+      )}
     </header>
   );
 }

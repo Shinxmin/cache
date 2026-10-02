@@ -97,6 +97,12 @@ function CompareIcon({ size = 16 }) {
 
 // 스튜디오 메뉴바 항목(일시적 미구현 — 모양만).
 const STUDIO_MENUS = ["파일", "편집", "보기", "설정"];
+// 파일 메뉴 항목. 불러오기만 동작하고, 저장하기·다른이름으로 저장하기는 아직 미구현이다.
+const FILE_MENU_ITEMS = [
+  { key: "import", label: "불러오기" },
+  { key: "save", label: "저장하기" },
+  { key: "saveAs", label: "다른이름으로 저장하기" },
+];
 
 // 예전 하단 내비바가 있던 자리에 고정된 검색바. position:fixed라 스크롤을
 // 아무리 올리고 내려도 그 자리에서 전혀 움직이지 않는다. 파일 화면(과 그
@@ -173,6 +179,10 @@ export default function BottomSearchBar({
   onConfirmCompare,
   onCancelMultiStudio,
   studioPreviewUrl,
+  importMode,
+  importCount,
+  onStartImport,
+  onConfirmImport,
   moveOpen,
   moveItemCount,
   movePath,
@@ -190,6 +200,19 @@ export default function BottomSearchBar({
   const [multiStudioBusy, setMultiStudioBusy] = useState(false);
   const [moveBusy, setMoveBusy] = useState(false);
   const panelOpen = confirmOpen || newFolderOpen || studioOpen || multiStudioOpen || moveOpen;
+  // 스튜디오 메뉴바의 파일 메뉴(작은 불투명 팝업). 바깥을 누르거나 패널이 닫히면 닫힌다.
+  const [fileMenuOpen, setFileMenuOpen] = useState(false);
+  useEffect(() => {
+    if (!panelOpen) setFileMenuOpen(false);
+  }, [panelOpen]);
+  useEffect(() => {
+    if (!fileMenuOpen) return undefined;
+    const onDown = (e) => {
+      if (!e.target.closest?.(".studio-menu-wrap")) setFileMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown, true);
+    return () => document.removeEventListener("pointerdown", onDown, true);
+  }, [fileMenuOpen]);
 
   // 스튜디오 패널 안에서 지금 어떤 기능을 보고 있는지 — null이면 아이콘 줄,
   // "name"/"tag"/"quality"면 그 기능의 화면이다. 패널이 새로 열릴 때마다
@@ -579,7 +602,7 @@ export default function BottomSearchBar({
           <div className="search-bar-scrim" onClick={handleScrimClick} onPointerDown={handleScrimPointerDown} />
         ))}
       <div className="bottom-search-wrap">
-        <div className={`search-dock${panelOpen ? " has-confirm" : ""}${panelOpen && (displayMode === "studio" || displayMode === "multiStudio") ? " studio-mode" : ""}`}>
+        <div className={`search-dock${panelOpen ? " has-confirm" : ""}${(panelOpen && (displayMode === "studio" || displayMode === "multiStudio")) || importMode ? " studio-mode" : ""}`}>
           <div
             className={`search-bar-confirm-panel${displayMode === "studio" || displayMode === "multiStudio" ? " mode-studio" : ""}${displayMode === "move" ? " mode-move" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
@@ -624,15 +647,48 @@ export default function BottomSearchBar({
                   <div className="search-bar-studio-divider" />
                   {/* 메뉴바: 일시적 미구현 — 모양만 있고 눌러도 아무 일도 일어나지 않는다. */}
                   <div className="studio-menubar" role="menubar">
-                    {STUDIO_MENUS.map((label) => (
-                      <button key={label} type="button" role="menuitem" className="studio-menubar-item">
-                        {label}
-                      </button>
-                    ))}
+                    {STUDIO_MENUS.map((label) =>
+                      label === "파일" ? (
+                        <div key={label} className="studio-menu-wrap">
+                          <button
+                            type="button"
+                            role="menuitem"
+                            aria-haspopup="menu"
+                            aria-expanded={fileMenuOpen}
+                            className="studio-menubar-item"
+                            onClick={() => setFileMenuOpen((v) => !v)}
+                          >
+                            {label}
+                          </button>
+                          {fileMenuOpen && (
+                            <div className="studio-file-menu" role="menu">
+                              {FILE_MENU_ITEMS.map((item) => (
+                                <button
+                                  key={item.key}
+                                  type="button"
+                                  role="menuitem"
+                                  className="studio-file-menu-item"
+                                  onClick={() => {
+                                    setFileMenuOpen(false);
+                                    if (item.key === "import") onStartImport?.();
+                                  }}
+                                >
+                                  {item.label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <button key={label} type="button" role="menuitem" className="studio-menubar-item">
+                          {label}
+                        </button>
+                      )
+                    )}
                   </div>
                   <div className="search-bar-studio-divider" />
                   {/* 뷰포트: 지금 넘겨 보고 있는 선택 파일의 미리보기(이미지가 아니면 파일 아이콘). */}
-                  <div className="studio-viewport">
+                  <div className={`studio-viewport${studioHasTarget || studioProgress || studioResult ? " has-file" : ""}`}>
                     {studioResult ? (
                       <div className="optimize-result-stats">
                         <p className="optimize-result-summary">{studioResult.total}개 파일 처리 완료</p>
@@ -761,16 +817,27 @@ export default function BottomSearchBar({
                 항목이 없으면 onOpenStudio가 조용히 아무 것도 하지 않는다
                 (다른 스튜디오 진입 동작과 같은 규칙). 닫을 땐 버튼이 아니라
                 빈 화면(스크림)을 눌러 닫는다. */}
-            {!panelOpen && (
-              <button
-                type="button"
-                className="search-bar-open-studio-btn"
-                aria-label="스튜디오 열기"
-                onClick={onOpenStudio}
-              >
-                <LayersIcon size={18} />
-              </button>
-            )}
+            {!panelOpen &&
+              (importMode ? (
+                // 불러오기 모드: 스튜디오 버튼 대신 확인 버튼. 누르면 고른 항목으로 스튜디오가 다시 열린다.
+                <button
+                  type="button"
+                  className="search-bar-inline-confirm"
+                  onClick={onConfirmImport}
+                  disabled={!importCount}
+                >
+                  확인
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="search-bar-open-studio-btn"
+                  aria-label="스튜디오 열기"
+                  onClick={onOpenStudio}
+                >
+                  <LayersIcon size={18} />
+                </button>
+              ))}
             {panelOpen && (
               <button
                 type="button"
