@@ -165,6 +165,8 @@ export default function App() {
   // 파일 > 다른이름으로 저장: 불러오기처럼 드라이브를 폴더로 옮겨 다니며 저장할 폴더(지금 열려
   // 있는 폴더)를 고른 뒤 확인을 누르면 거기에 새 파일로 저장한다.
   const [saveAsMode, setSaveAsMode] = useState(false);
+  // 다른이름으로 저장 때 검색바에 입력하는 저장 이름(하나면 그 이름, 여러 개면 뒤에 번호를 붙인다).
+  const [saveAsName, setSaveAsName] = useState("");
   const [studioSourceItems, setStudioSourceItems] = useState([]);
   const [multiStudioOpen, setMultiStudioOpen] = useState(false);
   const [multiStudioItems, setMultiStudioItems] = useState([]); // [{id,name,originalName,tag,level,levelTouched,mime,is_folder}]
@@ -1003,6 +1005,7 @@ export default function App() {
     if (!multiStudioItems.length) return;
     closeAllToolPanels();
     setSelectedIds(new Set());
+    setSaveAsName(multiStudioItems[0]?.name ?? "");
     setSaveAsMode(true);
   };
   const cancelSaveAs = () => setSaveAsMode(false);
@@ -1015,7 +1018,18 @@ export default function App() {
     }
     setStudioSaving(true);
     try {
-      const finalNames = dedupeStrings(items.map((it) => it.name.trim()));
+      const typed = saveAsName.trim();
+      if (!typed) {
+        window.alert("저장할 이름을 입력해 주세요");
+        setStudioSaving(false);
+        return;
+      }
+      // 여러 개면 입력한 이름 끝의 숫자부터(없으면 1부터) 순서대로 번호를 붙인다.
+      const m = typed.match(/^(.*?)(\d+)$/);
+      const finalNames =
+        items.length === 1
+          ? [typed]
+          : items.map((_, i) => `${m ? m[1] : typed}${(m ? parseInt(m[2], 10) : 1) + i}`);
       for (let i = 0; i < items.length; i += 1) {
         const it = items[i];
         const src = studioSourceItems.find((x) => x.id === it.id);
@@ -1472,6 +1486,8 @@ export default function App() {
             onSaveStudio={saveStudio}
             onStartSaveAs={startSaveAs}
             studioSaving={studioSaving}
+            saveAsName={saveAsMode ? saveAsName : undefined}
+            onChangeSaveAsName={setSaveAsName}
             onConfirmCompare={handleConfirmCompare}
             onCancelMultiStudio={() => setStudioVisible(false)}
             studioPreviewUrl={studioPreviewUrl}
