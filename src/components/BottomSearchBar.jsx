@@ -735,7 +735,7 @@ export default function BottomSearchBar({
                                   key={item.key}
                                   type="button"
                                   role="menuitem"
-                                  className="studio-file-menu-item"
+                                  className={`studio-file-menu-item${menu.key === "image" && studioSection === item.key ? " is-active" : ""}`}
                                   disabled={item.disabled}
                                   onClick={() => {
                                     setOpenMenu(null);
