@@ -603,7 +603,7 @@ export default function BottomSearchBar({
     settings: [
       {
         key: "quality",
-        label: "품질 ›",
+        label: "품질",
         sub: ["낮음", "중간", "높음"].map((name, i) => ({
           key: String(i),
           label: `${name} (${OPTIMIZE_LEVELS[i]}%)`,
@@ -750,7 +750,7 @@ export default function BottomSearchBar({
                           </button>
                           {openMenu === menu.key && (
                             <div className="studio-file-menu" role="menu" {...menuDrag}>
-                              {MENU_ITEMS[menu.key].map((item) => (
+                              {MENU_ITEMS[menu.key].map((item) => [
                                 <button
                                   key={item.key}
                                   type="button"
@@ -768,30 +768,33 @@ export default function BottomSearchBar({
                                     item.run();
                                   }}
                                 >
-                                  {item.label}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                          {openMenu === menu.key && openSub && (
-                            <div className="studio-file-menu studio-submenu" role="menu" {...menuDrag}>
-                              {MENU_ITEMS[menu.key]
-                                .find((it) => it.key === openSub)
-                                ?.sub.map((sub) => (
-                                  <button
-                                    key={sub.key}
-                                    type="button"
-                                    role="menuitemradio"
-                                    aria-checked={sub.active}
-                                    className={`studio-file-menu-item${sub.active ? " is-active" : ""}`}
-                                    onClick={() => {
-                                      setOpenMenu(null);
-                                      sub.run();
-                                    }}
-                                  >
-                                    {sub.label}
-                                  </button>
-                                ))}
+                                  {item.sub ? (
+                                    <span className="studio-file-menu-sub-row">
+                                      <span>{item.label}</span>
+                                      <span aria-hidden="true">›</span>
+                                    </span>
+                                  ) : (
+                                    item.label
+                                  )}
+                                </button>,
+                                ...(item.sub && openSub === item.key
+                                  ? item.sub.map((sub) => (
+                                      <button
+                                        key={`${item.key}-${sub.key}`}
+                                        type="button"
+                                        role="menuitemradio"
+                                        aria-checked={sub.active}
+                                        className={`studio-file-menu-item studio-file-menu-subitem${sub.active ? " is-active" : ""}`}
+                                        onClick={() => {
+                                          setOpenMenu(null);
+                                          sub.run();
+                                        }}
+                                      >
+                                        {sub.label}
+                                      </button>
+                                    ))
+                                  : []),
+                              ])}
                             </div>
                           )}
                         </div>

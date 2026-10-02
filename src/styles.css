@@ -2649,9 +2649,12 @@ main.page {
   pointer-events: none;
 }
 
-/* 설정 > 품질 하위 메뉴: 같은 디자인의 작은 메뉴를 상위 메뉴 왼쪽에 나란히 띄운다(설정이 메뉴바
-   맨 오른쪽이라 오른쪽에는 자리가 없다). */
-.studio-submenu {
-  left: auto;
-  right: 2px;
+/* 설정 > 품질: > 는 오른쪽 끝에 두고, 눌러서 펼치면 같은 메뉴 안에서 아래로 세 옵션이 늘어난다. */
+.studio-file-menu-sub-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.studio-file-menu-subitem {
+  padding-left: 18px;
 }
