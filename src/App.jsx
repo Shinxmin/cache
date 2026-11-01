@@ -20,7 +20,9 @@ import {
 import {
   clearFolderThumbnail,
   copyItems,
+  getStorageRegion,
   getStorageUsed,
+  measureStorageLatency,
   renameFiles,
   createFolder,
   createSplitPreset,
@@ -143,6 +145,9 @@ export default function App() {
 
   // 스토리지 섹션(헤더)의 사용량. 목록이 새로 고쳐질 때마다 다시 받는다.
   const [storageUsed, setStorageUsed] = useState(0);
+  // 스토리지 섹션의 지역(버킷 위치의 대륙)과 레이턴시(이 기기→R2 왕복 ms). 세션마다 한 번 잰다.
+  const [storageRegion, setStorageRegion] = useState("");
+  const [storageLatency, setStorageLatency] = useState(null);
 
   // 이미지·영상은 누르면 다운로드하지 않고 이 화면에서 바로 크게 보여준다.
   // 뷰어 안에서 스와이프로 이전/다음으로 넘기려면 지금 폴더의 미디어 목록과
@@ -191,6 +196,24 @@ export default function App() {
       cancelled = true;
     };
   }, [session?.token, refreshKey]);
+
+  useEffect(() => {
+    if (!session) return undefined;
+    let cancelled = false;
+    getStorageRegion(session.token)
+      .then((region) => {
+        if (!cancelled) setStorageRegion(region);
+      })
+      .catch(() => {});
+    measureStorageLatency(session.token, session.userId)
+      .then((ms) => {
+        if (!cancelled) setStorageLatency(ms);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.token, session?.userId]);
 
   const showToast = (message) => {
     clearTimeout(toastTimerRef.current);
@@ -761,12 +784,9 @@ export default function App() {
           <main className="page">
             <PageHeader
               title={title}
-              hasSelection={selectedIds.size > 0}
-              onDeleteSelected={handleDeleteSelected}
-              onMoveSelected={handleMoveSelected}
-              onCopySelected={handleCopySelected}
-              onRenameSelected={handleRenameSelected}
               storageUsed={storageUsed}
+              storageRegion={storageRegion}
+              storageLatency={storageLatency}
               canGoBack={folderPath.length > 0 || favoritesView}
               onBack={() => {
                 if (favoritesView) {
@@ -777,7 +797,6 @@ export default function App() {
                   setFolderPath((p) => p.slice(0, -1));
                 }
               }}
-              onOpenSettings={favoritesView ? undefined : () => setShowSettings(true)}
             />
             <FilesPage
               session={session}
@@ -814,6 +833,12 @@ export default function App() {
             onCancelNewFolder={cancelNewFolder}
             onUpload={handleUpload}
             onNewFolder={handleNewFolder}
+            hasSelection={selectedIds.size > 0}
+            onDeleteSelected={handleDeleteSelected}
+            onMoveSelected={handleMoveSelected}
+            onCopySelected={handleCopySelected}
+            onRenameSelected={handleRenameSelected}
+            onOpenSettings={favoritesView ? undefined : () => setShowSettings(true)}
             renameOpen={renameOpen}
             renameName={renameName}
             onChangeRenameName={setRenameName}

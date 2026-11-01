@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { BackIcon, EditIcon, FileIcon } from "./icons";
+import { BackIcon, EditIcon, FileIcon, SettingsIcon } from "./icons";
 import HeaderMoreButton from "./HeaderMoreButton";
+import SelectionMoreButton from "./SelectionMoreButton";
 import Spinner from "./Spinner";
 
 // 하단바 아이콘(단일 solid fill, currentColor)과 같은 방식으로 그린 돋보기 아이콘.
@@ -54,6 +55,12 @@ export default function BottomSearchBar({
   onCancelNewFolder,
   onUpload,
   onNewFolder,
+  hasSelection,
+  onDeleteSelected,
+  onMoveSelected,
+  onCopySelected,
+  onRenameSelected,
+  onOpenSettings,
   renameOpen,
   renameName,
   onChangeRenameName,
@@ -344,9 +351,24 @@ export default function BottomSearchBar({
               </button>
             )}
           </div>
-          {/* 하단바 아래쪽 줄: 업로드·새 폴더를 여는 원형 + 버튼(누르면 왼쪽으로 펼쳐진다). */}
+          {/* 하단바 아래쪽 줄: 오른쪽 끝에 설정 버튼, 그 왼쪽에 원형 + 버튼(업로드·새 폴더). 파일·폴더를
+              선택하는 동안은 + 버튼 자리를 선택 메뉴(삼점: 삭제·이동·복사·이름 바꾸기)가 대신 쓰고,
+              선택이 풀리면(동작을 마치면 선택이 풀린다) 다시 + 버튼으로 돌아온다. 둘 다 누르면
+              왼쪽으로 펼쳐진다. */}
           <div className="search-dock-actions">
-            <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} />
+            <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} hidden={Boolean(hasSelection)} />
+            <SelectionMoreButton
+              visible={Boolean(hasSelection)}
+              onDelete={onDeleteSelected}
+              onMove={onMoveSelected}
+              onCopy={onCopySelected}
+              onRename={onRenameSelected}
+            />
+            {onOpenSettings && (
+              <button className="header-settings" type="button" aria-label="설정" onClick={onOpenSettings}>
+                <SettingsIcon size={19} />
+              </button>
+            )}
           </div>
         </div>
       </div>

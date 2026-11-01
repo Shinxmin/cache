@@ -111,6 +111,44 @@ export async function getStorageUsed(token) {
   return result?.total ?? 0;
 }
 
+// ── 스토리지 섹션(지역·레이턴시) ──────────────────────────────────────
+// R2 버킷의 위치 힌트(apac·enam·wnam·weur·eeur·oc 등)를 대륙 이름으로 바꿔 돌려준다. 위치를 모르면
+// 빈 문자열.
+const R2_LOCATION_CONTINENT = {
+  apac: "ASIA",
+  enam: "NORTH AMERICA",
+  wnam: "NORTH AMERICA",
+  weur: "EUROPE",
+  eeur: "EUROPE",
+  oc: "OCEANIA",
+  me: "MIDDLE EAST",
+  afr: "AFRICA",
+  sam: "SOUTH AMERICA",
+};
+export async function getStorageRegion(token) {
+  const { location } = await presign(token, { action: "location" });
+  const key = String(location || "").trim().toLowerCase();
+  return R2_LOCATION_CONTINENT[key] ?? "";
+}
+
+// 이 기기에서 R2까지의 왕복 시간(ms). 내 키 공간의 작은 존재하지 않는 객체에 대한 presigned URL로
+// 세 번 요청해(no-cors라 응답 내용은 보지 않는다) 가장 빠른 값을 쓴다 — 첫 요청은 TLS 연결 비용이
+// 섞이기 때문이다.
+export async function measureStorageLatency(token, userId) {
+  const { url } = await presign(token, { action: "get", key: `${userId}/.latency-probe` });
+  let best = Infinity;
+  for (let i = 0; i < 3; i += 1) {
+    const started = performance.now();
+    try {
+      await fetch(url, { mode: "no-cors", cache: "no-store" });
+    } catch {
+      continue;
+    }
+    best = Math.min(best, performance.now() - started);
+  }
+  return Number.isFinite(best) ? Math.round(best) : null;
+}
+
 // 설정 → 중복된 파일. 같은 종류·같은 크기의 파일 중 그룹마다 가장 먼저 올린 하나(원본)를
 // 뺀 나머지(중복본)만 돌려준다 — 서버(list_duplicate_files)가 계산한다.
 export async function listDuplicateFiles(token) {

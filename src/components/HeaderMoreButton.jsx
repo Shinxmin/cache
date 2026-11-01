@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PlusIcon } from "./icons";
 
 function DocIcon() {
@@ -23,14 +23,19 @@ function FolderIcon() {
 //
 // 애니메이션은 순수 CSS다 — 바깥 박스(overflow:hidden)의 width만 트랜지션하고, 안쪽 3항목 행은
 // 항상 justify-content: flex-end로 오른쪽 정렬해 둔다. 업로드/새 폴더를 누르면 그 자리에서 닫는다.
-export default function HeaderMoreButton({ onUpload, onNewFolder }) {
+export default function HeaderMoreButton({ onUpload, onNewFolder, hidden = false }) {
   const [open, setOpen] = useState(false);
+  // 파일·폴더를 선택하는 동안에는 이 자리를 선택 메뉴(삼점)가 대신 쓴다 — 접히며 사라지고(열려
+  // 있었다면 닫힌다), 선택이 풀리면 다시 펼쳐지며 돌아온다.
+  useEffect(() => {
+    if (hidden) setOpen(false);
+  }, [hidden]);
   const fileInputRef = useRef(null);
 
   const toggle = () => setOpen((v) => !v);
 
   return (
-    <div className={`header-more${open ? " open" : ""}`}>
+    <div className={`header-more header-more--add${open ? " open" : ""}${hidden ? " is-hidden" : ""}`} aria-hidden={hidden}>
       {/* 업로드 클릭 시 아이폰에서는 사진/파일 선택 팝업을, PC에서는 OS 파일 선택
           대화상자를 그대로 띄우는 네이티브 파일 입력(화면에는 보이지 않음). */}
       <input
