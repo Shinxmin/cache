@@ -187,3 +187,13 @@ export function SettingsIcon({ size = 18 }) {
     </svg>
   );
 }
+
+// 구글 머티리얼 디자인의 "레이어(layers)" 아이콘(3층 스택). 검색바의 스튜디오 버튼과
+// 파일 화면 맨 위 "스토리지" 제목 옆 아이콘에 쓴다.
+export function LayersIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z" />
+    </svg>
+  );
+}

@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import HeaderMoreButton from "./HeaderMoreButton";
-import StudioToolkitBar from "./StudioToolkitBar";
-import { BackIcon, CloseIcon, DownloadIcon, SettingsIcon, UploadIcon } from "./icons";
+import { BackIcon, DownloadIcon, LayersIcon, SettingsIcon, UploadIcon } from "./icons";
 
 // 전송 버튼(45px 원) 테두리에 그리는 진행도 게이지. 버튼 지름보다 살짝 안쪽에
 // 그려서 원형 버튼 테두리를 따라 도는 것처럼 보이게 한다.
@@ -12,7 +11,7 @@ const TRANSFER_RING_C = 2 * Math.PI * TRANSFER_RING_R;
 // 자체에 포함되지 않는다 — 문서를 아무리 스크롤해도 이 박스는 절대 움직이거나
 // 사라지지 않는다. 검색바는 더 이상 여기 없다 — 예전 하단 내비바 자리로
 // 옮겨서 항상 떠 있다(App.jsx의 BottomSearchBar). 그래서 이 헤더는 제목·
-// 뒤로가기·더보기/설정/전송현황 버튼, 그리고 스튜디오 툴킷 바만 그린다.
+// 뒤로가기·더보기/설정/전송현황 버튼만 그린다.
 export default function PageHeader({
   title,
   viewMode,
@@ -25,21 +24,12 @@ export default function PageHeader({
   transferDirection,
   transferProgress,
   onOpenTransfers,
-  allSelected,
-  onToggleSelectAll,
-  hasSelection,
-  infoVisible,
-  toolkitLayout,
-  onTool,
   onOpenSettings,
-  importMode,
-  onCancelImport,
   resetKey,
 }) {
   const ref = useRef(null);
 
-  // 헤더가 fixed라 문서 흐름을 벗어나므로, 실제 렌더링된 높이(제목 줄 +
-  // 스튜디오 툴킷 바까지)를 재서 --header-h로 넘겨준다. .page의
+  // 헤더가 fixed라 문서 흐름을 벗어나므로, 실제 렌더링된 높이를 재서 --header-h로 넘겨준다. .page의
   // padding-top이 이 값을 써서 본문이 헤더 바로 밑에서 시작한다.
   useEffect(() => {
     const el = ref.current;
@@ -52,6 +42,11 @@ export default function PageHeader({
 
   return (
     <header className="page-header" ref={ref}>
+      {/* 파일 화면 맨 위의 새 레이아웃: 레이어(3층 스택) 아이콘 + "스토리지" 제목. */}
+      <div className="page-brand">
+        <LayersIcon size={26} />
+        <h2 className="page-brand-title">스토리지</h2>
+      </div>
       {/* 제목과 액션(더보기·설정·전송현황 버튼)을 한 행에 놓고 수직 중앙 정렬한다. */}
       <div className="page-header-row">
         {canGoBack && (
@@ -91,39 +86,19 @@ export default function PageHeader({
           </button>
           {/* key={resetKey}: 파일 화면↔즐겨찾기 화면을 오가면 새로 마운트되어
               열려 있던 상태가 닫힌 채로 초기화된다 */}
-          {/* 스튜디오 불러오기 모드: 삼점 버튼은 사라지고, 설정 원형 버튼이 있던 자리(같은 위치)에
-              불러오기를 취소하는 X 아이콘 버튼이 뜬다. */}
-          {!importMode && <HeaderMoreButton key={resetKey} onUpload={onUpload} onNewFolder={onNewFolder} />}
+          <HeaderMoreButton key={resetKey} onUpload={onUpload} onNewFolder={onNewFolder} />
           {/* 더 보기(삼점) 바로 오른쪽의 설정 버튼. 더 보기처럼 옆으로 늘어나지
               않는 고정 45px 원이며, 누르면 바로 설정 화면이 열린다. 파일 화면
               (홈 탭이 사라진 뒤로는 이 화면이 유일한 기본 화면이다)에서만
               뜨고, 그 안에서 연 즐겨찾기 화면에서는 뜨지 않는다(onOpenSettings
               를 안 넘기면 아예 렌더링되지 않는다). */}
-          {importMode ? (
-            <button className="header-settings" type="button" aria-label="불러오기 취소" onClick={onCancelImport}>
-              <CloseIcon size={20} />
+          {onOpenSettings && (
+            <button className="header-settings" type="button" aria-label="설정" onClick={onOpenSettings}>
+              <SettingsIcon size={19} />
             </button>
-          ) : (
-            onOpenSettings && (
-              <button className="header-settings" type="button" aria-label="설정" onClick={onOpenSettings}>
-                <SettingsIcon size={19} />
-              </button>
-            )
           )}
         </div>
       </div>
-      {/* 스튜디오 툴킷은 항상 떠 있다(불러오기 모드에서는 목록 선택과 충돌하므로 숨긴다). */}
-      {!importMode && (
-      <StudioToolkitBar
-        layout={toolkitLayout}
-        viewMode={viewMode}
-        allSelected={allSelected}
-        onToggleSelectAll={onToggleSelectAll}
-        hasSelection={hasSelection}
-        infoVisible={infoVisible}
-        onTool={onTool}
-      />
-      )}
     </header>
   );
 }
