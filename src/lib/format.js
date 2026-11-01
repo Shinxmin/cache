@@ -22,3 +22,11 @@ export function formatBytes(bytes) {
 // 스토리지 용량 표기의 최댓값(기본 10GB). 실제로 서버가 강제하는 한도는 아니고, 진행 막대·수치의
 // 분모로만 쓴다. 나중에 설정에서 바꿀 수 있게 할 값이다.
 export const STORAGE_QUOTA_BYTES = 10 * 1024 ** 3;
+
+// Cloudflare R2 저장 요금: 무료 10GB를 넘는 부분에 GB당 월 $0.015. 소수 두 자리 달러로 표기한다.
+const R2_FREE_BYTES = 10 * 1024 ** 3;
+const R2_PRICE_PER_GB = 0.015;
+export function formatStorageCost(bytes) {
+  const billableGb = Math.max(0, (bytes || 0) - R2_FREE_BYTES) / 1024 ** 3;
+  return `$${(billableGb * R2_PRICE_PER_GB).toFixed(2)}`;
+}

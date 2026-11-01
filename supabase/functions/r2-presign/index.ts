@@ -26,7 +26,7 @@ function json(body: unknown, status = 200) {
 }
 
 type Body = {
-  action?: "put" | "get" | "get-batch" | "delete" | "delete-batch";
+  action?: "put" | "get" | "get-batch" | "delete" | "delete-batch" | "location";
   key?: string;
   keys?: string[];
   contentType?: string;
@@ -131,6 +131,19 @@ Deno.serve(async (req) => {
       })
     );
     return json({ ok: true, failed });
+  }
+
+  // 스토리지 섹션의 "지역": 버킷 위치(S3 GetBucketLocation)를 그대로 돌려준다. 브라우저가 대륙
+  // 단위(ASIA 등)로 바꿔 보여준다. 위치를 못 읽으면 빈 문자열.
+  if (body.action === "location") {
+    try {
+      const res = await client.fetch(`${endpoint}/${bucket}?location`, { method: "GET" });
+      const text = res.ok ? await res.text() : "";
+      const match = text.match(/<LocationConstraint[^>]*>([^<]*)<\/LocationConstraint>/);
+      return json({ location: match ? match[1] : "" });
+    } catch {
+      return json({ location: "" });
+    }
   }
 
   if (!ownsKey(body.key)) return json({ error: "허용되지 않은 키입니다" }, 403);

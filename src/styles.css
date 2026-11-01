@@ -279,6 +279,33 @@ main.page {
 :root[data-theme="dark"] .storage-usage-fill {
   background: var(--text);
 }
+/* 사용량 막대 밑 한 줄 3칸: 지역 · 레이턴시 · 청구 금액. 소제목 아래에 그보다 약간 작은 값. */
+.storage-stats {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.storage-stat {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.storage-stat dt {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.storage-stat dd {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .storage-usage-text {
   font-size: 12px;
   font-weight: 500;
@@ -300,22 +327,6 @@ main.page {
   flex: none;
   display: flex;
   align-items: center;
-}
-/* 파일 화면 헤더(.page-header, 고정형)에서는 오른쪽 버튼 묶음을 제목 줄 위에 겹쳐 띄운다 — 선택
-   메뉴(삼점)가 왼쪽으로 크게 펼쳐질 때 제목을 밀어내 줄바꿈시키지 않고 그 위를 덮는다. 제목은 닫힌
-   버튼 묶음(삼점 45 + 간격 8 + 설정 45)만큼 오른쪽 여백을 두고 한 줄로 말줄임한다. */
-.page-header:not(.page-header--static) .page-header-actions {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 2;
-}
-.page-header:not(.page-header--static) .page-title {
-  padding-right: 106px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .page-header::before {
   content: "";
@@ -643,8 +654,22 @@ main.page {
   justify-content: flex-end;
   padding: 4px 10px 16px;
 }
+/* 하단바 아래 줄의 버튼들: + 버튼과 선택 메뉴(삼점)는 같은 자리를 번갈아 쓰고(둘 중 하나만 45px
+   폭으로 보인다), 그 오른쪽에 설정 버튼이 8px 떨어져 있다. */
 .search-dock-actions .header-more {
   margin-right: 0;
+}
+.search-dock-actions .header-settings {
+  margin-left: 8px;
+}
+.header-more--add {
+  transition: width 0.45s var(--spring), opacity 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.header-more--add.is-hidden {
+  width: 0;
+  opacity: 0;
+  box-shadow: none;
+  pointer-events: none;
 }
 .search-bar-input {
   flex: 1;
