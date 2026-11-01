@@ -55,6 +55,8 @@ export default function BottomSearchBar({
   onCancelNewFolder,
   onUpload,
   onNewFolder,
+  canGoBack,
+  onBack,
   hasSelection,
   onDeleteSelected,
   onMoveSelected,
@@ -356,6 +358,12 @@ export default function BottomSearchBar({
               선택이 풀리면(동작을 마치면 선택이 풀린다) 다시 + 버튼으로 돌아온다. 둘 다 누르면
               왼쪽으로 펼쳐진다. */}
           <div className="search-dock-actions">
+            {/* 하위 폴더(또는 즐겨찾기 화면)에 들어와 있을 때만 왼쪽 끝에 뜨는 뒤로 가기. */}
+            {canGoBack && (
+              <button className="dock-back" type="button" aria-label="뒤로" onClick={onBack}>
+                <BackIcon size={24} />
+              </button>
+            )}
             <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} hidden={Boolean(hasSelection)} />
             <SelectionMoreButton
               visible={Boolean(hasSelection)}

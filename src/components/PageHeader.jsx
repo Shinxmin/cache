@@ -1,16 +1,15 @@
 import { useEffect, useRef } from "react";
-import { BackIcon, LayersIcon, OpenInNewIcon } from "./icons";
+import { LayersIcon, OpenInNewIcon } from "./icons";
 import { formatBytes, formatStorageCost, STORAGE_QUOTA_BYTES } from "../lib/format";
 
 // 상단 좌측정렬 제목. position: fixed로 화면 상단에 고정되어 스크롤 범위
 // 자체에 포함되지 않는다 — 문서를 아무리 스크롤해도 이 박스는 절대 움직이거나
-// 사라지지 않는다. 제목·뒤로가기, 그리고 그 밑의 스토리지 섹션(사용량 막대·지역·레이턴시·청구
-// 금액)을 그린다. 업로드·새 폴더(+)·선택 메뉴(삼점)·설정 버튼은 하단바에 있다.
+// 사라지지 않는다. 제목, 그리고 그 밑의 스토리지 섹션(사용량 막대·지역·레이턴시·청구
+// 금액)을 그린다. 뒤로 가기·업로드·새 폴더(+)·선택 메뉴(삼점)·설정 버튼은 하단바에 있다.
 export default function PageHeader({
   title,
-  canGoBack,
-  onBack,
   storageUsed = 0,
+  storageBillingBytes = 0,
   storageRegion = "",
   storageLatency = null,
 }) {
@@ -32,11 +31,6 @@ export default function PageHeader({
   return (
     <header className="page-header" ref={ref}>
       <div className="page-header-row">
-        {canGoBack && (
-          <button className="header-back" type="button" aria-label="뒤로" onClick={onBack}>
-            <BackIcon />
-          </button>
-        )}
         <h1 className="page-title">{title}</h1>
       </div>
       {/* 스토리지 섹션: 테두리(하단바와 같은 모서리 곡률)로 감싼 상자 안에 레이어 아이콘 + "스토리지",
@@ -70,7 +64,8 @@ export default function PageHeader({
             {formatBytes(storageUsed)} / {formatBytes(STORAGE_QUOTA_BYTES)}
           </span>
         </div>
-        {/* 지역(버킷 위치의 대륙) · 레이턴시(이 기기→R2 왕복) · 청구 금액(10GB 초과분 × $0.015/GB). */}
+        {/* 지역(버킷 위치의 대륙) · 레이턴시(이 기기→R2 왕복, 10초마다 다시 잼) · 청구 금액(10GB 초과분 ×
+            $0.015/GB, 페이지를 새로 불러올 때만 계산). */}
         <dl className="storage-stats">
           <div className="storage-stat">
             <dt>지역</dt>
@@ -82,7 +77,7 @@ export default function PageHeader({
           </div>
           <div className="storage-stat">
             <dt>청구 금액</dt>
-            <dd>{formatStorageCost(storageUsed)}</dd>
+            <dd>{formatStorageCost(storageBillingBytes)}</dd>
           </div>
         </dl>
       </section>
