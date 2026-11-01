@@ -21,6 +21,16 @@ function SearchIcon({ size = 20 }) {
   );
 }
 
+// 하단바 뒤로 가기 아이콘. 옆의 + 아이콘(선 두께 2)과 같은 두께로 보이도록 채운 도형 대신 두께
+// 2짜리 선으로 그린 꺾쇠다.
+function DockBackIcon({ size = 21 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+      <path d="M15 4.5 7.5 12l7.5 7.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="miter" />
+    </svg>
+  );
+}
+
 // 헤더 삼점 버튼의 "새 폴더" 아이콘과 같은 모양.
 function FolderIcon({ size = 18 }) {
   return (
@@ -358,12 +368,17 @@ export default function BottomSearchBar({
               선택이 풀리면(동작을 마치면 선택이 풀린다) 다시 + 버튼으로 돌아온다. 둘 다 누르면
               왼쪽으로 펼쳐진다. */}
           <div className="search-dock-actions">
-            {/* 하위 폴더(또는 즐겨찾기 화면)에 들어와 있을 때만 왼쪽 끝에 뜨는 뒤로 가기. */}
-            {canGoBack && (
-              <button className="header-settings dock-back" type="button" aria-label="뒤로" onClick={onBack}>
-                <BackIcon size={21} />
-              </button>
-            )}
+            {/* 왼쪽 끝의 뒤로 가기. 최상위(홈)에서도 자리는 지키되 표준 비활성 투명도로 흐려지고 눌리지
+                않는다. */}
+            <button
+              className="header-settings dock-back"
+              type="button"
+              aria-label="뒤로"
+              disabled={!canGoBack}
+              onClick={onBack}
+            >
+              <DockBackIcon />
+            </button>
             <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} hidden={Boolean(hasSelection)} />
             <SelectionMoreButton
               visible={Boolean(hasSelection)}

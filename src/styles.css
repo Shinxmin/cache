@@ -659,11 +659,16 @@ main.page {
 .search-dock-actions .header-more {
   margin-right: 0;
 }
-/* 하단바 아래 줄 왼쪽 끝의 뒤로 가기(하위 폴더·즐겨찾기에서만). 설정 버튼과 같은 45px 원형 유리
-   버튼(.header-settings)에 21px 아이콘. 나머지 버튼은 오른쪽으로 밀어낸다. */
+/* 하단바 아래 줄 왼쪽 끝의 뒤로 가기. 설정 버튼과 같은 45px 원형 유리 버튼(.header-settings)에 21px
+   아이콘. 최상위(홈)에서는 표준 비활성 투명도(--studio-disabled)로 흐려지고 눌리지 않는다. 나머지
+   버튼은 오른쪽으로 밀어낸다. */
 .search-dock-actions .header-settings.dock-back {
   margin-left: 0;
   margin-right: auto;
+}
+.search-dock-actions .header-settings.dock-back:disabled {
+  opacity: var(--studio-disabled);
+  pointer-events: none;
 }
 .search-dock-actions .header-settings {
   margin-left: 8px;
