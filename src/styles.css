@@ -209,14 +209,14 @@ main.page {
   /* 제목-검색바 여백: 10px 대비 15% 증가 */
   gap: 11.5px;
 }
-/* 파일 화면 맨 위 "스토리지" 줄. 아이콘·글자는 라이트에서 검정(#000), 다크에서는 배경이
-   검정이라 흰색(var(--text))이 된다. */
+/* 제목 줄 밑 "스토리지" 줄(본문 크기). 아이콘·글자는 라이트에서 검정(#000), 다크에서는 배경이
+   검정이라 흰색(var(--text))이 된다. 오른쪽 바로가기 아이콘은 작은 회색. */
 .page-brand {
   position: relative;
   z-index: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: #000000;
 }
 :root[data-theme="dark"] .page-brand {
@@ -224,9 +224,20 @@ main.page {
 }
 .page-brand-title {
   margin: 0;
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 600;
   line-height: 1;
+}
+.page-brand-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 2px;
+  padding: 4px;
+  color: rgba(128, 128, 128, 0.8);
+}
+.page-brand-link:active {
+  opacity: 0.6;
 }
 .page-header-row {
   position: relative;
