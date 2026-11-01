@@ -360,8 +360,8 @@ export default function BottomSearchBar({
           <div className="search-dock-actions">
             {/* 하위 폴더(또는 즐겨찾기 화면)에 들어와 있을 때만 왼쪽 끝에 뜨는 뒤로 가기. */}
             {canGoBack && (
-              <button className="dock-back" type="button" aria-label="뒤로" onClick={onBack}>
-                <BackIcon size={24} />
+              <button className="header-settings dock-back" type="button" aria-label="뒤로" onClick={onBack}>
+                <BackIcon size={21} />
               </button>
             )}
             <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} hidden={Boolean(hasSelection)} />

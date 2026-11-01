@@ -659,20 +659,11 @@ main.page {
 .search-dock-actions .header-more {
   margin-right: 0;
 }
-/* 하단바 아래 줄 왼쪽 끝의 뒤로 가기(하위 폴더·즐겨찾기에서만). 아이콘은 통일 아이콘 색, 24px.
-   아이콘 왼쪽 끝을 검색창 돋보기와 같은 세로선에 맞춘다. 나머지 버튼은 오른쪽으로 밀어낸다. */
-.dock-back {
-  flex: none;
-  display: flex;
-  align-items: center;
-  height: 45px;
-  padding: 0 8px 0 4px;
+/* 하단바 아래 줄 왼쪽 끝의 뒤로 가기(하위 폴더·즐겨찾기에서만). 설정 버튼과 같은 45px 원형 유리
+   버튼(.header-settings)에 21px 아이콘. 나머지 버튼은 오른쪽으로 밀어낸다. */
+.search-dock-actions .header-settings.dock-back {
+  margin-left: 0;
   margin-right: auto;
-  color: var(--icon);
-  transition: transform 0.35s var(--spring);
-}
-.dock-back:active {
-  transform: scale(0.88);
 }
 .search-dock-actions .header-settings {
   margin-left: 8px;
