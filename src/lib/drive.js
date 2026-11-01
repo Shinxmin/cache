@@ -131,16 +131,21 @@ export async function getStorageRegion(token) {
   return R2_LOCATION_CONTINENT[key] ?? "";
 }
 
-// 이 기기에서 R2까지의 왕복 시간(ms). 내 키 공간의 작은 존재하지 않는 객체에 대한 presigned URL로
-// 세 번 요청해(no-cors라 응답 내용은 보지 않는다) 가장 빠른 값을 쓴다 — 첫 요청은 TLS 연결 비용이
-// 섞이기 때문이다.
+// 이 기기에서 R2까지의 왕복 시간(ms). 내 키 공간의 존재하지 않는 작은 객체에 대한 presigned URL로
+// 두 번 요청해(no-cors라 응답 내용은 보지 않는다) 더 빠른 값을 쓴다 — 첫 요청에는 연결 비용이 섞일
+// 수 있어서다. 10초마다 불리므로 presigned URL(1시간 유효)은 50분 동안 재사용한다.
+let latencyProbe = null; // { key, url, at }
 export async function measureStorageLatency(token, userId) {
-  const { url } = await presign(token, { action: "get", key: `${userId}/.latency-probe` });
+  const key = `${userId}/.latency-probe`;
+  if (!latencyProbe || latencyProbe.key !== key || Date.now() - latencyProbe.at > 50 * 60 * 1000) {
+    const { url } = await presign(token, { action: "get", key });
+    latencyProbe = { key, url, at: Date.now() };
+  }
   let best = Infinity;
-  for (let i = 0; i < 3; i += 1) {
+  for (let i = 0; i < 2; i += 1) {
     const started = performance.now();
     try {
-      await fetch(url, { mode: "no-cors", cache: "no-store" });
+      await fetch(latencyProbe.url, { mode: "no-cors", cache: "no-store" });
     } catch {
       continue;
     }

@@ -145,6 +145,10 @@ export default function App() {
 
   // 스토리지 섹션(헤더)의 사용량. 목록이 새로 고쳐질 때마다 다시 받는다.
   const [storageUsed, setStorageUsed] = useState(0);
+  // 청구 금액 계산에 쓰는 용량. 페이지를 새로 불러올 때(세션당 처음 한 번)만 정해지고, 그 뒤 업로드·
+  // 삭제로 사용량이 바뀌어도 다시 계산하지 않는다.
+  const [storageBillingBytes, setStorageBillingBytes] = useState(0);
+  const billingLoadedRef = useRef(false);
   // 스토리지 섹션의 지역(버킷 위치의 대륙)과 레이턴시(이 기기→R2 왕복 ms). 세션마다 한 번 잰다.
   const [storageRegion, setStorageRegion] = useState("");
   const [storageLatency, setStorageLatency] = useState(null);
@@ -189,7 +193,12 @@ export default function App() {
     let cancelled = false;
     getStorageUsed(session.token)
       .then((bytes) => {
-        if (!cancelled) setStorageUsed(bytes);
+        if (cancelled) return;
+        setStorageUsed(bytes);
+        if (!billingLoadedRef.current) {
+          billingLoadedRef.current = true;
+          setStorageBillingBytes(bytes);
+        }
       })
       .catch(() => {});
     return () => {
@@ -205,13 +214,37 @@ export default function App() {
         if (!cancelled) setStorageRegion(region);
       })
       .catch(() => {});
-    measureStorageLatency(session.token, session.userId)
-      .then((ms) => {
-        if (!cancelled) setStorageLatency(ms);
-      })
-      .catch(() => {});
     return () => {
       cancelled = true;
+    };
+  }, [session?.token]);
+
+  // 레이턴시는 10초마다 다시 잰다. 화면이 숨겨져 있는 동안(다른 탭·앱)은 쉬었다가 돌아오면 바로 잰다.
+  useEffect(() => {
+    if (!session) return undefined;
+    let cancelled = false;
+    let timer = 0;
+    let running = false;
+    const tick = async () => {
+      clearTimeout(timer);
+      if (running) return;
+      running = true;
+      if (!document.hidden) {
+        const ms = await measureStorageLatency(session.token, session.userId).catch(() => null);
+        if (!cancelled && ms != null) setStorageLatency(ms);
+      }
+      running = false;
+      if (!cancelled) timer = setTimeout(tick, 10000);
+    };
+    const onVisible = () => {
+      if (!document.hidden) tick();
+    };
+    tick();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [session?.token, session?.userId]);
 
@@ -787,16 +820,7 @@ export default function App() {
               storageUsed={storageUsed}
               storageRegion={storageRegion}
               storageLatency={storageLatency}
-              canGoBack={folderPath.length > 0 || favoritesView}
-              onBack={() => {
-                if (favoritesView) {
-                  setShowFavorites(false);
-                  setSearchQuery("");
-                  setSelectedIds(new Set());
-                } else {
-                  setFolderPath((p) => p.slice(0, -1));
-                }
-              }}
+              storageBillingBytes={storageBillingBytes}
             />
             <FilesPage
               session={session}
@@ -833,6 +857,16 @@ export default function App() {
             onCancelNewFolder={cancelNewFolder}
             onUpload={handleUpload}
             onNewFolder={handleNewFolder}
+            canGoBack={folderPath.length > 0 || favoritesView}
+            onBack={() => {
+              if (favoritesView) {
+                setShowFavorites(false);
+                setSearchQuery("");
+                setSelectedIds(new Set());
+              } else {
+                setFolderPath((p) => p.slice(0, -1));
+              }
+            }}
             hasSelection={selectedIds.size > 0}
             onDeleteSelected={handleDeleteSelected}
             onMoveSelected={handleMoveSelected}
