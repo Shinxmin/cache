@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { BackIcon, FileIcon, LayersIcon } from "./icons";
+import { BackIcon, EditIcon, FileIcon } from "./icons";
+import HeaderMoreButton from "./HeaderMoreButton";
 import Spinner from "./Spinner";
 
 // 하단바 아이콘(단일 solid fill, currentColor)과 같은 방식으로 그린 돋보기 아이콘.
 // 링은 두 원을 evenodd로 겹쳐 만든 진짜 구멍(반투명 색에서도 이중 톤이 생기지
 // 않는다 — 겹치는 영역이 아니라 "안 칠해지는" 영역이라 알파가 쌓이지 않음)이고,
 // 손잡이는 링 바깥 경계에 딱 맞닿게 배치해 링과 겹치는 면적이 생기지 않게 했다.
-function SearchIcon({ size = 18 }) {
+function SearchIcon({ size = 20 }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
       <path
@@ -28,21 +29,18 @@ function FolderIcon({ size = 18 }) {
   );
 }
 
-// 예전 하단 내비바가 있던 자리에 고정된 검색바. position:fixed라 스크롤을
-// 아무리 올리고 내려도 그 자리에서 전혀 움직이지 않는다.
+// 예전 하단 내비바가 있던 자리에 고정된 하단바. position:fixed라 스크롤을 아무리 올리고 내려도
+// 그 자리에서 전혀 움직이지 않는다. 위쪽 줄은 검색창, 아래쪽 줄은 업로드·새 폴더를 여는 원형
+// + 버튼(HeaderMoreButton)이다.
 //
-// 배경·블러·그림자·둥근 모서리는 전부 바깥 껍데기 하나(.search-dock)가
-// 맡는다 — 확인 문구(.search-bar-confirm-panel)와 검색창(.search-bar)은 그
-// 안의 내용일 뿐, 각자 따로 유리 재질을 두르지 않는다. 삭제·이동·새 폴더, 또는
-// 검색바 오른쪽 끝의 레이어 아이콘 버튼을 누르면 이 패널이 검색창 위로 하단에서
-// 확장되며 열린다 — 취소 버튼은 없고, 검색바를 뺀 화면 어디를 눌러도 취소로
-// 닫힌다(.search-bar-scrim). 확인 버튼은 패널이 아니라 검색바 자신의 오른쪽
-// 끝에 뜬다. 레이어 아이콘으로 여는 "스튜디오" 패널은 화면(내용)을 모두 지우고
-// 하단에서 열리는 애니메이션만 남겨 둔 빈 패널이다.
-// 새 폴더일 때는 검색창을 이름 입력창으로 재사용하고, 삭제·이동·스튜디오처럼
-// 그 입력창을 쓰지 않는 동안은 검색을 아예 막도록 입력창 자체를 비활성화한다.
-// 여러 상태 중 둘 이상 동시에 열릴 수는 없으므로(App.jsx가 하나를 열 때 나머지를
-// 닫는다) 패널·검색바 내용물은 그때그때 하나만 그린다.
+// 배경·블러·그림자·둥근 모서리는 전부 바깥 껍데기 하나(.search-dock)가 맡는다. 삭제·이동·복사·
+// 이름 바꾸기·새 폴더를 열면 이 독이 검색창 위로 확장되며 패널을 보여준다 — 취소 버튼은 없고,
+// 하단바를 뺀 화면 어디를 눌러도 취소로 닫힌다(.search-bar-scrim, 열려 있는 동안 나머지 화면
+// 전체에 같은 블러가 걸린다). 확인 버튼은 검색바 자신의 오른쪽 끝에 뜬다.
+// 새 폴더·이름 바꾸기일 때는 검색창을 이름 입력창으로 재사용하고(돋보기 대신 연필 아이콘),
+// 삭제·이동·복사처럼 입력창을 쓰지 않는 동안은 검색을 막도록 입력창 자체를 비활성화한다.
+// 여러 상태 중 둘 이상 동시에 열릴 수는 없으므로(App.jsx가 하나를 열 때 나머지를 닫는다)
+// 패널·검색바 내용물은 그때그때 하나만 그린다.
 export default function BottomSearchBar({
   searchQuery,
   onSearch,
@@ -54,10 +52,15 @@ export default function BottomSearchBar({
   onChangeNewFolderName,
   onConfirmNewFolder,
   onCancelNewFolder,
-  onOpenStudio,
-  studioOpen,
-  onCancelStudio,
+  onUpload,
+  onNewFolder,
+  renameOpen,
+  renameName,
+  onChangeRenameName,
+  onConfirmRename,
+  onCancelRename,
   moveOpen,
+  moveMode = "move",
   moveItemCount,
   movePath,
   moveRows,
@@ -71,11 +74,12 @@ export default function BottomSearchBar({
   const [busy, setBusy] = useState(false);
   const [folderBusy, setFolderBusy] = useState(false);
   const [moveBusy, setMoveBusy] = useState(false);
-  const panelOpen = confirmOpen || newFolderOpen || studioOpen || moveOpen;
+  const [renameBusy, setRenameBusy] = useState(false);
+  const panelOpen = confirmOpen || newFolderOpen || renameOpen || moveOpen;
 
-  // 검색바가 검색 대신 값을 입력받는 상태 — 새 폴더.
-  const textEntryOpen = newFolderOpen;
-  // 입력창을 쓰지 않는 패널(삭제 확인·이동·스튜디오)이 열려 있을 때는 검색바
+  // 검색바가 검색 대신 값을 입력받는 상태 — 새 폴더·이름 바꾸기.
+  const textEntryOpen = newFolderOpen || renameOpen;
+  // 입력창을 쓰지 않는 패널(삭제 확인·이동·복사)이 열려 있을 때는 검색바
   // 입력을 아예 비활성화한다 — 패널이 열려 있는 동안 검색어를 바꿔 지금 폴더
   // 목록 자체가 통째로 달라지는 걸 막기 위해서다.
   const inputDisabled = panelOpen && !textEntryOpen;
@@ -89,8 +93,8 @@ export default function BottomSearchBar({
   // 모드가 반영돼 "빈 패널" 한 프레임이 생기지 않는다.
   const liveMode = newFolderOpen
     ? "newFolder"
-    : studioOpen
-      ? "studio"
+    : renameOpen
+      ? "rename"
       : moveOpen
         ? "move"
         : confirmOpen
@@ -121,6 +125,17 @@ export default function BottomSearchBar({
     }
   };
 
+  const canSubmitRename = Boolean(renameName?.trim()) && !renameBusy;
+  const submitRename = async () => {
+    if (!canSubmitRename) return;
+    setRenameBusy(true);
+    try {
+      await onConfirmRename();
+    } finally {
+      setRenameBusy(false);
+    }
+  };
+
   // 이동은 태그처럼 비어 있어도(최상위로 옮기는 것도 유효한 목적지라)
   // 확인을 막지 않는다 — 옮길 대상이 하나 이상 있기만 하면 된다.
   const canSubmitMove = Boolean(moveItemCount) && !moveBusy;
@@ -138,16 +153,17 @@ export default function BottomSearchBar({
   // 막지만 목록에서 미리 눌리지 않게 해 둔다.
   const moveExcluded = moveExcludedIds ?? new Set();
 
-  const textValue = newFolderOpen ? newFolderName : searchQuery;
+  const textValue = newFolderOpen ? newFolderName : renameOpen ? renameName : searchQuery;
   const onTextChange = (value) => {
     if (newFolderOpen) onChangeNewFolderName?.(value);
+    else if (renameOpen) onChangeRenameName?.(value);
     else onSearch?.(value);
   };
-  const submitText = () => (newFolderOpen ? submitFolder() : undefined);
+  const submitText = () => (newFolderOpen ? submitFolder() : renameOpen ? submitRename() : undefined);
   const onCancelScrim = newFolderOpen
     ? onCancelNewFolder
-    : studioOpen
-      ? onCancelStudio
+    : renameOpen
+      ? onCancelRename
       : moveOpen
         ? onCancelMove
         : onCancelDelete;
@@ -230,26 +246,28 @@ export default function BottomSearchBar({
     onCancelScrim?.();
   };
 
-  // 검색바 아이콘은 새 폴더 패널에서만 폴더 아이콘으로 바뀐다.
-  const searchBarIcon = newFolderOpen ? <FolderIcon /> : <SearchIcon />;
+  // 검색바 아이콘은 이름을 입력받는 동안(새 폴더·이름 바꾸기) 돋보기 대신 연필 아이콘이 된다.
+  const searchBarIcon = textEntryOpen ? <EditIcon size={20} /> : <SearchIcon />;
 
   return (
     <>
       {panelOpen && (
-        <div className="search-bar-scrim" onClick={handleScrimClick} onPointerDown={handleScrimPointerDown} />
+        <div className="search-bar-scrim is-blurred" onClick={handleScrimClick} onPointerDown={handleScrimPointerDown} />
       )}
       <div className="bottom-search-wrap">
-        <div className={`search-dock${panelOpen ? " has-confirm" : ""}${panelOpen && displayMode === "studio" ? " studio-mode" : ""}`}>
+        <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
           <div
-            className={`search-bar-confirm-panel${displayMode === "studio" ? " mode-studio" : ""}${displayMode === "move" ? " mode-move" : ""}${panelOpen ? " is-open" : ""}`}
+            className={`search-bar-confirm-panel${displayMode === "move" ? " mode-move" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
           >
             <div className="search-bar-confirm-content" key={displayMode}>
               {displayMode === "newFolder" ? (
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">새 폴더</p>
-              ) : displayMode === "studio" ? null : displayMode === "move" ? (
+              ) : displayMode === "rename" ? (
+                <p className="search-bar-confirm-title search-bar-confirm-title--studio">이름 바꾸기</p>
+              ) : displayMode === "move" ? (
                 <>
-                  <p className="search-bar-confirm-title search-bar-confirm-title--studio">이동</p>
+                  <p className="search-bar-confirm-title search-bar-confirm-title--studio">{moveMode === "copy" ? "복사" : "이동"}</p>
                   <p className="search-bar-confirm-desc">{moveItemCount}개 파일</p>
                   {movePath.length > 0 && (
                     <div className="move-path">
@@ -266,8 +284,6 @@ export default function BottomSearchBar({
                       </li>
                     ) : moveRowsState === "error" ? (
                       <li className="move-note">불러오지 못했습니다</li>
-                    ) : moveRows.length === 0 ? (
-                      <li className="move-note">이 폴더는 비어 있습니다</li>
                     ) : (
                       moveRows.map((row) => (
                         <li key={row.id}>
@@ -317,23 +333,20 @@ export default function BottomSearchBar({
                 e.currentTarget.blur();
               }}
             />
-            {/* 빈 스튜디오 패널을 여는 버튼 — 검색바 오른쪽 끝 원형 버튼으로, 다른 패널이
-                하나도 열려 있지 않을 때만 뜬다. 닫을 땐 빈 화면(스크림)을 눌러 닫는다. */}
-            {!panelOpen && (
-              <button type="button" className="search-bar-open-studio-btn" aria-label="스튜디오 열기" onClick={onOpenStudio}>
-                <LayersIcon size={18} />
-              </button>
-            )}
             {panelOpen && (
               <button
                 type="button"
                 className="search-bar-inline-confirm"
-                onClick={confirmOpen ? confirm : studioOpen ? onCancelStudio : moveOpen ? submitMove : submitText}
-                disabled={confirmOpen ? busy : studioOpen ? false : moveOpen ? !canSubmitMove : !canSubmitFolder}
+                onClick={confirmOpen ? confirm : moveOpen ? submitMove : submitText}
+                disabled={confirmOpen ? busy : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
               >
                 확인
               </button>
             )}
+          </div>
+          {/* 하단바 아래쪽 줄: 업로드·새 폴더를 여는 원형 + 버튼(누르면 왼쪽으로 펼쳐진다). */}
+          <div className="search-dock-actions">
+            <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} />
           </div>
         </div>
       </div>

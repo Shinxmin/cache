@@ -67,7 +67,6 @@ export default function DuplicatesPage({ session, onBack }) {
       <div className="page page--flush">
         {state === "loading" && <p className="drive-note"><Spinner /></p>}
         {state === "error" && <p className="drive-note">불러오지 못했습니다</p>}
-        {state === "ready" && items.length === 0 && <p className="drive-note">중복된 파일이 없습니다</p>}
         {state === "ready" && items.length > 0 && (
           <ul className="drive-list">
             {items.map((item) => (

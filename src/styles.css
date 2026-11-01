@@ -30,6 +30,8 @@
   --studio-gray-40: rgba(128, 128, 128, 0.4);
   --studio-gray-70: rgba(128, 128, 128, 0.7);
   --studio-disabled: 0.4;
+  /* 하단바 패널이 위로 열릴 때 하단바를 뺀 나머지 화면 전체에 거는 통일 블러 값. */
+  --panel-backdrop-blur: 6px;
 }
 
 :root[data-theme="dark"] {
@@ -56,6 +58,8 @@
   /* 모달 전용 불투명 배경(글래스모피즘 없음) — 페이지 배경보다 한 단계
      밝혀 떠 있는 카드처럼 보이게 한다. */
   --surface: #2c2c2e;
+  /* 회색 계열 아이콘의 통일 색(라이트 테마 --icon과 같은 규칙, 검정 배경 위라 흰색 계열). */
+  --icon: rgba(255, 255, 255, 0.82);
 }
 
 :root[data-theme="light"] {
@@ -72,6 +76,8 @@
   --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   --danger: #d9433a;
   --surface: #ffffff;
+  /* 회색 계열 아이콘의 통일 색(--text-2보다 약간 진하게). 앞으로 추가되는 회색 아이콘도 전부 이 값을 쓴다. */
+  --icon: rgba(27, 27, 27, 0.68);
 }
 
 /* ── 기본: 배경색이 화면 전체(사파리 자체 툴바 뒤·홈 인디케이터 영역 포함)를 감싼다 ──
@@ -184,7 +190,7 @@ button {
    태그·설정·애드온 스토어처럼 <div className="page">를 쓰는 다른 화면은 하단
    검색바가 없으니 그대로 기본 32px 여백을 쓴다. */
 main.page {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 48px + 16.1px + 16px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 120px + 16.1px + 16px);
 }
 
 /* ── 상단 제목: 스크롤 범위 자체에 포함되지 않도록 position: fixed로 화면 상단에
@@ -209,14 +215,24 @@ main.page {
   /* 제목-검색바 여백: 10px 대비 15% 증가 */
   gap: 11.5px;
 }
-/* 제목 줄 밑 "스토리지" 줄(본문 크기). 아이콘·글자는 라이트에서 검정(#000), 다크에서는 배경이
-   검정이라 흰색(var(--text))이 된다. 오른쪽 바로가기 아이콘은 작은 회색. */
-.page-brand {
+/* 제목 줄 밑 스토리지 섹션. 하단바(.search-dock)와 같은 모서리 곡률(24px)의 테두리로 감싸고,
+   제목 줄과는 조금 더 떨어뜨린다. 아이콘·글자는 라이트에서 검정(#000), 다크에서는 배경이 검정이라
+   흰색(var(--text))이 된다. 오른쪽 바로가기 아이콘은 통일 아이콘 색. */
+.page-brand-box {
   position: relative;
   z-index: 1;
+  margin-top: 6px;
+  padding: 14px 16px 15px;
+  border: 1px solid rgba(128, 128, 128, 0.28);
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.page-brand {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   color: #000000;
 }
 :root[data-theme="dark"] .page-brand {
@@ -224,7 +240,7 @@ main.page {
 }
 .page-brand-title {
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   line-height: 1;
 }
@@ -234,10 +250,40 @@ main.page {
   justify-content: center;
   margin-left: 2px;
   padding: 4px;
-  color: rgba(128, 128, 128, 0.8);
+  color: var(--icon);
 }
 .page-brand-link:active {
   opacity: 0.6;
+}
+/* 사용량 막대(섹션 폭의 50%, 두께 6px) + 오른쪽 작은 "3.5GB / 10.0GB". 채움은 라이트에서 검정,
+   다크에서는 흰색. */
+.storage-usage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.storage-usage-bar {
+  flex: none;
+  width: 50%;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(128, 128, 128, 0.22);
+}
+.storage-usage-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: #000000;
+  transition: width 0.45s var(--spring);
+}
+:root[data-theme="dark"] .storage-usage-fill {
+  background: var(--text);
+}
+.storage-usage-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  white-space: nowrap;
 }
 .page-header-row {
   position: relative;
@@ -254,6 +300,22 @@ main.page {
   flex: none;
   display: flex;
   align-items: center;
+}
+/* 파일 화면 헤더(.page-header, 고정형)에서는 오른쪽 버튼 묶음을 제목 줄 위에 겹쳐 띄운다 — 선택
+   메뉴(삼점)가 왼쪽으로 크게 펼쳐질 때 제목을 밀어내 줄바꿈시키지 않고 그 위를 덮는다. 제목은 닫힌
+   버튼 묶음(삼점 45 + 간격 8 + 설정 45)만큼 오른쪽 여백을 두고 한 줄로 말줄임한다. */
+.page-header:not(.page-header--static) .page-header-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+}
+.page-header:not(.page-header--static) .page-title {
+  padding-right: 106px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .page-header::before {
   content: "";
@@ -370,7 +432,7 @@ main.page {
   align-items: center;
   justify-content: center;
   gap: 3px;
-  color: var(--text-2);
+  color: var(--icon);
   /* 이 헤더의 다른 원형 글래스 버튼들과 동일한 눌림 애니메이션 */
   transition: transform 0.35s var(--spring), background 0.2s var(--ease), color 0.2s var(--ease);
 }
@@ -382,6 +444,34 @@ main.page {
 }
 .header-more-toggle {
   width: 45px;
+}
+/* 선택 메뉴(헤더의 삼점): 파일·폴더를 선택하고 있을 때만 폭 0에서 45px로 펼쳐지며 나타나고,
+   선택이 풀리면 같은 방식으로 사라진다. 열면 삭제·이동·복사·이름 바꾸기 네 항목(52px씩)이
+   왼쪽에서 드러난다(8 + 52×4 + 45 = 261px). */
+.header-more--selection {
+  --more-open-w: 261px;
+  width: 0;
+  margin-right: 0;
+  opacity: 0;
+  box-shadow: none;
+  transition: width 0.45s var(--spring), margin-right 0.45s var(--spring), opacity 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.header-more--selection.visible {
+  width: 45px;
+  margin-right: 8px;
+  opacity: 1;
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
+}
+.header-more--selection.visible.open {
+  width: var(--more-open-w);
+}
+/* 펼쳐지면 제목 위를 덮으므로, 비치는 유리 대신 불투명한 면(--surface)으로 칠해 제목이 비쳐
+   보이지 않게 한다. */
+.header-more--selection {
+  background: var(--surface);
+}
+.header-more--selection .header-more-item:not(.header-more-toggle) {
+  width: 52px;
 }
 
 /* 두 번 눌러야 실행되는 삭제·복원 버튼(useArmedConfirm)이 첫 번째로 눌려
@@ -406,7 +496,7 @@ main.page {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  color: var(--text-2);
+  color: var(--icon);
   background: var(--glass);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
   backdrop-filter: blur(28px) saturate(200%);
@@ -472,6 +562,18 @@ main.page {
   z-index: 39;
   background: transparent;
 }
+/* 하단바 패널이 위로 열려 있는 동안 하단바를 뺀 나머지 화면 전체에 통일된 블러를 건다. */
+.search-bar-scrim.is-blurred {
+  -webkit-backdrop-filter: blur(var(--panel-backdrop-blur));
+  backdrop-filter: blur(var(--panel-backdrop-blur));
+  animation: scrim-blur-in 0.3s var(--ease);
+}
+@keyframes scrim-blur-in {
+  from {
+    -webkit-backdrop-filter: blur(0px);
+    backdrop-filter: blur(0px);
+  }
+}
 /* ── 검색 독(dock): 배경·블러·그림자·둥근 모서리를 전부 이 바깥 껍데기
    하나가 맡는다. 안의 확인 패널(.search-bar-confirm-panel)과 검색창
    (.search-bar)은 각자 유리 재질을 두르지 않는 내용물일 뿐이다 — 그래서
@@ -506,12 +608,13 @@ main.page {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 45%);
   pointer-events: none;
 }
-.search-dock:active {
+/* 검색창 줄을 누를 때만 독 전체가 눌림 애니메이션을 먹는다(아래 + 버튼은 자기만 눌린다). */
+.search-dock:has(.search-bar:active) {
   transform: scale(0.94);
 }
 /* 확인 패널이 열려 있을 땐 버튼 두 개가 따로 눌리므로, 독 전체가 눌림
    애니메이션을 먹지 않게 한다. */
-.search-dock.has-confirm:active {
+.search-dock.has-confirm:has(.search-bar:active) {
   transform: none;
 }
 .search-bar {
@@ -528,6 +631,20 @@ main.page {
   display: flex;
   flex: none;
   line-height: 0;
+  color: var(--icon);
+}
+/* 하단바 아래쪽 줄: 검색창 밑에서 원형 + 버튼(.header-more, 45px)을 오른쪽에 둔다. 버튼 오른쪽
+   끝은 검색창의 확인 버튼 오른쪽 끝과 맞추고(독 가장자리에서 10px), 아래 여백은 그보다 조금
+   넉넉히 둔다. 하단바 전체 높이 = 검색창 55px + 이 줄 65px = 120px. */
+.search-dock-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 10px 16px;
+}
+.search-dock-actions .header-more {
+  margin-right: 0;
 }
 .search-bar-input {
   flex: 1;
@@ -572,30 +689,6 @@ main.page {
 }
 .search-bar-inline-confirm:disabled {
   opacity: var(--studio-disabled);
-}
-/* 스튜디오를 여는 전용 버튼 — 검색바 오른쪽 끝의 알약 버튼. 확인 버튼과
-   똑같은 높이·안쪽 여백·둥근 정도를 써서 크기를 맞췄다(내용이 텍스트 대신
-   아이콘 하나뿐이라 자연히 확인 버튼보다 살짝 좁은 알약이 된다). 다른
-   패널이 하나도 열려 있지 않을 때만 뜨고(그 자리는 패널이 열리면 확인
-   버튼이나 품질 세그먼트가 대신 차지한다), 닫을 때는 버튼이 아니라 빈
-   화면(스크림)을 눌러 닫는다. 아이콘 색은 툴킷 아이콘 줄(.studio-toolkit-row)이
-   실제로 쓰는 var(--text-2)와 맞춘다 — var(--text)는 100% 불투명한
-   진한 색이라 56% 불투명한 툴킷 아이콘보다 훨씬 진하게 보였다. */
-.search-bar-open-studio-btn {
-  flex: none;
-  height: 32px;
-  padding: 0 14px;
-  margin-right: -6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: var(--studio-gray-35);
-  color: var(--studio-t70);
-  transition: transform 0.35s var(--spring);
-}
-.search-bar-open-studio-btn:active {
-  transform: scale(0.9);
 }
 /* 최적화(단일·다중) 패널이 열려 있을 때만 확인 버튼 바로 왼쪽에 뜨는 품질
    세그먼트. 예전엔 칸마다 선택 여부만 보여주는 작은 점이었는데, 그 점 자리에
@@ -724,19 +817,6 @@ main.page {
      모든 패널의 제목 위 여백을 20px로 통일한다. */
   padding: 20px 16px 8px;
 }
-/* 스튜디오(이름·태그·압축·클립 통합) 패널은 제목 아래 구분선 + 기능 선택
-   줄(아이콘 줄/기능 화면) + 구분선 + 본문(파일명 등)이 쌓이므로, 다른
-   패널처럼 세로 가운데 정렬 대신 위에서부터 순서대로 쌓는다. 높이(200px)는
-   아이콘 줄이든 각 기능 상세 화면(하이라이트 포함)이든, 단일이든 다중이든
-   예외 없이 공통으로 적용된다(상태에 따라 흔들리지 않는다). */
-.search-bar-confirm-panel.mode-studio {
-  justify-content: flex-start;
-}
-.search-bar-confirm-panel.mode-studio.is-open {
-  /* 스튜디오 패널 고정 높이 270px(헤더 + 메뉴바 + 뷰포트). 늘어난 높이는 뷰포트가 가져간다. */
-  max-height: 270px;
-  min-height: 270px;
-}
 /* 이동 패널은 경로 표시줄 + 스크롤되는 폴더 목록까지 들어가 가장 길다. */
 .search-bar-confirm-panel.mode-move {
   justify-content: flex-start;
@@ -755,11 +835,6 @@ main.page {
    기능을 한 아이콘으로 묶은 만큼 제목의 존재감도 조금 더 준다. */
 .search-bar-confirm-title--studio {
   font-size: 21px;
-}
-/* 스튜디오 패널 제목은 22px(다른 패널 제목은 그대로 21px). */
-.search-bar-confirm-panel.mode-studio .search-bar-confirm-title--studio {
-  font-size: 22px;
-  font-weight: 600;
 }
 /* 삭제 확인 보조 설명(고정 문구). 제목과의 간격을 조금 더 줄여 본문을
    살짝 위로 올린다. */
@@ -896,64 +971,6 @@ main.page {
 .studio-toolkit-icon-btn:active {
   transform: scale(0.88);
 }
-/* 선택된 항목이 없어 휴지통·다운로드·블러가 disabled여도 흐릿하게 만들지
-   않는다 — 항상 같은 모습으로 보이게 하고, 눌러도 그냥 아무 일이 없는
-   쪽을 택했다(각 핸들러가 이미 빈 선택이면 조용히 아무 것도 안 한다).
-   정보 아이콘도 같은 이유로 켜고 꺼도 색이 바뀌지 않는다 — aria-pressed로
-   상태는 전달하되, 눈에 보이는 표시는 실제 용량 캡션이 뜨고 사라지는 것으로
-   충분하다고 봤다. */
-
-/* ── 전송 중에만 나타나는 헤더 버튼: 축소 검색 아이콘과 완전히 같은 재질·크기·
-   타이밍이고, 검색바와 삼점바 사이에 자리한다. ── */
-.header-transfer {
-  position: relative;
-  isolation: isolate;
-  flex: none;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 0;
-  height: 45px;
-  margin-right: 0;
-  border-radius: 999px;
-  color: var(--text-2);
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(28px) saturate(200%);
-  backdrop-filter: blur(28px) saturate(200%);
-  box-shadow: none;
-  opacity: 0;
-  transition: width 0.45s var(--spring), margin-right 0.45s var(--spring), opacity 0.3s var(--ease), box-shadow 0.3s var(--ease);
-}
-.header-transfer.visible {
-  width: 45px;
-  margin-right: 8px;
-  opacity: 1;
-  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
-}
-.header-transfer svg {
-  flex: none;
-}
-/* 버튼 테두리를 따라 도는 전체 진행도 게이지. 12시 방향에서 시작해 시계
-   방향으로 채워지도록 -90도 돌려 둔다. */
-.header-transfer-ring {
-  position: absolute;
-  inset: 0;
-  transform: rotate(-90deg);
-  pointer-events: none;
-}
-.header-transfer-ring circle {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.5px;
-}
-.header-transfer-ring-track {
-  stroke-opacity: 0.28;
-}
-.header-transfer-ring-fill {
-  stroke-linecap: round;
-  transition: stroke-dashoffset 0.15s linear;
-}
 
 /* 폴더 안으로 들어갔을 때 제목 왼쪽에 붙는 뒤로 가기. */
 .header-back {
@@ -988,7 +1005,7 @@ main.page {
   -webkit-backdrop-filter: blur(28px) saturate(200%);
   backdrop-filter: blur(28px) saturate(200%);
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
-  color: var(--text-2);
+  color: var(--icon);
   transition: transform 0.35s var(--spring);
 }
 .header-circle-btn:active {
@@ -1015,8 +1032,15 @@ main.page {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
-  gap: 16px 12px;
+  /* 가로 칸 수는 최소 3칸, 최대 5칸. 칸 최소폭 104px을 기준으로 채우되, 하한은 5칸이 꽉 차는
+     폭((100% - 4칸 간격) / 5)보다 작아지지 않고(그래서 6칸 이상이 안 된다), 상한은 3칸이
+     꽉 차는 폭((100% - 2칸 간격) / 3)을 넘지 않는다(그래서 2칸 이하가 안 된다). */
+  --grid-gap-x: 12px;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(clamp((100% - 4 * var(--grid-gap-x)) / 5, 104px, (100% - 2 * var(--grid-gap-x)) / 3), 1fr)
+  );
+  gap: 16px var(--grid-gap-x);
 }
 .drive-tile-btn {
   width: 100%;
@@ -1052,7 +1076,7 @@ main.page {
   align-items: center;
   justify-content: center;
   border-radius: 16px;
-  color: var(--text-2);
+  color: var(--icon);
   background: var(--glass);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
   backdrop-filter: blur(28px) saturate(200%);
@@ -1185,7 +1209,7 @@ main.page {
 .drive-row-icon {
   flex: none;
   display: flex;
-  color: var(--text-2);
+  color: var(--icon);
 }
 .drive-row-text {
   min-width: 0;
@@ -1277,7 +1301,7 @@ main.page {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--text-2);
+  color: var(--icon);
 }
 
 /* ── 파일 뷰어: 이미지·영상을 누르면 다운로드 대신 뜨는 전체화면 오버레이. ── */
@@ -1600,7 +1624,7 @@ main.page {
 .rename-close {
   flex: none;
   display: flex;
-  color: var(--text-2);
+  color: var(--icon);
   transition: transform 0.35s var(--spring);
 }
 .rename-close:active {
@@ -1763,7 +1787,7 @@ main.page {
 .move-path-back {
   flex: none;
   display: flex;
-  color: var(--text-2);
+  color: var(--icon);
   transition: transform 0.35s var(--spring);
 }
 .move-path-back:active {
@@ -1819,7 +1843,7 @@ main.page {
 .move-row-icon {
   flex: none;
   display: flex;
-  color: var(--text-2);
+  color: var(--icon);
 }
 .move-row-name {
   min-width: 0;
@@ -1835,72 +1859,6 @@ main.page {
   justify-content: center;
   font-size: 14px;
   color: var(--text-2);
-}
-
-/* ── 전송 현황 화면 ───────────────────────────────────────────────────── */
-.transfer-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.transfer-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(28px) saturate(200%);
-  backdrop-filter: blur(28px) saturate(200%);
-  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
-}
-.transfer-icon {
-  flex: none;
-  display: flex;
-  color: var(--text-2);
-}
-.transfer-body {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-.transfer-name {
-  font-size: 14px;
-  color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.transfer-track {
-  height: 4px;
-  border-radius: 999px;
-  background: var(--glass-border);
-  overflow: hidden;
-}
-.transfer-fill {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--text);
-  transition: width 0.3s var(--ease);
-}
-.transfer-item--error .transfer-fill {
-  background: var(--danger);
-}
-.transfer-status {
-  flex: none;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-2);
-  font-variant-numeric: tabular-nums;
-}
-.transfer-item--error .transfer-status {
-  color: var(--danger);
 }
 
 /* ── 설정 탭 리스트: 지금은 스튜디오 툴킷 on/off 한 줄뿐이다. ── */
@@ -2216,16 +2174,6 @@ main.page {
   }
 }
 
-
-/* 스튜디오 패널이 열려 있을 때만 확인 버튼을 스튜디오 색 체계로(다른 패널의
-   확인 버튼은 그대로): 회색 40% 배경, 15px·400·100% 글자. */
-.bottom-search-wrap .search-dock.studio-mode .search-bar-inline-confirm {
-  background: var(--studio-gray-35);
-  color: var(--text);
-  font-size: 14px;
-  font-weight: 500;
-}
-
 /* ── 폴더 썸네일 지정: 정보(i)를 켠 단일 선택 폴더에 뜨는 작은 사람 아이콘, 그리고
    지정 모드에서 이미지가 아닌 항목을 흐리게 막는 스타일. ── */
 .drive-thumb-pick {
@@ -2234,7 +2182,7 @@ main.page {
   justify-content: center;
   flex: none;
   /* 웹사이트 표준 아이콘 색(툴킷 아이콘과 같은 --text-2) */
-  color: var(--text-2);
+  color: var(--icon);
   cursor: pointer;
   -webkit-touch-callout: none;
 }
@@ -2278,12 +2226,6 @@ main.page {
 .drive-row.is-pick-dim {
   opacity: var(--studio-disabled);
   pointer-events: none;
-}
-/* 스튜디오/불러오기 확인 버튼은 폭을 56px로 고정한다(진행 막대 폭의 기준). */
-.search-dock.studio-mode .search-bar-inline-confirm {
-  box-sizing: border-box;
-  width: 56px;
-  padding: 0;
 }
 /* 진행 막대가 있는 동안(또는 저장 중) 스튜디오 안의 모든 기능·버튼·텍스트 터치를 막는다. */
 .search-bar-confirm-panel.is-locked .search-bar-confirm-content {

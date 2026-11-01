@@ -5,7 +5,6 @@ import SplashScreen from "./components/SplashScreen";
 import AuthPage from "./pages/AuthPage";
 import SettingsPage from "./pages/SettingsPage";
 import FilesPage from "./pages/FilesPage";
-import TransfersPage from "./pages/TransfersPage";
 import TrashPage from "./pages/TrashPage";
 import TagsPage from "./pages/TagsPage";
 import DuplicatesPage from "./pages/DuplicatesPage";
@@ -20,6 +19,9 @@ import {
 } from "./lib/session";
 import {
   clearFolderThumbnail,
+  copyItems,
+  getStorageUsed,
+  renameFiles,
   createFolder,
   createSplitPreset,
   downloadFile,
@@ -38,6 +40,7 @@ import {
 } from "./lib/drive";
 import { isImage, isVideo } from "./lib/thumbnail";
 import { isOptimizableFile } from "./lib/optimize";
+import { extensionOf } from "./lib/filename";
 import { isSearchActive } from "./lib/search";
 import { loadTheme, saveTheme } from "./lib/theme";
 
@@ -115,13 +118,15 @@ export default function App() {
   // 모달 대신 하단 검색바가 위로 확장되며 그 자리에서 확인을 받는다
   // (BottomSearchBar 참고) — 다른 삭제·복원 확인은 전부 그대로 ConfirmModal.
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  // 검색바의 레이어 버튼으로 여는 빈 스튜디오 패널(하단에서 열리는 애니메이션만 남아 있다).
-  const [studioOpen, setStudioOpen] = useState(false);
-  // 스튜디오 툴킷의 이동(→) 아이콘. 삭제 확인과 같은 방식으로 하단 검색바가
-  // 확장되는 패널을 쓴다. 패널 안에서 드라이브를 폴더별로 눌러 내려가다가
+  // 선택 메뉴(헤더의 삼점)의 이동·복사. 삭제 확인과 같은 방식으로 하단 검색바가
+  // 확장되는 패널을 쓴다(moveMode가 "copy"면 같은 패널로 복사한다). 패널 안에서 드라이브를 폴더별로 눌러 내려가다가
   // 확인을 누르면 지금 들어와 있는 폴더로 옮긴다(movePath가 빈 배열이면
   // 최상위). moveRows는 지금 보고 있는 폴더의 목록이다.
   const [moveOpen, setMoveOpen] = useState(false);
+  const [moveMode, setMoveMode] = useState("move"); // move | copy
+  // 선택 메뉴의 이름 바꾸기. 새 폴더처럼 하단 검색바가 이름 입력창이 된다.
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameName, setRenameName] = useState("");
   const [movePath, setMovePath] = useState([]); // [{ id, name }]
   const [moveRows, setMoveRows] = useState([]);
   const [moveRowsState, setMoveRowsState] = useState("loading"); // loading | ready | error
@@ -136,12 +141,8 @@ export default function App() {
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
 
-  // 전송(업로드/다운로드) 상태. 진행 중인 것이 있을 때만 헤더에 버튼이 뜬다.
-  const [transfers, setTransfers] = useState([]);
-  const [showTransfers, setShowTransfers] = useState(false);
-  // 헤더 버튼 테두리에 도는 원형 게이지용 전체 진행도(0~1). 여러 파일을 한 번에
-  // 올릴 때는 "지금 파일까지의 진행률"이 아니라 배치 전체 기준으로 계산한다.
-  const [transferRing, setTransferRing] = useState(0);
+  // 스토리지 섹션(헤더)의 사용량. 목록이 새로 고쳐질 때마다 다시 받는다.
+  const [storageUsed, setStorageUsed] = useState(0);
 
   // 이미지·영상은 누르면 다운로드하지 않고 이 화면에서 바로 크게 보여준다.
   // 뷰어 안에서 스와이프로 이전/다음으로 넘기려면 지금 폴더의 미디어 목록과
@@ -178,6 +179,19 @@ export default function App() {
   }, []);
 
 
+  useEffect(() => {
+    if (!session) return undefined;
+    let cancelled = false;
+    getStorageUsed(session.token)
+      .then((bytes) => {
+        if (!cancelled) setStorageUsed(bytes);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.token, refreshKey]);
+
   const showToast = (message) => {
     clearTimeout(toastTimerRef.current);
     setToast(message);
@@ -186,7 +200,6 @@ export default function App() {
   useEffect(() => () => clearTimeout(toastTimerRef.current), []);
 
   const parentId = folderPath.length ? folderPath[folderPath.length - 1].id : null;
-  const activeTransfer = useMemo(() => transfers.find((t) => t.status === "active"), [transfers]);
 
   // 폴더를 옮기거나 검색어가 바뀌면(검색 결과 자체가 통째로 달라지므로)
   // 이전에 보이던 항목 기준의 선택은 의미가 없다.
@@ -249,16 +262,13 @@ export default function App() {
     setSelectedIds(checked ? new Set(visibleItems.map((it) => it.id)) : new Set());
   };
 
+  // 업로드·다운로드 실행. 전송 현황 화면은 없어졌으므로 실패했을 때만 알린다.
   const track = async (name, direction, run) => {
-    const id = crypto.randomUUID();
-    setTransfers((prev) => [{ id, name, direction, progress: 0, status: "active" }, ...prev]);
-    const update = (patch) => setTransfers((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
     try {
-      await run((progress) => update({ progress }));
-      update({ progress: 1, status: "done" });
+      await run(() => {});
       return true;
     } catch {
-      update({ status: "error" });
+      window.alert(direction === "up" ? `${name} 업로드에 실패했습니다` : `${name} 다운로드에 실패했습니다`);
       return false;
     }
   };
@@ -271,7 +281,6 @@ export default function App() {
     if (showFavorites) setShowFavorites(false);
     const files = Array.from(fileList ?? []);
     const target = parentId;
-    setTransferRing(0);
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const ok = await track(file.name, "up", (onProgress) =>
@@ -282,7 +291,6 @@ export default function App() {
           parentId: target,
           onProgress: (p) => {
             onProgress(p);
-            setTransferRing((i + p) / files.length);
           },
         })
       );
@@ -337,14 +345,12 @@ export default function App() {
       setViewerIndex(idx >= 0 ? idx : 0);
       return;
     }
-    setTransferRing(0);
     return track(item.name, "down", (onProgress) =>
       downloadFile({
         token: session.token,
         item,
         onProgress: (p) => {
           onProgress(p);
-          setTransferRing(p);
         },
       })
     );
@@ -359,8 +365,7 @@ export default function App() {
 
     if (targets.length === 1) {
       const item = targets[0];
-      setTransferRing(0);
-      const onProgress = (p) => setTransferRing(p);
+      const onProgress = () => {};
       if (item.is_folder) {
         await track(`${item.name}.zip`, "down", (progress) =>
           downloadFolderAsZip({
@@ -400,7 +405,6 @@ export default function App() {
     }
 
     const zipName = `선택한 항목 ${targets.length}개.zip`;
-    setTransferRing(0);
     await track(zipName, "down", (progress) =>
       downloadSelectionAsZip({
         token: session.token,
@@ -408,7 +412,6 @@ export default function App() {
         zipName,
         onProgress: (p) => {
           progress(p);
-          setTransferRing(p);
         },
       })
     );
@@ -470,24 +473,73 @@ export default function App() {
     setDeleteConfirmOpen(false);
   };
 
-  // 검색바 오른쪽 끝의 레이어 버튼: 내용이 없는 빈 스튜디오 패널을 하단에서 연다
-  // (이미 열려 있으면 닫는다). 스튜디오 화면은 삭제되어 열리는 애니메이션만 남았다.
-  const handleStudioSelected = () => {
-    if (studioOpen) {
-      setStudioOpen(false);
-      return;
-    }
-    closeAllToolPanels();
-    setStudioOpen(true);
-  };
-
-  // 삭제 확인·새 폴더·이동·스튜디오는 전부 검색바 위 같은 패널 자리를
+  // 삭제 확인·새 폴더·이동·복사·이름 바꾸기는 전부 검색바 위 같은 패널 자리를
   // 공유한다 — 그중 하나를 열기 전에 항상 이걸 먼저 불러 나머지를 전부 닫는다.
   const closeAllToolPanels = () => {
     setDeleteConfirmOpen(false);
     setNewFolderOpen(false);
     cancelMove();
-    setStudioOpen(false);
+    setRenameOpen(false);
+  };
+
+  // 선택 메뉴의 삭제: 하단 검색바의 삭제 확인 패널을 연다(이미 열려 있으면 닫는다).
+  const handleDeleteSelected = () => {
+    if (deleteConfirmOpen) {
+      cancelDeleteConfirm();
+      return;
+    }
+    if (!selectedIds.size) return;
+    closeAllToolPanels();
+    setDeleteConfirmOpen(true);
+  };
+
+  // 선택 메뉴의 복사: 이동과 같은 폴더 고르기 패널을 복사 모드로 연다.
+  const handleCopySelected = () => {
+    if (moveOpen && moveMode === "copy") {
+      closeAllToolPanels();
+      return;
+    }
+    if (!selectedIds.size) return;
+    closeAllToolPanels();
+    setMoveMode("copy");
+    setMovePath([]);
+    setMoveOpen(true);
+  };
+
+  // 선택 메뉴의 이름 바꾸기: 하나면 지금 이름을, 여러 개면 빈 칸을 채워 둔 이름 입력 패널을 연다.
+  const handleRenameSelected = () => {
+    if (renameOpen) {
+      closeAllToolPanels();
+      return;
+    }
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    if (!targets.length) return;
+    closeAllToolPanels();
+    setRenameName(targets.length === 1 ? targets[0].name : "");
+    setRenameOpen(true);
+  };
+
+  // 확인: 하나면 입력한 이름 그대로, 여러 개면 "입력한 이름_1", "_2"…에 각자 원래 확장자를 붙인다.
+  const confirmRename = async () => {
+    const typed = renameName.trim();
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    if (!typed || !targets.length) return;
+    const renames =
+      targets.length === 1
+        ? [{ id: targets[0].id, name: typed }]
+        : targets.map((it, i) => {
+            const ext = it.is_folder ? "" : extensionOf(it.name);
+            return { id: it.id, name: `${typed}_${i + 1}${ext ? `.${ext}` : ""}` };
+          });
+    try {
+      await renameFiles(session.token, renames);
+      setRenameOpen(false);
+      setRenameName("");
+      setSelectedIds(new Set());
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("이름을 바꾸지 못했습니다");
+    }
   };
 
   // 선택된 항목으로 이동 패널을 연다(항상 최상위에서 시작). 폴더를 옮기면
@@ -501,6 +553,7 @@ export default function App() {
     }
     if (!selectedIds.size) return;
     closeAllToolPanels();
+    setMoveMode("move");
     setMovePath([]);
     setMoveOpen(true);
   };
@@ -553,12 +606,22 @@ export default function App() {
     if (!ids.length) return;
     const destinationId = movePath.length ? movePath[movePath.length - 1].id : null;
     try {
-      await moveFiles(session.token, ids, destinationId);
+      if (moveMode === "copy") {
+        await copyItems({
+          token: session.token,
+          userId: session.userId,
+          items: visibleItems.filter((it) => selectedIds.has(it.id)),
+          destinationId,
+          sourceParentId: parentId,
+        });
+      } else {
+        await moveFiles(session.token, ids, destinationId);
+      }
       cancelMove();
       setSelectedIds(new Set());
       setRefreshKey((k) => k + 1);
     } catch {
-      window.alert("옮기지 못했습니다");
+      window.alert(moveMode === "copy" ? "복사하지 못했습니다" : "옮기지 못했습니다");
     }
   };
 
@@ -693,17 +756,17 @@ export default function App() {
           중이다 — 스플래시는 그 위를 덮고 있다가 로딩이 끝나면(initialFilesReady)
           사라지며 이미 준비된 화면으로 자연스럽게 전환된다. */}
       {!initialFilesReady && <SplashScreen />}
-      {showTransfers ? (
-        <TransfersPage transfers={transfers} onBack={() => setShowTransfers(false)} onClearAll={() => setTransfers([])} />
-      ) : (
+      {(
         <>
           <main className="page">
             <PageHeader
               title={title}
-              resetKey={favoritesView ? "favorites" : "files"}
-              viewMode={viewMode}
-              onUpload={handleUpload}
-              onNewFolder={handleNewFolder}
+              hasSelection={selectedIds.size > 0}
+              onDeleteSelected={handleDeleteSelected}
+              onMoveSelected={handleMoveSelected}
+              onCopySelected={handleCopySelected}
+              onRenameSelected={handleRenameSelected}
+              storageUsed={storageUsed}
               canGoBack={folderPath.length > 0 || favoritesView}
               onBack={() => {
                 if (favoritesView) {
@@ -714,11 +777,6 @@ export default function App() {
                   setFolderPath((p) => p.slice(0, -1));
                 }
               }}
-              transferVisible={transfers.length > 0}
-              transferInProgress={Boolean(activeTransfer)}
-              transferDirection={(activeTransfer ?? transfers[0])?.direction}
-              transferProgress={transferRing}
-              onOpenTransfers={() => setShowTransfers(true)}
               onOpenSettings={favoritesView ? undefined : () => setShowSettings(true)}
             />
             <FilesPage
@@ -754,10 +812,15 @@ export default function App() {
             onChangeNewFolderName={setNewFolderName}
             onConfirmNewFolder={confirmNewFolder}
             onCancelNewFolder={cancelNewFolder}
-            onOpenStudio={handleStudioSelected}
-            studioOpen={studioOpen}
-            onCancelStudio={() => setStudioOpen(false)}
+            onUpload={handleUpload}
+            onNewFolder={handleNewFolder}
+            renameOpen={renameOpen}
+            renameName={renameName}
+            onChangeRenameName={setRenameName}
+            onConfirmRename={confirmRename}
+            onCancelRename={() => setRenameOpen(false)}
             moveOpen={moveOpen}
+            moveMode={moveMode}
             moveItemCount={selectedIds.size}
             movePath={movePath}
             moveRows={moveRows}

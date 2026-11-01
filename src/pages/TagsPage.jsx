@@ -77,7 +77,6 @@ export default function TagsPage({ session, onBack }) {
       <div className="page page--flush">
         {state === "loading" && <p className="drive-note"><Spinner /></p>}
         {state === "error" && <p className="drive-note">불러오지 못했습니다</p>}
-        {state === "ready" && tags.length === 0 && <p className="drive-note">태그가 없습니다</p>}
         {state === "ready" && tags.length > 0 && (
           <ul className="drive-list">
             {tags.map(({ tag, count }) => (

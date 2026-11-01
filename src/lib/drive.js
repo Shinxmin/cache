@@ -502,6 +502,30 @@ export async function copyFileTo({ token, userId, item, blob, mime, name, parent
   return row?.id ?? null;
 }
 
+// 선택 메뉴의 복사: 고른 항목들을 destinationId 폴더(null이면 최상위)에 새로 복제한다. 파일은 R2
+// 객체까지 새로 만들고(copyFileTo), 폴더는 같은 이름의 새 폴더를 만든 뒤 안의 항목을 재귀로 복제한다.
+// 원래 있던 폴더에 그대로 복사하면 이름 뒤(확장자 앞)에 " 복사본"을 붙여 구분한다.
+export async function copyItems({ token, userId, items, destinationId = null, sourceParentId = null }) {
+  const sameFolder = (destinationId ?? null) === (sourceParentId ?? null);
+  const copyName = (name, isFolder) => {
+    if (!sameFolder) return name;
+    const ext = isFolder ? "" : extensionOf(name);
+    return ext ? `${name.slice(0, -(ext.length + 1))} 복사본.${ext}` : `${name} 복사본`;
+  };
+  const copyOne = async (item, parentId, name) => {
+    if (item.is_folder) {
+      // 새 폴더를 만들기 전에 원본 목록을 먼저 받아 둔다(새로 만든 폴더가 목록에 섞이지 않게).
+      const children = await listFiles(token, item.id);
+      const created = await createFolder(token, name, parentId);
+      for (const child of children) await copyOne(child, created?.id ?? null, child.name);
+      return;
+    }
+    if (!item.r2_key) return;
+    await copyFileTo({ token, userId, item, name, parentId });
+  };
+  for (const item of items) await copyOne(item, destinationId, copyName(item.name, item.is_folder));
+}
+
 // 일반적인 "브라우저 다운로드" 방식(a[download] 클릭) — Downloads 폴더나
 // 파일 앱으로 저장된다. 공유 시트를 쓸 수 없거나 사용자가 공유 자체에
 // 실패했을 때(취소는 제외) 대체 경로로도 쓰인다.
