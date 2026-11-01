@@ -43,7 +43,7 @@ import { loadTheme, saveTheme } from "./lib/theme";
 
 const TOAST_MS = 2000;
 
-const THEME_COLORS = { dark: "#000000", light: "#F5F5F7" };
+const THEME_COLORS = { dark: "#000000", light: "#FFFFFF" };
 
 export default function App() {
   // 설정의 테마 스위치가 고른 값 — "system"(기기 설정을 그대로 따름) |

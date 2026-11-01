@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import HeaderMoreButton from "./HeaderMoreButton";
-import { BackIcon, DownloadIcon, SettingsIcon, UploadIcon } from "./icons";
+import { BackIcon, DownloadIcon, LayersIcon, SettingsIcon, UploadIcon } from "./icons";
 
 // 전송 버튼(45px 원) 테두리에 그리는 진행도 게이지. 버튼 지름보다 살짝 안쪽에
 // 그려서 원형 버튼 테두리를 따라 도는 것처럼 보이게 한다.
@@ -42,6 +42,11 @@ export default function PageHeader({
 
   return (
     <header className="page-header" ref={ref}>
+      {/* 파일 화면 맨 위의 새 레이아웃: 레이어(3층 스택) 아이콘 + "스토리지" 제목. */}
+      <div className="page-brand">
+        <LayersIcon size={26} />
+        <h2 className="page-brand-title">스토리지</h2>
+      </div>
       {/* 제목과 액션(더보기·설정·전송현황 버튼)을 한 행에 놓고 수직 중앙 정렬한다. */}
       <div className="page-header-row">
         {canGoBack && (

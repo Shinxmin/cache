@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BackIcon, FileIcon } from "./icons";
+import { BackIcon, FileIcon, LayersIcon } from "./icons";
 import Spinner from "./Spinner";
 
 // 하단바 아이콘(단일 solid fill, currentColor)과 같은 방식으로 그린 돋보기 아이콘.
@@ -15,17 +15,6 @@ function SearchIcon({ size = 18 }) {
         d="M17 10A7 7 0 1 1 3 10a7 7 0 0 1 14 0Zm-2.8 0a4.2 4.2 0 1 0-8.4 0 4.2 4.2 0 0 0 8.4 0Z"
       />
       <rect fill="currentColor" x="17" y="8.7" width="6.5" height="2.6" rx="1.3" transform="rotate(45 10 10)" />
-    </svg>
-  );
-}
-
-// 구글 머티리얼 디자인의 "레이어(layers)" 아이콘. 검색바 오른쪽 끝의 알약
-// 버튼(패널이 닫혀 있을 때만 뜬다)에 쓰인다.
-function LayersIcon({ size = 18 }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
-      <path d="M12 2 3 7.5 12 13 21 7.5 12 2z" />
-      <path d="M3 15.5 12 21 21 15.5 18.4 13.9 12 17.7 5.6 13.9 3 15.5z" />
     </svg>
   );
 }
