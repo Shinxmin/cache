@@ -3,11 +3,7 @@ import ThemeSwitch from "../components/ThemeSwitch";
 import { BackIcon, ChevronRightIcon } from "../components/icons";
 import { APP_VERSION } from "../lib/version";
 import { getStorageUsed } from "../lib/drive";
-import { formatBytes } from "../lib/format";
-
-// 기본 용량 표기 기준(10GB) — 실제로 서버가 강제하는 한도는 아니고, 화면에
-// 보여줄 진행 막대·수치의 분모로만 쓴다.
-const STORAGE_QUOTA_BYTES = 10 * 1024 ** 3;
+import { formatBytes, STORAGE_QUOTA_BYTES } from "../lib/format";
 
 // 설정 화면. 예전엔 하단 내비바의 한 탭이었지만, 하단 내비바 자체가
 // 없어진 뒤로는 파일 탭 헤더의 톱니바퀴 버튼으로 여는 화면이 됐다
@@ -61,7 +57,7 @@ export default function SettingsPage({
                 <div className="settings-storage-fill" style={{ width: `${storagePercent}%` }} />
               </div>
               <span className="settings-storage-text">
-                {formatBytes(storageUsed, { fixedDecimal: true })} / {formatBytes(STORAGE_QUOTA_BYTES, { fixedDecimal: true })}
+                {formatBytes(storageUsed)} / {formatBytes(STORAGE_QUOTA_BYTES)}
               </span>
             </div>
           </div>

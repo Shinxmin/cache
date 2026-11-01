@@ -1,31 +1,89 @@
-import { useEffect, useRef } from "react";
-import HeaderMoreButton from "./HeaderMoreButton";
-import { BackIcon, DownloadIcon, LayersIcon, OpenInNewIcon, SettingsIcon, UploadIcon } from "./icons";
+import { useEffect, useRef, useState } from "react";
+import { BackIcon, EditIcon, FileCopyIcon, FileMoveIcon, LayersIcon, OpenInNewIcon, SettingsIcon, TrashIcon } from "./icons";
+import { formatBytes, STORAGE_QUOTA_BYTES } from "../lib/format";
 
-// 전송 버튼(45px 원) 테두리에 그리는 진행도 게이지. 버튼 지름보다 살짝 안쪽에
-// 그려서 원형 버튼 테두리를 따라 도는 것처럼 보이게 한다.
-const TRANSFER_RING_R = 20;
-const TRANSFER_RING_C = 2 * Math.PI * TRANSFER_RING_R;
+function DotsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+      <circle cx="5.5" cy="12" r="2.2" />
+      <circle cx="12" cy="12" r="2.2" />
+      <circle cx="18.5" cy="12" r="2.2" />
+    </svg>
+  );
+}
+
+// 파일·폴더를 하나라도 선택하고 있을 때만 설정 버튼 왼쪽에 나타나는 원형 삼점 버튼.
+// 선택이 생기면 폭 0에서 45px로 펼쳐지며 나타나고, 선택이 모두 풀리면 같은 방식으로
+// 사라진다(열려 있었다면 닫힌다). 누르면 오른쪽 끝은 그대로 둔 채 왼쪽으로 자라나
+// 삭제·이동·복사·이름 바꾸기 네 항목(아이콘 + 아래 글자)이 드러난다. 항목을 누르면 그
+// 자리에서 닫히고, 해당 동작의 하단바 패널이 열린다.
+function SelectionMoreButton({ visible, onDelete, onMove, onCopy, onRename }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!visible) setOpen(false);
+  }, [visible]);
+
+  const items = [
+    { key: "delete", label: "삭제", icon: <TrashIcon size={17} />, run: onDelete },
+    { key: "move", label: "이동", icon: <FileMoveIcon size={17} />, run: onMove },
+    { key: "copy", label: "복사", icon: <FileCopyIcon size={17} />, run: onCopy },
+    { key: "rename", label: "이름 바꾸기", icon: <EditIcon size={17} />, run: onRename },
+  ];
+
+  return (
+    <div
+      className={`header-more header-more--selection${visible ? " visible" : ""}${open ? " open" : ""}`}
+      aria-hidden={!visible}
+    >
+      <div className="header-more-inner">
+        {items.map((item) => (
+          <button
+            key={item.key}
+            className="header-more-item"
+            type="button"
+            tabIndex={open ? 0 : -1}
+            aria-hidden={!open}
+            onClick={() => {
+              setOpen(false);
+              item.run?.();
+            }}
+          >
+            <span className="header-more-icon">{item.icon}</span>
+            <span className="header-more-label">{item.label}</span>
+          </button>
+        ))}
+        <button
+          className="header-more-item header-more-toggle"
+          type="button"
+          tabIndex={visible ? 0 : -1}
+          aria-label={open ? "닫기" : "선택 항목 메뉴"}
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span className="header-more-icon">
+            <DotsIcon />
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // 상단 좌측정렬 제목. position: fixed로 화면 상단에 고정되어 스크롤 범위
 // 자체에 포함되지 않는다 — 문서를 아무리 스크롤해도 이 박스는 절대 움직이거나
-// 사라지지 않는다. 검색바는 더 이상 여기 없다 — 예전 하단 내비바 자리로
-// 옮겨서 항상 떠 있다(App.jsx의 BottomSearchBar). 그래서 이 헤더는 제목·
-// 뒤로가기·더보기/설정/전송현황 버튼만 그린다.
+// 사라지지 않는다. 제목·뒤로가기·선택 메뉴(삼점)·설정 버튼, 그리고 그 밑의
+// 스토리지 섹션(사용량 막대)을 그린다. 업로드·새 폴더(+)는 하단바로 옮겨 갔다.
 export default function PageHeader({
   title,
-  viewMode,
-  onUpload,
-  onNewFolder,
   canGoBack,
   onBack,
-  transferVisible,
-  transferInProgress,
-  transferDirection,
-  transferProgress,
-  onOpenTransfers,
+  hasSelection,
+  onDeleteSelected,
+  onMoveSelected,
+  onCopySelected,
+  onRenameSelected,
+  storageUsed = 0,
   onOpenSettings,
-  resetKey,
 }) {
   const ref = useRef(null);
 
@@ -40,6 +98,8 @@ export default function PageHeader({
     return () => ro.disconnect();
   }, []);
 
+  const storagePercent = Math.min(100, (storageUsed / STORAGE_QUOTA_BYTES) * 100);
+
   return (
     <header className="page-header" ref={ref}>
       <div className="page-header-row">
@@ -50,42 +110,15 @@ export default function PageHeader({
         )}
         <h1 className="page-title">{title}</h1>
         <div className="page-header-actions">
-          {/* 이번 세션에 업로드나 다운로드를 한 번이라도 했으면 계속 떠 있는
-              버튼이다(사이트를 새로고침/종료하기 전까지 영구 표시). 테두리를
-              따라 도는 원형 게이지는 실제로 전송 중일 때만 나타나고
-              (transferInProgress), 여러 파일을 한 번에 올릴 때는 지금 파일
-              하나가 아니라 배치 전체 기준 진행도를 보여준다. */}
-          <button
-            className={`header-transfer${transferVisible ? " visible" : ""}`}
-            type="button"
-            aria-label="전송 현황"
-            aria-hidden={!transferVisible}
-            tabIndex={transferVisible ? 0 : -1}
-            onClick={onOpenTransfers}
-          >
-            {transferInProgress && (
-              <svg className="header-transfer-ring" viewBox="0 0 45 45" width="45" height="45" aria-hidden="true">
-                <circle className="header-transfer-ring-track" cx="22.5" cy="22.5" r={TRANSFER_RING_R} />
-                <circle
-                  className="header-transfer-ring-fill"
-                  cx="22.5"
-                  cy="22.5"
-                  r={TRANSFER_RING_R}
-                  strokeDasharray={TRANSFER_RING_C}
-                  strokeDashoffset={TRANSFER_RING_C * (1 - Math.min(1, Math.max(0, transferProgress ?? 0)))}
-                />
-              </svg>
-            )}
-            {transferDirection === "down" ? <DownloadIcon /> : <UploadIcon />}
-          </button>
-          {/* key={resetKey}: 파일 화면↔즐겨찾기 화면을 오가면 새로 마운트되어
-              열려 있던 상태가 닫힌 채로 초기화된다 */}
-          <HeaderMoreButton key={resetKey} onUpload={onUpload} onNewFolder={onNewFolder} />
-          {/* 더 보기(삼점) 바로 오른쪽의 설정 버튼. 더 보기처럼 옆으로 늘어나지
-              않는 고정 45px 원이며, 누르면 바로 설정 화면이 열린다. 파일 화면
-              (홈 탭이 사라진 뒤로는 이 화면이 유일한 기본 화면이다)에서만
-              뜨고, 그 안에서 연 즐겨찾기 화면에서는 뜨지 않는다(onOpenSettings
-              를 안 넘기면 아예 렌더링되지 않는다). */}
+          <SelectionMoreButton
+            visible={Boolean(hasSelection)}
+            onDelete={onDeleteSelected}
+            onMove={onMoveSelected}
+            onCopy={onCopySelected}
+            onRename={onRenameSelected}
+          />
+          {/* 설정 버튼. 고정 45px 원이며, 누르면 바로 설정 화면이 열린다. 즐겨찾기 화면에서는
+              뜨지 않는다(onOpenSettings를 안 넘기면 아예 렌더링되지 않는다). */}
           {onOpenSettings && (
             <button className="header-settings" type="button" aria-label="설정" onClick={onOpenSettings}>
               <SettingsIcon size={19} />
@@ -93,21 +126,38 @@ export default function PageHeader({
           )}
         </div>
       </div>
-      {/* 제목 줄 밑의 새 레이아웃: 레이어(3층 스택) 아이콘 + "스토리지"(본문 크기). 오른쪽의 작은
-          회색 아이콘은 Cloudflare R2 대시보드를 새 탭으로 여는 바로가기다. */}
-      <div className="page-brand">
-        <LayersIcon size={20} />
-        <h2 className="page-brand-title">스토리지</h2>
-        <a
-          className="page-brand-link"
-          href="https://dash.cloudflare.com/?to=/:account/r2/overview"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Cloudflare R2 대시보드 열기"
-        >
-          <OpenInNewIcon size={15} />
-        </a>
-      </div>
+      {/* 스토리지 섹션: 테두리(하단바와 같은 모서리 곡률)로 감싼 상자 안에 레이어 아이콘 + "스토리지",
+          그 아래 사용량 막대(최대 STORAGE_QUOTA_BYTES)와 "3.5GB / 10.0GB" 표기. 오른쪽 위의 작은 회색
+          아이콘은 Cloudflare R2 대시보드를 새 탭으로 여는 바로가기다. */}
+      <section className="page-brand-box">
+        <div className="page-brand">
+          <LayersIcon size={23} />
+          <h2 className="page-brand-title">스토리지</h2>
+          <a
+            className="page-brand-link"
+            href="https://dash.cloudflare.com/?to=/:account/r2/overview"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Cloudflare R2 대시보드 열기"
+          >
+            <OpenInNewIcon size={15} />
+          </a>
+        </div>
+        <div className="storage-usage">
+          <div
+            className="storage-usage-bar"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={STORAGE_QUOTA_BYTES}
+            aria-valuenow={storageUsed}
+          >
+            <div className="storage-usage-fill" style={{ width: `${storagePercent}%` }} />
+          </div>
+          <span className="storage-usage-text">
+            {formatBytes(storageUsed)} / {formatBytes(STORAGE_QUOTA_BYTES)}
+          </span>
+        </div>
+      </section>
     </header>
   );
 }

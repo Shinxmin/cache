@@ -206,3 +206,40 @@ export function OpenInNewIcon({ size = 18 }) {
     </svg>
   );
 }
+
+// 연필(이름 입력) 아이콘. 새 폴더·이름 바꾸기 패널에서 검색바의 돋보기 대신 뜨고,
+// 선택 메뉴의 "이름 바꾸기"에도 쓴다.
+export function EditIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+    </svg>
+  );
+}
+
+// 더하기(+) 아이콘. 하단바의 업로드·새 폴더 메뉴 버튼에 쓴다.
+export function PlusIcon({ size = 20 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+    </svg>
+  );
+}
+
+// 파일 모양 안에 오른쪽 화살표를 뚫은 아이콘(선택 메뉴의 "이동").
+export function FileMoveIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" fillRule="evenodd" aria-hidden="true">
+      <path d="M6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM13 3.5V9h5.5zM7 14.25h5.25V11.5L16.5 15.5l-4.25 4v-2.75H7z" />
+    </svg>
+  );
+}
+
+// 파일 모양 안에 +를 뚫은 아이콘(선택 메뉴의 "복사").
+export function FileCopyIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" fillRule="evenodd" aria-hidden="true">
+      <path d="M6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM13 3.5V9h5.5zM11 11.5h2v3h3v2h-3v3h-2v-3H8v-2h3z" />
+    </svg>
+  );
+}

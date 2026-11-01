@@ -324,13 +324,7 @@ export default function FilesPage({
 
   if (state === "loading") return <p className="drive-note"><Spinner /></p>;
   if (state === "error") return <p className="drive-note">파일을 불러오지 못했습니다</p>;
-  if (!items.length) {
-    return (
-      <p className="drive-note">
-        {searching ? "검색 결과가 없습니다" : favorites ? "즐겨찾기한 항목이 없습니다" : "아직 파일이 없습니다"}
-      </p>
-    );
-  }
+  if (!items.length) return null;
 
   if (viewMode === "list") {
     return (
