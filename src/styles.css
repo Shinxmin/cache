@@ -731,92 +731,6 @@ main.page {
   font-size: 22px;
   font-weight: 600;
 }
-/* 스튜디오 제목 밑, 그리고 기능 선택 줄(아이콘 줄/기능 화면) 밑에 긋는
-   구분선 두 개 — 그 사이에 기능 선택 줄이 낀 샌드위치 모양이다. */
-.search-bar-studio-divider {
-  flex: none;
-  height: 1px;
-  margin: 3px 0;
-  background: var(--studio-t10);
-}
-/* 제목 바로 밑 첫 구분선만 위쪽 여백을 조금 더 준다 — 제목과 구분선
-   사이가 답답해 보이지 않게. */
-.search-bar-confirm-title--studio + .search-bar-studio-divider {
-  margin-top: 8px;
-}
-/* ── 스튜디오 레이아웃(편집툴 느낌): 헤더(제목 + < 1/3 >) / 메뉴바 / 뷰포트.
-   패널 높이는 250px 고정이라 상태가 바뀌어도 크기가 변하지 않는다. ── */
-.studio-head {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.studio-head + .search-bar-studio-divider {
-  /* 제목과 그 밑 구분선 사이 여백을 조금 더 준다. */
-  margin-top: 8px;
-}
-.studio-menubar {
-  flex: none;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-/* 일시적 미구현 메뉴: 글자만 있고 눌러도 반응이 없다. */
-.studio-menubar-item {
-  padding: 0;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--studio-t75);
-  cursor: default;
-}
-.studio-viewport {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
-  margin: 8px 0 6px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background: var(--studio-gray-35);
-  overflow: hidden;
-}
-/* 파일이 있을 때는 뷰포트 배경을 없앤다(없을 땐 그대로 유지). */
-.studio-viewport.has-file {
-  background: none;
-}
-.studio-viewport-img {
-  /* 높이는 뷰포트 세로폭에 딱 맞추고 가로는 원본 비율대로(가로 100%·세로 200 파일이
-     뷰포트 높이 100이면 50). 너무 넓은 이미지는 뷰포트 폭에서 멈춰 전체가 보이게 한다.
-     뷰포트가 flex 가운데 정렬이라 항상 중앙에 놓인다. */
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  margin: auto;
-  height: 100%;
-  width: auto;
-  max-width: 100%;
-  object-fit: contain;
-  display: block;
-  pointer-events: none;
-  -webkit-touch-callout: none;
-}
-.studio-viewport-empty {
-  display: flex;
-  color: var(--studio-t70);
-}
-.studio-viewport .optimize-result-stats,
-.studio-viewport .optimize-progress-track,
-.studio-viewport .optimize-progress-count {
-  align-self: stretch;
-  margin-left: 12px;
-  margin-right: 12px;
-}
 /* 삭제 확인 보조 설명(고정 문구). 제목과의 간격을 조금 더 줄여 본문을
    살짝 위로 올린다. */
 .search-bar-confirm-desc {
@@ -850,36 +764,6 @@ main.page {
 .search-bar-confirm-filename--studio {
   flex: none;
   margin-top: 2px;
-}
-.search-bar-confirm-nav {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex: none;
-}
-.search-bar-confirm-nav-btn {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  color: var(--studio-t70);
-}
-/* 오른쪽 화살표(ChevronRightIcon)를 뒤집어 왼쪽(이전) 화살표로 쓴다 —
-   아이콘을 새로 그리지 않고 재사용. */
-.search-bar-confirm-nav-btn--prev {
-  transform: scaleX(-1);
-}
-.search-bar-confirm-nav-btn:disabled {
-  opacity: var(--studio-disabled);
-}
-.search-bar-confirm-nav-count {
-  flex: none;
-  min-width: 28px;
-  font-size: 12px;
-  color: var(--studio-t70);
-  text-align: center;
 }
 /* ── 체크박스: 네이티브 input은 투명 처리해 접근성/토글 동작만 맡기고, 시각
    표현은 형제 요소(.checkbox-box)가 담당한다. 체크 시 text/bg 색을 서로
@@ -965,61 +849,6 @@ main.page {
   color: var(--bg);
 }
 
-/* ── 스튜디오 툴킷: 홈·파일 탭에서 검색바 밑에, 제목·검색바와 같은 fixed 헤더
-   안에 고정되는 선택 도구줄. 좌우 여백 없이(헤더의 20px 좌우 패딩을 음수
-   마진으로 상쇄) 위아래 가로선 하나씩으로만 구분된다. 항상 떠 있다.
-   검색바가 스크롤로 축소되면 PageHeader가 넘겨주는 transform으로 검색바
-   자리까지 끌어올려진다(같은 --spring 곡선이라 다른 접힘 애니메이션과
-   동일하게 유기적으로 움직인다). ── */
-.studio-toolkit {
-  position: relative;
-  z-index: 1;
-  margin: 0 -20px;
-  padding: 10px 20px;
-  min-height: 44px;
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  /* 1열 아이콘 사이 간격. 남는 폭(체크박스+기본 도구 사이 칸 수)을 고르게
-     나눈 값이라 화면이 넓어질수록 유동적으로 벌어지지만, 이 값(20px)을
-     넘어서는 더 벌어지지 않는다 — 그 이상 남는 폭은 그냥 오른쪽에 빈 채로
-     남는다(가로로 아주 넓은 화면에서 아이콘 사이가 비정상적으로 멀어지는
-     것을 막기 위함). */
-  --toolkit-gap: min(20px, calc((100% - 240px) / 7));
-  border-top: 1px solid var(--glass-border);
-  border-bottom: 1px solid var(--glass-border);
-  transition: transform 0.45s var(--spring);
-  will-change: transform;
-}
-.studio-toolkit-row {
-  display: flex;
-  align-items: center;
-  gap: var(--toolkit-gap);
-  min-height: 22px;
-  color: var(--text-2);
-}
-/* 체크박스+기본 도구로 항상 고정된 개수다. flex-start + 위 --toolkit-gap
-   조합이 예전의 space-between과 똑같은 결과를 내면서도(첫 항목인
-   체크박스는 항상 왼쪽 끝에 붙고, 남는 폭을 각 칸에 고르게 나눠 유동적으로
-   벌어진다) 위쪽 캡을 추가로 강제한다. 개수가 고정이라 줄바꿈 없이 한
-   줄에 다 들어가도록 계산돼 있다(가장 좁은 iPhone 폭 375px 기준으로
-   확인). */
-.studio-toolkit-row-base {
-  flex-wrap: nowrap;
-  justify-content: flex-start;
-}
-.studio-toolkit-select {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: none;
-  cursor: pointer;
-  color: var(--text-2);
-}
-.studio-toolkit-select-label {
-  font-size: 13px;
-  white-space: nowrap;
-}
 /* 아이콘마다 실제 그려지는 폭이 달라도(예: 원형 그래프 vs 화살표) 버튼
    자체는 같은 폭(22px)을 차지하도록 고정해, grid 칸 가운데에서 간격이
    고르게 보이게 한다. */
@@ -1770,19 +1599,6 @@ main.page {
 .rename-input::placeholder {
   color: var(--text-2);
 }
-.search-bar-confirm-extras-btn {
-  flex: none;
-  height: 30px;
-  padding: 0;
-  background: none;
-  color: var(--studio-t75);
-  font-size: 12px;
-  font-weight: 500;
-  transition: opacity 0.2s var(--ease);
-}
-.search-bar-confirm-extras-btn:active {
-  opacity: 0.5;
-}
 /* 다크 모드에서는 이 네 버튼(확인·스튜디오 열기·아이콘 줄·일괄 지우기·
    적용)의 연회색 배경을 살짝 부드러운 흰색으로, 글자·아이콘 색은 어두운
    색으로 뒤집는다 — 검색 독의 backdrop-filter 위에서 회색 계열은 다크
@@ -1791,16 +1607,6 @@ main.page {
 :root[data-theme="dark"] .search-bar-inline-confirm {
   background: rgba(255, 255, 255, 0.5);
   color: var(--bg);
-}
-/* 최적화가 진행·완료돼 결과가 나오는 동안에는 도구 줄 전체를 흐리게 하고 눌리지
-   않게 잠근다. */
-.studio-tools.is-running {
-  opacity: var(--studio-disabled);
-  pointer-events: none;
-}
-/* 잠긴 줄 안의 비활성 도구는 줄 자체의 40%에 또 40%가 곱해지지 않게 한다. */
-.studio-tools.is-running .search-bar-studio-icon-btn:disabled {
-  opacity: 1;
 }
 .optimize-result-summary {
   margin: 5px 0 0;
@@ -2380,74 +2186,6 @@ main.page {
   }
 }
 
-/* ── 설정: 스튜디오 툴킷 사용자 정렬 ── */
-.settings-chevron {
-  display: flex;
-  transition: transform 0.35s var(--spring);
-}
-.settings-chevron.is-open {
-  transform: rotate(90deg);
-}
-/* "스튜디오 툴킷 사용자 정렬" 행: 제목·초기화·펼치기 화살표가 각각 따로
-   눌리는 버튼 세 개로 이루어진 한 줄이다(제목 버튼과 화살표 버튼 둘 다
-   펼치고 접기를 맡고, 그 사이 "초기화"만 따로 반응한다 — 버튼 안에 버튼을
-   또 넣을 수 없어서 이렇게 나눴다). */
-.settings-arrange-row {
-  justify-content: flex-start;
-  gap: 0;
-}
-.settings-arrange-toggle {
-  flex: none;
-  display: flex;
-}
-.settings-reset-link {
-  flex: none;
-  margin-left: 10px;
-  font-size: 12px;
-  color: var(--text-2);
-  text-decoration: underline;
-  transition: opacity 0.2s var(--ease);
-}
-.settings-reset-link:active {
-  opacity: 0.55;
-}
-.settings-arrange-chevron-btn {
-  flex: none;
-  margin-left: auto;
-  display: flex;
-  color: var(--text-2);
-}
-.settings-arrange {
-  padding: 10px 0 4px;
-  border-bottom: 1px solid var(--glass-border);
-}
-.toolkit-arranger-bar {
-  margin: 0;
-  padding-left: 0;
-  padding-right: 0;
-  border-top: 0;
-  border-bottom: 0;
-  transition: none;
-}
-/* 사용자 정렬 화면은 실제 툴바(화면 폭 전체로 유동적인 여백)와 달리
-   왼쪽부터 촘촘하게 모아 그린다 — 드래그로 순서를 바꾸는 동안 아이콘 사이
-   간격이 넓으면 자리가 어디쯤인지 가늠하기 어렵고, 넘치면 옆으로
-   슬라이드하는 대신 다음 줄로 자연스레 내려가 전부 한 화면에 보이게 한다. */
-.toolkit-arranger-bar .studio-toolkit-row {
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  row-gap: 10px;
-}
-.toolkit-arranger-item {
-  touch-action: none;
-  cursor: grab;
-}
-.toolkit-arranger-item.is-dragging {
-  opacity: 0.35;
-  transform: scale(1.15);
-  pointer-events: none;
-}
-
 
 /* 스튜디오 패널이 열려 있을 때만 확인 버튼을 스튜디오 색 체계로(다른 패널의
    확인 버튼은 그대로): 회색 40% 배경, 15px·400·100% 글자. */
@@ -2511,150 +2249,13 @@ main.page {
   opacity: var(--studio-disabled);
   pointer-events: none;
 }
-
-/* ── 스튜디오 메뉴바의 파일 메뉴: 파일 글자 바로 대각선 오른쪽 아래에 뜨는 작은 불투명
-   팝업. 항목은 글자만 있고 구분선으로 나뉜다. ── */
-.studio-menu-wrap {
-  position: relative;
-  /* 안의 버튼이 인라인 줄 높이(베이스라인 여백)를 만들면 다른 메뉴와 세로 중심이 어긋난다. */
-  display: flex;
-  align-items: center;
-  height: 100%;
-}
-.studio-menubar-item {
-  line-height: 1.2;
-}
-.studio-file-menu {
-  position: absolute;
-  top: 100%;
-  left: calc(100% - 4px);
-  z-index: 5;
-  /* 폭 135px. 항목이 많으면 스크롤(터치 스와이프·마우스 드래그)된다. */
-  width: 135px;
-  max-height: 112px;
-  display: flex;
-  flex-direction: column;
-  border-radius: 10px;
-  background: var(--surface);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28), 0 0 0 1px var(--studio-t10);
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  touch-action: pan-y;
-  scrollbar-width: none;
-}
-.studio-file-menu::-webkit-scrollbar {
-  display: none;
-}
-.studio-file-menu-item {
-  flex: none;
-  padding: 8px 9px;
-  text-align: left;
-  white-space: nowrap;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text);
-}
-.studio-file-menu-item.is-active {
-  font-weight: 700;
-}
-.studio-file-menu-item + .studio-file-menu-item {
-  border-top: 1px solid var(--studio-t10);
-}
-.studio-file-menu-item:active {
-  background: var(--studio-gray-35);
-}
-
-/* 스튜디오 제목 줄 오른쪽: < 1/N > 와 세션 종료 원형 X 버튼. */
-.studio-head-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.studio-close-btn {
-  flex: none;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: var(--studio-gray-35);
-  color: var(--studio-t70);
-  transition: transform 0.35s var(--spring);
-}
-.studio-close-btn:active {
-  transform: scale(0.88);
-}
-
-/* 숨겨진 스튜디오 세션 안내: 검색바 바로 위 가운데. 패널이 없을 때만 보이고, 눌리지 않는다. */
-.studio-session-note {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 100%;
-  margin: 0 0 8px;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-2-strong);
-  text-shadow: 0 0 8px var(--bg), 0 0 3px var(--bg);
-  pointer-events: none;
-}
-
-/* 이미지 메뉴에서 지금 쓰고 있는 기능은 굵게, 비활성 항목(조건이 안 맞는 편집·저장 항목)은 표준
-   비활성 불투명도로 낮추고 눌리지 않게 한다. */
-.studio-file-menu-item:disabled {
-  opacity: var(--studio-disabled);
-  pointer-events: none;
-}
 /* 스튜디오/불러오기 확인 버튼은 폭을 56px로 고정한다(진행 막대 폭의 기준). */
 .search-dock.studio-mode .search-bar-inline-confirm {
   box-sizing: border-box;
   width: 56px;
   padding: 0;
 }
-/* 확인 진행 막대: 확인 버튼 세로 32px의 1/2(16px), 가로는 확인 버튼 56px의 3배(168px). */
-.studio-confirm-progress {
-  position: relative;
-  flex: none;
-  box-sizing: border-box;
-  width: 168px;
-  height: 16px;
-  margin-right: 0;
-  border-radius: 999px;
-  background: var(--slider-track);
-  overflow: hidden;
-}
-.studio-confirm-progress-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  border-radius: 999px;
-  background: var(--progress-fill);
-  transition: width 0.2s var(--ease);
-}
-.studio-confirm-progress-text {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 500;
-  line-height: 1;
-  color: var(--text);
-}
 /* 진행 막대가 있는 동안(또는 저장 중) 스튜디오 안의 모든 기능·버튼·텍스트 터치를 막는다. */
 .search-bar-confirm-panel.is-locked .search-bar-confirm-content {
   pointer-events: none;
-}
-
-/* 설정 > 품질: > 는 오른쪽 끝에 두고, 눌러서 펼치면 같은 메뉴 안에서 아래로 세 옵션이 늘어난다. */
-.studio-file-menu-sub-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.studio-file-menu-subitem {
-  padding-left: 18px;
 }
