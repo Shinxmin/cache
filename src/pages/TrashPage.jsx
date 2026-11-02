@@ -1,21 +1,46 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { deleteFilesPermanently, listTrash, restoreFiles } from "../lib/drive";
-import { BackIcon, FileIcon, FolderIcon, RestoreIcon, TrashIcon } from "../components/icons";
-import PageMoreButton from "../components/PageMoreButton";
+import { CheckIcon, FileIcon, FolderIcon, RestoreIcon, TrashIcon } from "../components/icons";
+import BottomSearchBar from "../components/BottomSearchBar";
 import Spinner from "../components/Spinner";
-import useArmedConfirm from "../hooks/useArmedConfirm";
+import useLongPress from "../hooks/useLongPress";
 
-// 설정 → 휴지통에서 열리는 화면. 앱의 다른 화면과 같은 제목 레이아웃·리스트
-// 스타일을 그대로 쓴다. 제목 우측의 삼점바(홈·파일 탭과 같은 위치·모양)는
-// 휴지통 전체를 대상으로 한 전체 삭제·전체 복원을 맡고, 개별 항목의 삭제·복원은
-// 각 행 오른쪽의 아이콘 두 개가 그대로 맡는다. 네 액션 모두 두 번 눌러야 실행된다
-// — 첫 번째 누름은 그 버튼을 연한 빨간 배경으로 바꾸기만 하고(useArmedConfirm),
-// 같은 버튼을 한 번 더 눌러야 실제로 삭제·복원된다. 빈 공간을 누르면 풀린다.
+// 휴지통 행 하나: 꾹 누르면 선택이 켜지고, 선택이 있는 동안은 탭으로 선택·해제한다(선택이 없을 땐 탭이 아무
+// 일도 하지 않는다).
+function TrashRow({ item, selected, selectionMode, onToggle }) {
+  const press = useLongPress(
+    () => {
+      if (selectionMode) onToggle(item.id);
+    },
+    () => onToggle(item.id)
+  );
+  return (
+    <button className={`drive-row${selected ? " selected" : ""}`} type="button" {...press}>
+      <span className="drive-row-icon">{item.is_folder ? <FolderIcon size={20} /> : <FileIcon size={20} />}</span>
+      <span className="drive-row-text">
+        <span className="drive-row-title-line">
+          <span className="drive-row-name">{item.name}</span>
+        </span>
+      </span>
+      {selected && (
+        <span className="drive-row-check">
+          <CheckIcon />
+        </span>
+      )}
+    </button>
+  );
+}
+
+// 설정 → 휴지통에서 열리는 화면. 홈과 같은 하단바가 내려온다: 검색은 휴지통에 있는 데이터에서만 하고, <는
+// 활성, 설정은 비활성이다. 항목을 꾹 눌러 고르면 비활성이던 + 버튼 자리가 삼점 메뉴(삭제·복원)로 바뀌고,
+// 고른 항목에만 적용된다. 삭제·복원은 하단 팝업(제목만, 본문 없음)에서 확인한다.
 export default function TrashPage({ session, onBack }) {
   const [items, setItems] = useState([]);
   const [state, setState] = useState("loading"); // loading | ready | error
   const [refreshKey, setRefreshKey] = useState(0);
-  const { isArmed, press } = useArmedConfirm();
+  const [query, setQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [action, setAction] = useState(null); // null | "delete" | "restore"
 
   useEffect(() => {
     let cancelled = false;
@@ -34,89 +59,84 @@ export default function TrashPage({ session, onBack }) {
     };
   }, [session.token, refreshKey]);
 
-  const restore = async (ids) => {
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? items.filter((it) => it.name.toLowerCase().includes(q)) : items;
+  }, [items, query]);
+
+  // 목록에서 사라진 항목(검색으로 가려지거나 처리돼 없어진 것)은 선택에서도 뺀다.
+  const liveSelected = useMemo(() => {
+    const ids = new Set(visible.map((it) => it.id));
+    return [...selectedIds].filter((id) => ids.has(id));
+  }, [visible, selectedIds]);
+
+  useEffect(() => {
+    if (action && liveSelected.length === 0) setAction(null);
+  }, [action, liveSelected.length]);
+
+  const toggle = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const run = async () => {
+    const ids = liveSelected;
+    if (!ids.length || !action) return;
     try {
-      await restoreFiles(session.token, ids);
+      if (action === "restore") await restoreFiles(session.token, ids);
+      else await deleteFilesPermanently(session.token, ids);
+      setSelectedIds(new Set());
+      setAction(null);
       setRefreshKey((k) => k + 1);
     } catch {
-      window.alert("복원하지 못했습니다");
+      window.alert(action === "restore" ? "복원하지 못했습니다" : "삭제하지 못했습니다");
     }
   };
 
-  const removeForever = async (ids) => {
-    try {
-      await deleteFilesPermanently(session.token, ids);
-      setRefreshKey((k) => k + 1);
-    } catch {
-      window.alert("삭제하지 못했습니다");
-    }
-  };
+  const actions = [
+    { key: "delete", label: "삭제", icon: <TrashIcon size={17} />, run: () => setAction("delete") },
+    { key: "restore", label: "복원", icon: <RestoreIcon size={17} />, run: () => setAction("restore") },
+  ];
 
   return (
     <>
-      <header className="page-header page-header--static">
+      <header className="page-header page-header--static page-header--no-blur">
         <div className="page-header-row">
-          <button className="header-back" type="button" aria-label="뒤로" onClick={onBack}>
-            <BackIcon />
-          </button>
           <h1 className="page-title">휴지통</h1>
-          <div className="page-header-actions">
-            <PageMoreButton
-              disabled={items.length === 0}
-              actions={[
-                {
-                  key: "deleteAll",
-                  label: "전체 삭제",
-                  icon: <TrashIcon size={17} />,
-                  armed: isArmed("deleteAll"),
-                  onClick: press("deleteAll", () => removeForever(items.map((it) => it.id))),
-                },
-                {
-                  key: "restoreAll",
-                  label: "전체 복원",
-                  icon: <RestoreIcon size={17} />,
-                  armed: isArmed("restoreAll"),
-                  onClick: press("restoreAll", () => restore(items.map((it) => it.id))),
-                },
-              ]}
-            />
-          </div>
         </div>
       </header>
-      <div className="page page--flush">
+      <div className="page page--flush page--has-dock">
         {state === "loading" && <p className="drive-note"><Spinner /></p>}
         {state === "error" && <p className="drive-note">불러오지 못했습니다</p>}
-        {state === "ready" && items.length > 0 && (
+        {state === "ready" && visible.length > 0 && (
           <ul className="drive-list">
-            {items.map((item) => (
-              <li key={item.id} className="trash-row">
-                <span className="drive-row-icon">{item.is_folder ? <FolderIcon size={20} /> : <FileIcon size={20} />}</span>
-                <span className="drive-row-name">{item.name}</span>
-                <span className="trash-row-actions">
-                  <button
-                    className={`studio-toolkit-icon-btn${isArmed(`restore:${item.id}`) ? " is-armed" : ""}`}
-                    type="button"
-                    aria-label="복원"
-                    data-armed={isArmed(`restore:${item.id}`) ? "true" : undefined}
-                    onClick={press(`restore:${item.id}`, () => restore([item.id]))}
-                  >
-                    <RestoreIcon size={18} />
-                  </button>
-                  <button
-                    className={`studio-toolkit-icon-btn${isArmed(`delete:${item.id}`) ? " is-armed" : ""}`}
-                    type="button"
-                    aria-label="영구 삭제"
-                    data-armed={isArmed(`delete:${item.id}`) ? "true" : undefined}
-                    onClick={press(`delete:${item.id}`, () => removeForever([item.id]))}
-                  >
-                    <TrashIcon size={18} />
-                  </button>
-                </span>
+            {visible.map((item) => (
+              <li key={item.id}>
+                <TrashRow item={item} selected={selectedIds.has(item.id)} selectionMode={liveSelected.length > 0} onToggle={toggle} />
               </li>
             ))}
           </ul>
         )}
       </div>
+      <BottomSearchBar
+        searchQuery={query}
+        onSearch={setQuery}
+        canGoBack
+        onBack={onBack}
+        settingsDisabled
+        plusDisabled
+        swapSideButtons={false}
+        hasSelection={liveSelected.length > 0}
+        selectionActions={actions}
+        confirmOpen={Boolean(action)}
+        confirmTitle={action === "restore" ? "복원" : "삭제"}
+        onConfirmDelete={run}
+        onCancelDelete={() => setAction(null)}
+      />
     </>
   );
 }

@@ -54,6 +54,13 @@ function FolderIcon({ size = 18 }) {
 // 패널·검색바 내용물은 그때그때 하나만 그린다.
 export default function BottomSearchBar({
   inactive = false,
+  // 휴지통처럼 일부 버튼만 막는 화면용: 설정/+ 버튼 비활성, 선택 메뉴 항목 교체, 선택 중에도 좌우 버튼(<·설정)을
+  // 전체 선택/다운로드로 바꾸지 않기, 삭제 패널 제목 교체.
+  settingsDisabled = false,
+  plusDisabled = false,
+  selectionActions,
+  swapSideButtons = true,
+  confirmTitle,
   searchQuery,
   onSearch,
   confirmOpen,
@@ -351,7 +358,7 @@ export default function BottomSearchBar({
                   </ul>
                 </>
               ) : (
-                <p className="search-bar-confirm-title search-bar-confirm-title--studio">삭제</p>
+                <p className="search-bar-confirm-title search-bar-confirm-title--studio">{confirmTitle ?? "삭제"}</p>
               )}
             </div>
           </div>
@@ -396,7 +403,7 @@ export default function BottomSearchBar({
           <div className="search-dock-actions">
             {/* 왼쪽 끝 버튼: 파일·폴더를 선택하는 동안은 전체 선택/해제(체크 아이콘), 아니면 뒤로 가기.
                 뒤로 가기는 최상위(홈)에서도 자리는 지키되 표준 비활성 투명도로 흐려지고 눌리지 않는다. */}
-            {hasSelection ? (
+            {hasSelection && swapSideButtons ? (
               <button
                 className="header-settings dock-back"
                 type="button"
@@ -422,22 +429,23 @@ export default function BottomSearchBar({
             {hasSelection ? (
               <SelectionMoreButton
                 visible
+                actions={selectionActions}
                 onDelete={onDeleteSelected}
                 onMove={onMoveSelected}
                 onInfo={onInfoSelected}
                 infoDisabled={infoDisabled}
               />
             ) : (
-              <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} disabled={inactive} />
+              <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} disabled={inactive || plusDisabled} />
             )}
             {/* 오른쪽 끝 버튼: 선택하는 동안은 다운로드(아래 화살표, 선택한 항목을 기기에 저장), 아니면 설정. */}
-            {hasSelection ? (
+            {hasSelection && swapSideButtons ? (
               <button className="header-settings" type="button" aria-label="다운로드" onClick={onDownloadSelected}>
                 <DownloadIcon size={19} />
               </button>
             ) : (
-              (onOpenSettings || inactive) && (
-                <button className="header-settings" type="button" aria-label="설정" disabled={inactive} onClick={onOpenSettings}>
+              (onOpenSettings || inactive || settingsDisabled) && (
+                <button className="header-settings" type="button" aria-label="설정" disabled={inactive || settingsDisabled} onClick={onOpenSettings}>
                   <SettingsIcon size={19} />
                 </button>
               )

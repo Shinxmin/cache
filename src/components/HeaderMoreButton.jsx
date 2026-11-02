@@ -35,7 +35,7 @@ export default function HeaderMoreButton({ onUpload, onNewFolder, hidden = false
   const toggle = () => setOpen((v) => !v);
 
   return (
-    <div className={`header-more header-more--add${open ? " open" : ""}${hidden ? " is-hidden" : ""}`} aria-hidden={hidden}>
+    <div className={`header-more header-more--add${open ? " open" : ""}${hidden ? " is-hidden" : ""}${disabled ? " is-disabled" : ""}`} aria-hidden={hidden}>
       {/* 업로드 클릭 시 아이폰에서는 사진/파일 선택 팝업을, PC에서는 OS 파일 선택
           대화상자를 그대로 띄우는 네이티브 파일 입력(화면에는 보이지 않음). */}
       <input

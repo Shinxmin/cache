@@ -187,23 +187,6 @@ export async function listDuplicateFiles(token) {
   return rpcResult(await supabase.rpc("list_duplicate_files", { p_token: token }));
 }
 
-// ── 태그 관리(설정 → 태그) ──────────────────────────────────────────────
-// 지금 쓰이고 있는(휴지통에 있지 않은 파일에 붙어 있는) 태그를 중복 없이
-// 나열한다. 각 항목은 { tag, count }(그 태그가 붙은 파일·폴더 개수) 형태다.
-export async function listDistinctTags(token) {
-  return rpcResult(await supabase.rpc("list_distinct_tags", { p_token: token }));
-}
-
-// 그 태그가 붙어 있던 모든 파일에서 태그만 뗀다(파일 자체는 그대로).
-export async function deleteTag(token, tag) {
-  return rpcResult(await supabase.rpc("delete_tag", { p_token: token, p_tag: tag }));
-}
-
-// 태그가 붙어 있는 모든 파일에서 태그를 전부 뗀다.
-export async function deleteAllTags(token) {
-  return rpcResult(await supabase.rpc("delete_all_tags", { p_token: token }));
-}
-
 // ── 하이라이트 클립(스튜디오 "하이라이트" 섹션) ────────────────────────
 // 동영상 하나에 저장해 둔 구간(클립) 목록. 클립은 계정에 저장되므로 다른
 // 기기에서 열어도 같은 목록이 뜬다.

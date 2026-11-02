@@ -754,6 +754,12 @@ main.page {
 .page--has-dock {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 120px + 16.1px + 16px);
 }
+/* 하단바의 + / 설정 버튼이 막혀 있을 때(휴지통 등)의 표준 비활성 디자인. */
+.header-more--add.is-disabled,
+.search-dock-actions .header-settings:disabled {
+  opacity: var(--studio-disabled);
+  pointer-events: none;
+}
 .search-dock-actions .header-more {
   margin-right: 0;
 }
@@ -2118,6 +2124,17 @@ main.page {
 .settings-list {
   display: flex;
   flex-direction: column;
+}
+/* 설정의 기능 섹션 하나: 홈의 스토리지 섹션(.page-brand-box)과 같은 테두리·곡률(24px)의 독립된 상자. */
+.settings-card {
+  margin-bottom: 14px;
+  padding: 0 16px;
+  border: 1px solid rgba(128, 128, 128, 0.28);
+  border-radius: 24px;
+}
+.settings-card .settings-row,
+.settings-card .settings-pw {
+  border-bottom: 0;
 }
 .settings-row {
   display: flex;

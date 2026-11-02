@@ -7,7 +7,6 @@ import AuthPage from "./pages/AuthPage";
 import SettingsPage from "./pages/SettingsPage";
 import FilesPage from "./pages/FilesPage";
 import TrashPage from "./pages/TrashPage";
-import TagsPage from "./pages/TagsPage";
 import DuplicatesPage from "./pages/DuplicatesPage";
 import FileViewer from "./pages/FileViewer";
 import SplitCompareViewer from "./pages/SplitCompareViewer";
@@ -120,7 +119,6 @@ export default function App() {
   // 꾹 눌러(또는 전체 선택으로) 선택된 항목의 id 집합.
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [showTrash, setShowTrash] = useState(false);
-  const [showTags, setShowTags] = useState(false);
   const [showDuplicates, setShowDuplicates] = useState(false);
   // 스튜디오 툴킷의 삭제(휴지통) 아이콘을 누르면 켜진다. 이 동작만 별도
   // 모달 대신 하단 검색바가 위로 확장되며 그 자리에서 확인을 받는다
@@ -803,10 +801,6 @@ export default function App() {
     return <TrashPage session={session} onBack={() => setShowTrash(false)} />;
   }
 
-  if (showTags) {
-    return <TagsPage session={session} onBack={() => setShowTags(false)} />;
-  }
-
   if (showDuplicates) {
     return <DuplicatesPage session={session} onBack={() => setShowDuplicates(false)} />;
   }
@@ -819,7 +813,6 @@ export default function App() {
         onChangeThemeMode={handleChangeThemeMode}
         viewMode={viewMode}
         onOpenTrash={() => setShowTrash(true)}
-        onOpenTags={() => setShowTags(true)}
         onOpenDuplicates={() => setShowDuplicates(true)}
         onBack={() => setShowSettings(false)}
         onStoragePasswordChange={setHasStoragePw}
