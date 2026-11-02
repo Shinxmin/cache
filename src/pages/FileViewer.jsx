@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { fileUrl } from "../lib/drive";
 import { isImage, isVideo } from "../lib/thumbnail";
-import { CloseIcon } from "../components/icons";
+import { DockBackIcon } from "../components/icons";
 import Spinner from "../components/Spinner";
 import VideoClipPanel from "../components/VideoClipPanel";
 import useDarkOverlay from "../hooks/useDarkOverlay";
@@ -88,8 +88,9 @@ export default function FileViewer({ session, items, initialIndex, onClose }) {
 
   return (
     <div className="viewer-overlay" onClick={onOverlayClick}>
-      <button className="viewer-close" type="button" aria-label="닫기" onClick={onClose}>
-        <CloseIcon />
+      {/* 홈 화면 하단의 < 버튼과 같은 모양·크기·위치의 뒤로 가기(닫기) 버튼. */}
+      <button className="header-settings viewer-back" type="button" aria-label="뒤로" onClick={onClose}>
+        <DockBackIcon />
       </button>
       {isVideo(item.mime) && (
         <VideoClipPanel session={session} item={item} video={videoEl} onHasContentChange={setHasClipPanel} />
