@@ -21,6 +21,15 @@ function SearchIcon({ size = 20 }) {
   );
 }
 
+// 접힌 하단바 가운데의 꺾쇠(⌄). 뒤로 가기 꺾쇠와 같은 두께 2의 선.
+function ChevronDownIcon({ size = 20 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+      <path d="M5.5 9 12 15.5 18.5 9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="miter" />
+    </svg>
+  );
+}
+
 // 하단바 뒤로 가기 아이콘. 옆의 + 아이콘(선 두께 2)과 같은 두께로 보이도록 채운 도형 대신 두께
 // 2짜리 선으로 그린 꺾쇠다.
 function DockBackIcon({ size = 21 }) {
@@ -263,6 +272,25 @@ export default function BottomSearchBar({
     onCancelScrim?.();
   };
 
+  // 스크롤하는 동안 하단바를 가운데 작은 가로 알약(⌄만 보임)으로 접고, 스크롤이 멈추면(250ms 동안 스크롤
+  // 이벤트가 없으면) 다시 펼친다. 패널이 열려 있거나 검색창에 입력 중일 때는 접지 않는다.
+  const [scrolling, setScrolling] = useState(false);
+  useEffect(() => {
+    let timer = 0;
+    const onScroll = () => {
+      setScrolling(true);
+      clearTimeout(timer);
+      timer = setTimeout(() => setScrolling(false), 250);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      clearTimeout(timer);
+    };
+  }, []);
+  const typing = typeof document !== "undefined" && document.activeElement === inputRef.current && inputRef.current != null;
+  const collapsed = scrolling && !panelOpen && !typing;
+
   // 검색바 아이콘은 이름을 입력받는 동안(새 폴더·이름 바꾸기) 돋보기 대신 연필 아이콘이 된다.
   const searchBarIcon = textEntryOpen ? <EditIcon size={20} /> : <SearchIcon />;
 
@@ -272,7 +300,13 @@ export default function BottomSearchBar({
         <div className="search-bar-scrim is-blurred" onClick={handleScrimClick} onPointerDown={handleScrimPointerDown} />
       )}
       <div className="bottom-search-wrap">
-        <div className={`search-dock${panelOpen ? " has-confirm" : ""}`}>
+        <div className={`search-dock${panelOpen ? " has-confirm" : ""}${collapsed ? " is-collapsed" : ""}`}>
+          {/* 스크롤하는 동안 하단바가 접혀 가운데 작은 가로 알약이 되면 이 꺾쇠(⌄) 하나만 보인다. */}
+          <span className="search-dock-collapsed-icon" aria-hidden="true">
+            <ChevronDownIcon />
+          </span>
+          <div className="search-dock-body" aria-hidden={collapsed}>
+          <div className="search-dock-body-inner">
           <div
             className={`search-bar-confirm-panel${displayMode === "move" ? " mode-move" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
@@ -389,6 +423,8 @@ export default function BottomSearchBar({
                 <SettingsIcon size={19} />
               </button>
             )}
+          </div>
+          </div>
           </div>
         </div>
       </div>
