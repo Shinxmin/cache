@@ -154,6 +154,12 @@ export async function measureStorageLatency(token, userId) {
   return Number.isFinite(best) ? Math.round(best) : null;
 }
 
+// 정보 패널: 항목 하나의 { created_at, size, files }. 폴더면 하위 모든 폴더·파일을 합산한 파일 개수와
+// 용량이다(휴지통에 있는 것은 제외). 서버(item_info)가 재귀로 계산한다.
+export async function getItemInfo(token, id) {
+  return rpcResult(await supabase.rpc("item_info", { p_token: token, p_id: id }));
+}
+
 // 설정 → 중복된 파일. 같은 종류·같은 크기의 파일 중 그룹마다 가장 먼저 올린 하나(원본)를
 // 뺀 나머지(중복본)만 돌려준다 — 서버(list_duplicate_files)가 계산한다.
 export async function listDuplicateFiles(token) {

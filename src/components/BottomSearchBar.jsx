@@ -80,6 +80,11 @@ export default function BottomSearchBar({
   onDeleteSelected,
   onMoveSelected,
   onRenameSelected,
+  onInfoSelected,
+  infoDisabled,
+  infoOpen,
+  infoLines,
+  onCancelInfo,
   onOpenSettings,
   renameOpen,
   renameName,
@@ -101,7 +106,7 @@ export default function BottomSearchBar({
   const [folderBusy, setFolderBusy] = useState(false);
   const [moveBusy, setMoveBusy] = useState(false);
   const [renameBusy, setRenameBusy] = useState(false);
-  const panelOpen = confirmOpen || newFolderOpen || renameOpen || moveOpen;
+  const panelOpen = confirmOpen || newFolderOpen || renameOpen || moveOpen || infoOpen;
 
   // 검색바가 검색 대신 값을 입력받는 상태 — 새 폴더·이름 바꾸기.
   const textEntryOpen = newFolderOpen || renameOpen;
@@ -121,7 +126,9 @@ export default function BottomSearchBar({
     ? "newFolder"
     : renameOpen
       ? "rename"
-      : moveOpen
+      : infoOpen
+        ? "info"
+        : moveOpen
         ? "move"
         : confirmOpen
           ? "confirm"
@@ -190,7 +197,9 @@ export default function BottomSearchBar({
     ? onCancelNewFolder
     : renameOpen
       ? onCancelRename
-      : moveOpen
+      : infoOpen
+        ? onCancelInfo
+        : moveOpen
         ? onCancelMove
         : onCancelDelete;
 
@@ -251,6 +260,15 @@ export default function BottomSearchBar({
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">새 폴더</p>
               ) : displayMode === "rename" ? (
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">이름 수정</p>
+              ) : displayMode === "info" ? (
+                <>
+                  <p className="search-bar-confirm-title search-bar-confirm-title--studio">정보</p>
+                  {/* 삭제 패널 본문과 같은 글꼴·색·위치(패널 맨 아래 왼쪽)에서 시작하는 두 줄. */}
+                  <div className="search-bar-confirm-info">
+                    <p className="search-bar-confirm-desc">{infoLines?.[0] ?? "\u00a0"}</p>
+                    <p className="search-bar-confirm-desc">{infoLines?.[1] ?? "\u00a0"}</p>
+                  </div>
+                </>
               ) : displayMode === "move" ? (
                 <>
                   <p className="search-bar-confirm-title search-bar-confirm-title--studio">이동</p>
@@ -323,15 +341,15 @@ export default function BottomSearchBar({
               <button
                 type="button"
                 className="search-bar-inline-confirm"
-                onClick={confirmOpen ? confirm : moveOpen ? submitMove : submitText}
-                disabled={confirmOpen ? busy : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
+                onClick={confirmOpen ? confirm : infoOpen ? onCancelInfo : moveOpen ? submitMove : submitText}
+                disabled={confirmOpen ? busy : infoOpen ? false : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
               >
                 확인
               </button>
             )}
           </div>
           {/* 하단바 아래쪽 줄: 오른쪽 끝에 설정 버튼, 그 왼쪽에 원형 + 버튼(업로드·새 폴더). 파일·폴더를
-              선택하는 동안은 + 버튼 자리를 선택 메뉴(삼점: 삭제·이동·이름 수정)가 대신 쓰고,
+              선택하는 동안은 + 버튼 자리를 선택 메뉴(삼점: 삭제·이동·정보)가 대신 쓰고,
               선택이 풀리면(동작을 마치면 선택이 풀린다) 다시 + 버튼으로 돌아온다. 둘 다 누르면
               왼쪽으로 펼쳐진다. */}
           <div className="search-dock-actions">
@@ -353,7 +371,8 @@ export default function BottomSearchBar({
                 visible
                 onDelete={onDeleteSelected}
                 onMove={onMoveSelected}
-                onRename={onRenameSelected}
+                onInfo={onInfoSelected}
+                infoDisabled={infoDisabled}
               />
             ) : (
               <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} />

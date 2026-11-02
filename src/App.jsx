@@ -20,6 +20,7 @@ import {
 } from "./lib/session";
 import {
   clearFolderThumbnail,
+  getItemInfo,
   getStorageRegion,
   getStorageUsed,
   measureStorageLatency,
@@ -43,6 +44,7 @@ import {
 import { isImage, isVideo } from "./lib/thumbnail";
 import { isOptimizableFile } from "./lib/optimize";
 import { extensionOf } from "./lib/filename";
+import { formatBytes, formatDateTime } from "./lib/format";
 import { isSearchActive } from "./lib/search";
 import { loadTheme, saveTheme } from "./lib/theme";
 
@@ -127,6 +129,9 @@ export default function App() {
   const [moveOpen, setMoveOpen] = useState(false);
   // 선택 메뉴의 이름 바꾸기. 새 폴더처럼 하단 검색바가 이름 입력창이 된다.
   const [renameOpen, setRenameOpen] = useState(false);
+  // 선택 메뉴의 정보. 하나만 선택했을 때만 열리고, 하단 패널에 업로드·생성 시각과 파일 개수·용량을 보여준다.
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [infoLines, setInfoLines] = useState(null); // [시각, "N개 파일 • 용량"] | null(불러오는 중)
   const [renameName, setRenameName] = useState("");
   const [movePath, setMovePath] = useState([]); // [{ id, name }]
   const [moveRows, setMoveRows] = useState([]);
@@ -535,6 +540,33 @@ export default function App() {
     setNewFolderOpen(false);
     cancelMove();
     setRenameOpen(false);
+    setInfoOpen(false);
+  };
+
+  // 선택 메뉴의 정보: 하나만 선택했을 때만 동작한다. 파일은 이미 불러온 항목 값을, 폴더는 서버가 하위 모든
+  // 폴더·파일을 합산한 값을 쓴다.
+  const handleInfoSelected = async () => {
+    if (infoOpen) {
+      closeAllToolPanels();
+      return;
+    }
+    if (selectedIds.size !== 1) return;
+    const item = visibleItems.find((it) => selectedIds.has(it.id));
+    if (!item) return;
+    closeAllToolPanels();
+    setInfoLines(null);
+    setInfoOpen(true);
+    const build = (createdAt, files, size) => [formatDateTime(createdAt), `${files}개 파일 • ${formatBytes(size)}`];
+    if (!item.is_folder) {
+      setInfoLines(build(item.created_at, 1, item.size));
+      return;
+    }
+    try {
+      const info = await getItemInfo(session.token, item.id);
+      setInfoLines(build(info.created_at ?? item.created_at, info.files, info.size));
+    } catch {
+      setInfoLines(build(item.created_at, 0, 0));
+    }
   };
 
   // 선택 메뉴의 삭제: 하단 검색바의 삭제 확인 패널을 연다(이미 열려 있으면 닫는다).
@@ -849,6 +881,11 @@ export default function App() {
             onDeleteSelected={handleDeleteSelected}
             onMoveSelected={handleMoveSelected}
             onRenameSelected={handleRenameSelected}
+            onInfoSelected={handleInfoSelected}
+            infoDisabled={selectedIds.size !== 1}
+            infoOpen={infoOpen}
+            infoLines={infoLines}
+            onCancelInfo={() => setInfoOpen(false)}
             onOpenSettings={favoritesView ? undefined : () => setShowSettings(true)}
             renameOpen={renameOpen}
             renameName={renameName}
