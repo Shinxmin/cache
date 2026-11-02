@@ -16,13 +16,13 @@ function DotsIcon() {
 // 사라진다(열려 있었다면 닫힌다). 누르면 오른쪽 끝은 그대로 둔 채 왼쪽으로 자라나
 // 삭제·이동·정보 세 항목(아이콘 + 아래 글자)이 드러난다. 항목을 누르면 그
 // 자리에서 닫히고, 해당 동작의 하단바 패널이 열린다.
-export default function SelectionMoreButton({ visible, onDelete, onMove, onInfo, infoDisabled = false }) {
+export default function SelectionMoreButton({ visible, onDelete, onMove, onInfo, infoDisabled = false, actions }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!visible) setOpen(false);
   }, [visible]);
 
-  const items = [
+  const items = actions ?? [
     { key: "delete", label: "삭제", icon: <TrashIcon size={17} />, run: onDelete },
     { key: "move", label: "이동", icon: <FileMoveIcon size={17} />, run: onMove },
     // 정보는 하나만 선택했을 때만 쓸 수 있다 — 여러 개를 고르면 표준 비활성 디자인(흐림, 눌리지 않음).
@@ -32,6 +32,8 @@ export default function SelectionMoreButton({ visible, onDelete, onMove, onInfo,
   return (
     <div
       className={`header-more header-more--selection${visible ? " visible" : ""}${open ? " open" : ""}`}
+      // 펼침 폭 = 왼쪽 여백 8 + 항목 폭 48.5 × 개수 + 삼점 버튼 45.
+      style={{ "--more-open-w": `${8 + 48.5 * items.length + 45}px` }}
       aria-hidden={!visible}
     >
       <div className="header-more-inner">
