@@ -30,3 +30,11 @@ export function formatStorageCost(bytes) {
   const billableGb = Math.max(0, (bytes || 0) - R2_FREE_BYTES) / 1024 ** 3;
   return `$${(billableGb * R2_PRICE_PER_GB).toFixed(2)}`;
 }
+
+// 업로드·생성 시각을 "2027년 03월 05일 14:00"처럼(월·일 두 자리, 24시간제, 기기 시간대) 표기한다.
+export function formatDateTime(value) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}년 ${p(d.getMonth() + 1)}월 ${p(d.getDate())}일 ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
