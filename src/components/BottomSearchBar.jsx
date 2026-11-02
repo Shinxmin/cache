@@ -44,12 +44,12 @@ function FolderIcon({ size = 18 }) {
 // 그 자리에서 전혀 움직이지 않는다. 위쪽 줄은 검색창, 아래쪽 줄은 업로드·새 폴더를 여는 원형
 // + 버튼(HeaderMoreButton)이다.
 //
-// 배경·블러·그림자·둥근 모서리는 전부 바깥 껍데기 하나(.search-dock)가 맡는다. 삭제·이동·복사·
+// 배경·블러·그림자·둥근 모서리는 전부 바깥 껍데기 하나(.search-dock)가 맡는다. 삭제·이동·
 // 이름 바꾸기·새 폴더를 열면 이 독이 검색창 위로 확장되며 패널을 보여준다 — 취소 버튼은 없고,
 // 하단바를 뺀 화면 어디를 눌러도 취소로 닫힌다(.search-bar-scrim, 열려 있는 동안 나머지 화면
 // 전체에 같은 블러가 걸린다). 확인 버튼은 검색바 자신의 오른쪽 끝에 뜬다.
 // 새 폴더·이름 바꾸기일 때는 검색창을 이름 입력창으로 재사용하고(돋보기 대신 연필 아이콘),
-// 삭제·이동·복사처럼 입력창을 쓰지 않는 동안은 검색을 막도록 입력창 자체를 비활성화한다.
+// 삭제·이동처럼 입력창을 쓰지 않는 동안은 검색을 막도록 입력창 자체를 비활성화한다.
 // 여러 상태 중 둘 이상 동시에 열릴 수는 없으므로(App.jsx가 하나를 열 때 나머지를 닫는다)
 // 패널·검색바 내용물은 그때그때 하나만 그린다.
 export default function BottomSearchBar({
@@ -70,7 +70,6 @@ export default function BottomSearchBar({
   hasSelection,
   onDeleteSelected,
   onMoveSelected,
-  onCopySelected,
   onRenameSelected,
   onOpenSettings,
   renameOpen,
@@ -79,7 +78,6 @@ export default function BottomSearchBar({
   onConfirmRename,
   onCancelRename,
   moveOpen,
-  moveMode = "move",
   moveItemCount,
   movePath,
   moveRows,
@@ -98,7 +96,7 @@ export default function BottomSearchBar({
 
   // 검색바가 검색 대신 값을 입력받는 상태 — 새 폴더·이름 바꾸기.
   const textEntryOpen = newFolderOpen || renameOpen;
-  // 입력창을 쓰지 않는 패널(삭제 확인·이동·복사)이 열려 있을 때는 검색바
+  // 입력창을 쓰지 않는 패널(삭제 확인·이동)이 열려 있을 때는 검색바
   // 입력을 아예 비활성화한다 — 패널이 열려 있는 동안 검색어를 바꿔 지금 폴더
   // 목록 자체가 통째로 달라지는 걸 막기 위해서다.
   const inputDisabled = panelOpen && !textEntryOpen;
@@ -286,7 +284,7 @@ export default function BottomSearchBar({
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">이름 바꾸기</p>
               ) : displayMode === "move" ? (
                 <>
-                  <p className="search-bar-confirm-title search-bar-confirm-title--studio">{moveMode === "copy" ? "복사" : "이동"}</p>
+                  <p className="search-bar-confirm-title search-bar-confirm-title--studio">이동</p>
                   <p className="search-bar-confirm-desc">{moveItemCount}개 파일</p>
                   {movePath.length > 0 && (
                     <div className="move-path">
@@ -364,7 +362,7 @@ export default function BottomSearchBar({
             )}
           </div>
           {/* 하단바 아래쪽 줄: 오른쪽 끝에 설정 버튼, 그 왼쪽에 원형 + 버튼(업로드·새 폴더). 파일·폴더를
-              선택하는 동안은 + 버튼 자리를 선택 메뉴(삼점: 삭제·이동·복사·이름 바꾸기)가 대신 쓰고,
+              선택하는 동안은 + 버튼 자리를 선택 메뉴(삼점: 삭제·이동·이름 바꾸기)가 대신 쓰고,
               선택이 풀리면(동작을 마치면 선택이 풀린다) 다시 + 버튼으로 돌아온다. 둘 다 누르면
               왼쪽으로 펼쳐진다. */}
           <div className="search-dock-actions">
@@ -384,7 +382,6 @@ export default function BottomSearchBar({
               visible={Boolean(hasSelection)}
               onDelete={onDeleteSelected}
               onMove={onMoveSelected}
-              onCopy={onCopySelected}
               onRename={onRenameSelected}
             />
             {onOpenSettings && (
