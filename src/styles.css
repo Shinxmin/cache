@@ -457,10 +457,10 @@ main.page {
   width: 45px;
 }
 /* 선택 메뉴(하단바의 삼점): 파일·폴더를 선택하고 있을 때만 폭 0에서 45px로 펼쳐지며 나타나고,
-   선택이 풀리면 같은 방식으로 사라진다. 열면 삭제·이동·이름 바꾸기 세 항목(52px씩)이
-   왼쪽에서 드러난다(8 + 52×3 + 45 = 209px). */
+   선택이 풀리면 같은 방식으로 사라진다. 열면 삭제·이동·이름 수정 세 항목이 + 버튼 메뉴와 같은 폭
+   (48.5px씩)·여백으로 왼쪽에서 드러난다(8 + 48.5×3 + 45 = 198.5px). */
 .header-more--selection {
-  --more-open-w: 209px;
+  --more-open-w: 198.5px;
   width: 0;
   margin-right: 0;
   opacity: 0;
@@ -480,9 +480,6 @@ main.page {
    보이지 않게 한다. */
 .header-more--selection {
   background: var(--surface);
-}
-.header-more--selection .header-more-item:not(.header-more-toggle) {
-  width: 52px;
 }
 
 /* 두 번 눌러야 실행되는 삭제·복원 버튼(useArmedConfirm)이 첫 번째로 눌려
