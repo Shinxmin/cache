@@ -14,7 +14,7 @@ function DotsIcon() {
 // 파일·폴더를 하나라도 선택하고 있을 때만 하단바의 + 버튼 자리에 나타나는 원형 삼점 버튼.
 // 선택이 생기면 폭 0에서 45px로 펼쳐지며 나타나고, 선택이 모두 풀리면 같은 방식으로
 // 사라진다(열려 있었다면 닫힌다). 누르면 오른쪽 끝은 그대로 둔 채 왼쪽으로 자라나
-// 삭제·이동·이름 바꾸기 세 항목(아이콘 + 아래 글자)이 드러난다. 항목을 누르면 그
+// 삭제·이동·이름 수정 세 항목(아이콘 + 아래 글자)이 드러난다. 항목을 누르면 그
 // 자리에서 닫히고, 해당 동작의 하단바 패널이 열린다.
 export default function SelectionMoreButton({ visible, onDelete, onMove, onRename }) {
   const [open, setOpen] = useState(false);
@@ -25,7 +25,7 @@ export default function SelectionMoreButton({ visible, onDelete, onMove, onRenam
   const items = [
     { key: "delete", label: "삭제", icon: <TrashIcon size={17} />, run: onDelete },
     { key: "move", label: "이동", icon: <FileMoveIcon size={17} />, run: onMove },
-    { key: "rename", label: "이름 바꾸기", icon: <EditIcon size={17} />, run: onRename },
+    { key: "rename", label: "이름 수정", icon: <EditIcon size={17} />, run: onRename },
   ];
 
   return (

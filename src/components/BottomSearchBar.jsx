@@ -281,7 +281,7 @@ export default function BottomSearchBar({
               {displayMode === "newFolder" ? (
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">새 폴더</p>
               ) : displayMode === "rename" ? (
-                <p className="search-bar-confirm-title search-bar-confirm-title--studio">이름 바꾸기</p>
+                <p className="search-bar-confirm-title search-bar-confirm-title--studio">이름 수정</p>
               ) : displayMode === "move" ? (
                 <>
                   <p className="search-bar-confirm-title search-bar-confirm-title--studio">이동</p>
@@ -362,7 +362,7 @@ export default function BottomSearchBar({
             )}
           </div>
           {/* 하단바 아래쪽 줄: 오른쪽 끝에 설정 버튼, 그 왼쪽에 원형 + 버튼(업로드·새 폴더). 파일·폴더를
-              선택하는 동안은 + 버튼 자리를 선택 메뉴(삼점: 삭제·이동·이름 바꾸기)가 대신 쓰고,
+              선택하는 동안은 + 버튼 자리를 선택 메뉴(삼점: 삭제·이동·이름 수정)가 대신 쓰고,
               선택이 풀리면(동작을 마치면 선택이 풀린다) 다시 + 버튼으로 돌아온다. 둘 다 누르면
               왼쪽으로 펼쳐진다. */}
           <div className="search-dock-actions">
