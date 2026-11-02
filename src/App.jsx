@@ -791,12 +791,15 @@ export default function App() {
         <>
           <main className="page">
             <PageHeader title={title} />
-            <StorageSection
-              storageUsed={storageUsed}
-              storageRegion={storageRegion}
-              storageLatency={storageLatency}
-              storageBillingBytes={storageBillingBytes}
-            />
+            {/* 스토리지 섹션은 파일 최상위(홈)에서만 보인다 — 하위 폴더·즐겨찾기·검색 결과에서는 숨긴다. */}
+            {folderPath.length === 0 && !favoritesView && !isSearchActive(searchQuery) && (
+              <StorageSection
+                storageUsed={storageUsed}
+                storageRegion={storageRegion}
+                storageLatency={storageLatency}
+                storageBillingBytes={storageBillingBytes}
+              />
+            )}
             <FilesPage
               session={session}
               viewMode={viewMode}
