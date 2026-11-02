@@ -234,12 +234,3 @@ export function FileMoveIcon({ size = 18 }) {
     </svg>
   );
 }
-
-// 파일 모양 안에 +를 뚫은 아이콘(선택 메뉴의 "복사").
-export function FileCopyIcon({ size = 18 }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" fillRule="evenodd" aria-hidden="true">
-      <path d="M6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM13 3.5V9h5.5zM11 11.5h2v3h3v2h-3v3h-2v-3H8v-2h3z" />
-    </svg>
-  );
-}

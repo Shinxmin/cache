@@ -19,7 +19,6 @@ import {
 } from "./lib/session";
 import {
   clearFolderThumbnail,
-  copyItems,
   getStorageRegion,
   getStorageUsed,
   measureStorageLatency,
@@ -120,12 +119,11 @@ export default function App() {
   // 모달 대신 하단 검색바가 위로 확장되며 그 자리에서 확인을 받는다
   // (BottomSearchBar 참고) — 다른 삭제·복원 확인은 전부 그대로 ConfirmModal.
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  // 선택 메뉴(헤더의 삼점)의 이동·복사. 삭제 확인과 같은 방식으로 하단 검색바가
-  // 확장되는 패널을 쓴다(moveMode가 "copy"면 같은 패널로 복사한다). 패널 안에서 드라이브를 폴더별로 눌러 내려가다가
+  // 선택 메뉴(하단바의 삼점)의 이동. 삭제 확인과 같은 방식으로 하단 검색바가
+  // 확장되는 패널을 쓴다. 패널 안에서 드라이브를 폴더별로 눌러 내려가다가
   // 확인을 누르면 지금 들어와 있는 폴더로 옮긴다(movePath가 빈 배열이면
   // 최상위). moveRows는 지금 보고 있는 폴더의 목록이다.
   const [moveOpen, setMoveOpen] = useState(false);
-  const [moveMode, setMoveMode] = useState("move"); // move | copy
   // 선택 메뉴의 이름 바꾸기. 새 폴더처럼 하단 검색바가 이름 입력창이 된다.
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameName, setRenameName] = useState("");
@@ -529,7 +527,7 @@ export default function App() {
     setDeleteConfirmOpen(false);
   };
 
-  // 삭제 확인·새 폴더·이동·복사·이름 바꾸기는 전부 검색바 위 같은 패널 자리를
+  // 삭제 확인·새 폴더·이동·이름 바꾸기는 전부 검색바 위 같은 패널 자리를
   // 공유한다 — 그중 하나를 열기 전에 항상 이걸 먼저 불러 나머지를 전부 닫는다.
   const closeAllToolPanels = () => {
     setDeleteConfirmOpen(false);
@@ -547,19 +545,6 @@ export default function App() {
     if (!selectedIds.size) return;
     closeAllToolPanels();
     setDeleteConfirmOpen(true);
-  };
-
-  // 선택 메뉴의 복사: 이동과 같은 폴더 고르기 패널을 복사 모드로 연다.
-  const handleCopySelected = () => {
-    if (moveOpen && moveMode === "copy") {
-      closeAllToolPanels();
-      return;
-    }
-    if (!selectedIds.size) return;
-    closeAllToolPanels();
-    setMoveMode("copy");
-    setMovePath([]);
-    setMoveOpen(true);
   };
 
   // 선택 메뉴의 이름 바꾸기: 하나면 지금 이름을, 여러 개면 빈 칸을 채워 둔 이름 입력 패널을 연다.
@@ -609,7 +594,6 @@ export default function App() {
     }
     if (!selectedIds.size) return;
     closeAllToolPanels();
-    setMoveMode("move");
     setMovePath([]);
     setMoveOpen(true);
   };
@@ -662,22 +646,12 @@ export default function App() {
     if (!ids.length) return;
     const destinationId = movePath.length ? movePath[movePath.length - 1].id : null;
     try {
-      if (moveMode === "copy") {
-        await copyItems({
-          token: session.token,
-          userId: session.userId,
-          items: visibleItems.filter((it) => selectedIds.has(it.id)),
-          destinationId,
-          sourceParentId: parentId,
-        });
-      } else {
-        await moveFiles(session.token, ids, destinationId);
-      }
+      await moveFiles(session.token, ids, destinationId);
       cancelMove();
       setSelectedIds(new Set());
       setRefreshKey((k) => k + 1);
     } catch {
-      window.alert(moveMode === "copy" ? "복사하지 못했습니다" : "옮기지 못했습니다");
+      window.alert("옮기지 못했습니다");
     }
   };
 
@@ -870,7 +844,6 @@ export default function App() {
             hasSelection={selectedIds.size > 0}
             onDeleteSelected={handleDeleteSelected}
             onMoveSelected={handleMoveSelected}
-            onCopySelected={handleCopySelected}
             onRenameSelected={handleRenameSelected}
             onOpenSettings={favoritesView ? undefined : () => setShowSettings(true)}
             renameOpen={renameOpen}
@@ -879,7 +852,6 @@ export default function App() {
             onConfirmRename={confirmRename}
             onCancelRename={() => setRenameOpen(false)}
             moveOpen={moveOpen}
-            moveMode={moveMode}
             moveItemCount={selectedIds.size}
             movePath={movePath}
             moveRows={moveRows}
