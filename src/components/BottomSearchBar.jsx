@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BackIcon, CheckIcon, DownloadIcon, EditIcon, FileIcon, SettingsIcon } from "./icons";
+import { BackIcon, CheckIcon, DockBackIcon, DownloadIcon, EditIcon, FileIcon, SettingsIcon } from "./icons";
 import HeaderMoreButton from "./HeaderMoreButton";
 import SelectionMoreButton from "./SelectionMoreButton";
 import Spinner from "./Spinner";
@@ -26,16 +26,6 @@ function ChevronDownIcon({ size = 20 }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
       <path d="M5.5 9 12 15.5 18.5 9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="miter" />
-    </svg>
-  );
-}
-
-// 하단바 뒤로 가기 아이콘. 옆의 + 아이콘(선 두께 2)과 같은 두께로 보이도록 채운 도형 대신 두께
-// 2짜리 선으로 그린 꺾쇠다.
-function DockBackIcon({ size = 21 }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
-      <path d="M15 4.5 7.5 12l7.5 7.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="miter" />
     </svg>
   );
 }

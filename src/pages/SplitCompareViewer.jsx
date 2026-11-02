@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { fileUrl } from "../lib/drive";
-import { CloseIcon, DuplicateIcon } from "../components/icons";
+import { DockBackIcon, DuplicateIcon } from "../components/icons";
 import Spinner from "../components/Spinner";
 import useDarkOverlay from "../hooks/useDarkOverlay";
 
@@ -84,8 +84,8 @@ export default function SplitCompareViewer({ session, items, onClose, onSavePres
       >
         <DuplicateIcon />
       </button>
-      <button className="viewer-close" type="button" aria-label="닫기" onClick={onClose}>
-        <CloseIcon />
+      <button className="header-settings viewer-back" type="button" aria-label="뒤로" onClick={onClose}>
+        <DockBackIcon />
       </button>
       <div className="split-compare" onClick={(e) => e.stopPropagation()}>
         {failed && <p className="viewer-note">불러오지 못했습니다</p>}

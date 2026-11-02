@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
-// 전체화면 검정 뷰어(파일 뷰어·스플릿 비교)가 떠 있는 동안 화면 맨 위가
-// 검정으로 깨끗하게 덮이도록 만든다.
+// 전체화면 뷰어(파일 뷰어·스플릿 비교)가 떠 있는 동안 화면 맨 위가 뷰어 배경색(라이트 흰색 / 다크
+// 검정, 테마의 --bg)으로 깨끗하게 덮이도록 만든다.
 //
 // 뷰어 자체는 position: fixed로 화면 전체를 검정으로 칠하지만, 그것만으로는
 // 상단 상태바 영역에 페이지 배경(--bg, 밝은 회색)이 비쳐 보이고 그 경계가
@@ -19,7 +19,8 @@ export default function useDarkOverlay() {
     const meta = document.querySelector('meta[name="theme-color"]');
     const prev = meta?.getAttribute("content");
     root.setAttribute("data-overlay", "dark");
-    meta?.setAttribute("content", "#000000");
+    // 상단 상태바 색도 뷰어 배경(테마의 --bg: 라이트 #ffffff, 다크 #000000)에 맞춘다.
+    meta?.setAttribute("content", getComputedStyle(root).getPropertyValue("--bg").trim() || "#000000");
     return () => {
       root.removeAttribute("data-overlay");
       if (prev != null) meta?.setAttribute("content", prev);
