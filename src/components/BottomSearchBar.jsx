@@ -374,7 +374,7 @@ export default function BottomSearchBar({
                 aria-pressed={Boolean(allSelected)}
                 onClick={() => onToggleSelectAll?.(!allSelected)}
               >
-                <CheckIcon size={22} strokeWidth={2} />
+                <CheckIcon size={19} strokeWidth={2} />
               </button>
             ) : (
               <button
