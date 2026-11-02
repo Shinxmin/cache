@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ThemeSwitch from "../components/ThemeSwitch";
+import StoragePasswordSection from "../components/StoragePasswordSection";
 import { BackIcon, ChevronRightIcon } from "../components/icons";
 import { APP_VERSION } from "../lib/version";
 import { getStorageUsed } from "../lib/drive";
@@ -17,6 +18,7 @@ export default function SettingsPage({
   onOpenTags,
   onOpenDuplicates,
   onBack,
+  onStoragePasswordChange,
   onLogout,
 }) {
   // 휴지통·태그 화면과 같은 방식으로, 이 화면이 직접 계정 전체 사용량을
@@ -61,6 +63,7 @@ export default function SettingsPage({
               </span>
             </div>
           </div>
+          <StoragePasswordSection session={session} onChange={onStoragePasswordChange} />
           <button className="settings-row settings-row--link" type="button" onClick={onOpenDuplicates}>
             <span className="settings-row-label">중복된 파일</span>
             <ChevronRightIcon size={18} />

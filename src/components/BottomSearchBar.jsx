@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BackIcon, CheckIcon, DockBackIcon, DownloadIcon, EditIcon, FileIcon, SettingsIcon } from "./icons";
 import HeaderMoreButton from "./HeaderMoreButton";
 import SelectionMoreButton from "./SelectionMoreButton";
+import CheckboxVisual from "./Checkbox";
 import Spinner from "./Spinner";
 
 // 하단바 아이콘(단일 solid fill, currentColor)과 같은 방식으로 그린 돋보기 아이콘.
@@ -71,6 +72,14 @@ export default function BottomSearchBar({
   onMoveSelected,
   onRenameSelected,
   onInfoSelected,
+  infoLocked,
+  infoLockDisabled,
+  onToggleInfoLock,
+  unlockOpen,
+  unlockPw,
+  onChangeUnlockPw,
+  onConfirmUnlock,
+  onCancelUnlock,
   allSelected,
   onToggleSelectAll,
   onDownloadSelected,
@@ -100,10 +109,10 @@ export default function BottomSearchBar({
   const [folderBusy, setFolderBusy] = useState(false);
   const [moveBusy, setMoveBusy] = useState(false);
   const [renameBusy, setRenameBusy] = useState(false);
-  const panelOpen = confirmOpen || newFolderOpen || renameOpen || moveOpen || infoOpen;
+  const panelOpen = confirmOpen || newFolderOpen || renameOpen || moveOpen || infoOpen || unlockOpen;
 
   // 검색바가 검색 대신 값을 입력받는 상태 — 새 폴더·이름 바꾸기.
-  const textEntryOpen = newFolderOpen || renameOpen || infoOpen;
+  const textEntryOpen = newFolderOpen || renameOpen || infoOpen || unlockOpen;
   // 입력창을 쓰지 않는 패널(삭제 확인·이동)이 열려 있을 때는 검색바
   // 입력을 아예 비활성화한다 — 패널이 열려 있는 동안 검색어를 바꿔 지금 폴더
   // 목록 자체가 통째로 달라지는 걸 막기 위해서다.
@@ -118,7 +127,9 @@ export default function BottomSearchBar({
   // 모드가 반영돼 "빈 패널" 한 프레임이 생기지 않는다.
   const liveMode = newFolderOpen
     ? "newFolder"
-    : renameOpen
+    : unlockOpen
+      ? "unlock"
+      : renameOpen
       ? "rename"
       : infoOpen
         ? "info"
@@ -180,9 +191,10 @@ export default function BottomSearchBar({
   // 막지만 목록에서 미리 눌리지 않게 해 둔다.
   const moveExcluded = moveExcludedIds ?? new Set();
 
-  const textValue = newFolderOpen ? newFolderName : renameOpen || infoOpen ? renameName : searchQuery;
+  const textValue = newFolderOpen ? newFolderName : unlockOpen ? unlockPw : renameOpen || infoOpen ? renameName : searchQuery;
   const onTextChange = (value) => {
     if (newFolderOpen) onChangeNewFolderName?.(value);
+    else if (unlockOpen) onChangeUnlockPw?.(value);
     else if (renameOpen || infoOpen) onChangeRenameName?.(value);
     else onSearch?.(value);
   };
@@ -197,10 +209,24 @@ export default function BottomSearchBar({
       setRenameBusy(false);
     }
   };
-  const submitText = () => (newFolderOpen ? submitFolder() : renameOpen ? submitRename() : infoOpen ? submitInfo() : undefined);
+  // 잠긴 항목의 암호 입력: 확인(엔터)하면 맞을 때만 열리고 틀리면 아무 일도 없다.
+  const [unlockBusy, setUnlockBusy] = useState(false);
+  const canSubmitUnlock = Boolean(unlockPw) && !unlockBusy;
+  const submitUnlock = async () => {
+    if (!canSubmitUnlock) return;
+    setUnlockBusy(true);
+    try {
+      await onConfirmUnlock();
+    } finally {
+      setUnlockBusy(false);
+    }
+  };
+  const submitText = () => (unlockOpen ? submitUnlock() : newFolderOpen ? submitFolder() : renameOpen ? submitRename() : infoOpen ? submitInfo() : undefined);
   const onCancelScrim = newFolderOpen
     ? onCancelNewFolder
-    : renameOpen
+    : unlockOpen
+      ? onCancelUnlock
+      : renameOpen
       ? onCancelRename
       : infoOpen
         ? onCancelInfo
@@ -265,9 +291,21 @@ export default function BottomSearchBar({
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">새 폴더</p>
               ) : displayMode === "rename" ? (
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">이름 수정</p>
+              ) : displayMode === "unlock" ? (
+                <p className="search-bar-confirm-title search-bar-confirm-title--studio">암호</p>
               ) : displayMode === "info" ? (
                 <>
-                  <p className="search-bar-confirm-title search-bar-confirm-title--studio">정보</p>
+                  <div className="search-bar-confirm-title-row">
+                    <p className="search-bar-confirm-title search-bar-confirm-title--studio">정보</p>
+                    {/* 암호화: 제목 바로 오른쪽의 작은 체크박스. 통합 암호가 없으면 표준 비활성 디자인으로 흐려지고 눌리지 않는다. */}
+                    <label className={`info-lock${infoLockDisabled ? " is-disabled" : ""}`}>
+                      <span className="checkbox">
+                        <input type="checkbox" checked={Boolean(infoLocked)} disabled={infoLockDisabled} onChange={() => onToggleInfoLock?.()} />
+                        <CheckboxVisual />
+                      </span>
+                      <span className="info-lock-label">암호화</span>
+                    </label>
+                  </div>
                   {/* 삭제 패널 본문과 같은 글꼴·색·위치(패널 맨 아래 왼쪽)에서 시작하는 두 줄. */}
                   <div className="search-bar-confirm-info">
                     <p className="search-bar-confirm-desc">{infoLines?.[0] ?? "\u00a0"}</p>
@@ -324,7 +362,8 @@ export default function BottomSearchBar({
             <input
               ref={inputRef}
               className="search-bar-input"
-              type={textEntryOpen ? "text" : "search"}
+              type={unlockOpen ? "password" : textEntryOpen ? "text" : "search"}
+              autoComplete={unlockOpen ? "off" : undefined}
               inputMode={textEntryOpen ? "text" : "search"}
               enterKeyHint={textEntryOpen ? "done" : "search"}
               placeholder={textEntryOpen ? "여기에 입력하세요" : "검색"}
@@ -342,8 +381,8 @@ export default function BottomSearchBar({
               <button
                 type="button"
                 className="search-bar-inline-confirm"
-                onClick={confirmOpen ? confirm : infoOpen ? submitInfo : moveOpen ? submitMove : submitText}
-                disabled={confirmOpen ? busy : infoOpen ? !canSubmitInfo : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
+                onClick={confirmOpen ? confirm : unlockOpen ? submitUnlock : infoOpen ? submitInfo : moveOpen ? submitMove : submitText}
+                disabled={confirmOpen ? busy : unlockOpen ? !canSubmitUnlock : infoOpen ? !canSubmitInfo : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
               >
                 확인
               </button>

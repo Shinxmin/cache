@@ -160,6 +160,27 @@ export async function getItemInfo(token, id) {
   return rpcResult(await supabase.rpc("item_info", { p_token: token, p_id: id }));
 }
 
+// ── 스토리지 통합 암호 / 항목 잠금(암호화) ──────────────────────────────
+// 통합 암호는 서버에 bcrypt 해시로만 저장되고 비교도 서버가 한다. 잠긴 항목(files.locked)은 열 때 이 암호를
+// 입력해야 한다. 암호를 지우면 모든 항목의 잠금도 함께 풀린다.
+export async function getStoragePasswordStatus(token) {
+  const r = rpcResult(await supabase.rpc("storage_password_status", { p_token: token }));
+  return Boolean(r?.has_password);
+}
+export async function setStoragePassword(token, newPassword, currentPassword = null) {
+  return rpcResult(await supabase.rpc("set_storage_password", { p_token: token, p_new: newPassword, p_current: currentPassword }));
+}
+export async function deleteStoragePassword(token, currentPassword) {
+  return rpcResult(await supabase.rpc("delete_storage_password", { p_token: token, p_current: currentPassword }));
+}
+export async function verifyStoragePassword(token, password) {
+  const r = rpcResult(await supabase.rpc("verify_storage_password", { p_token: token, p_password: password }));
+  return Boolean(r?.valid);
+}
+export async function setFilesLocked(token, ids, locked) {
+  return rpcResult(await supabase.rpc("set_files_locked", { p_token: token, p_ids: ids, p_locked: locked }));
+}
+
 // 설정 → 중복된 파일. 같은 종류·같은 크기의 파일 중 그룹마다 가장 먼저 올린 하나(원본)를
 // 뺀 나머지(중복본)만 돌려준다 — 서버(list_duplicate_files)가 계산한다.
 export async function listDuplicateFiles(token) {

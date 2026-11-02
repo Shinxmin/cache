@@ -21,6 +21,9 @@ import {
 import {
   clearFolderThumbnail,
   getItemInfo,
+  getStoragePasswordStatus,
+  setFilesLocked,
+  verifyStoragePassword,
   getStorageRegion,
   getStorageUsed,
   measureStorageLatency,
@@ -134,6 +137,11 @@ export default function App() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [infoLines, setInfoLines] = useState(null); // [시각, "N개 파일 • 용량"] | null(불러오는 중)
   const [renameName, setRenameName] = useState("");
+  // 스토리지 통합 암호: 설정돼 있는지(정보 패널의 암호화 체크박스 활성 여부)와, 잠긴 항목을 열 때 뜨는 암호 입력 패널.
+  const [hasStoragePw, setHasStoragePw] = useState(false);
+  const [unlockOpen, setUnlockOpen] = useState(false);
+  const [unlockPw, setUnlockPw] = useState("");
+  const unlockRunRef = useRef(null); // 암호가 맞았을 때 이어서 실행할 동작(열기)
   const [movePath, setMovePath] = useState([]); // [{ id, name }]
   const [moveRows, setMoveRows] = useState([]);
   const [moveRowsState, setMoveRowsState] = useState("loading"); // loading | ready | error
@@ -165,10 +173,12 @@ export default function App() {
   // 스플릿 프리셋 항목(split_pair가 있는 항목)은 일반 뷰어로 스와이프해
   // 넘어가는 목록에서 뺀다 — 그 항목은 항상 직접 탭해서 스플릿 비교 화면
   // 으로만 열려야 하기 때문이다(handleOpenFile 참고).
+  // 암호화(잠금)된 항목은 스와이프로 넘어가는 목록에서도 뺀다 — 암호를 입력해 직접 연 그 항목만 뷰어에 들어간다.
   const mediaItems = useMemo(
-    () => visibleItems.filter((it) => (isImage(it.mime) || isVideo(it.mime)) && !it.split_pair),
+    () => visibleItems.filter((it) => (isImage(it.mime) || isVideo(it.mime)) && !it.split_pair && !it.locked),
     [visibleItems]
   );
+  const [viewerItems, setViewerItems] = useState([]);
 
   useEffect(() => {
     const stored = loadSession();
@@ -210,6 +220,19 @@ export default function App() {
       cancelled = true;
     };
   }, [session?.token, refreshKey]);
+
+  useEffect(() => {
+    if (!session) return undefined;
+    let cancelled = false;
+    getStoragePasswordStatus(session.token)
+      .then((has) => {
+        if (!cancelled) setHasStoragePw(has);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.token]);
 
   useEffect(() => {
     if (!session) return undefined;
@@ -381,18 +404,71 @@ export default function App() {
   // 이미지·영상은 누르기만 해서 다운로드되면 안 되므로 뷰어를 띄운다.
   // 스플릿 프리셋 항목(split_pair가 있는 항목)은 일반 뷰어 대신 그 자리에서
   // 다시 A/B 스플릿 비교 화면을 띄운다. 그 외 파일만 눌렀을 때 바로 내려받는다.
-  const handleOpenFile = (item) => {
+  const openFileNow = (item) => {
     if (item.split_pair) {
       setSplitCompareTargets(splitPresetParts(item));
       return;
     }
     if (isImage(item.mime) || isVideo(item.mime)) {
+      if (item.locked) {
+        // 암호를 입력해 연 잠긴 항목은 그 항목만 뷰어에 넣는다.
+        setViewerItems([item]);
+        setViewerIndex(0);
+        return;
+      }
       const idx = mediaItems.findIndex((it) => it.id === item.id);
+      setViewerItems(mediaItems);
       setViewerIndex(idx >= 0 ? idx : 0);
       return;
     }
     enqueue("down", [{ run: (onProgress) => downloadFile({ token: session.token, item, onProgress }) }]);
-    return undefined;
+  };
+
+  // 암호화(잠금)된 항목은 통합 암호를 입력해야 열린다. 검색바가 암호 입력창이 되고, 암호가 맞으면 열리고
+  // 틀리면 아무 반응이 없다(통합 암호가 없으면 막지 않는다).
+  const guardLocked = (item, run) => {
+    if (!item.locked || !hasStoragePw) {
+      run();
+      return;
+    }
+    closeAllToolPanels();
+    unlockRunRef.current = run;
+    setUnlockPw("");
+    setUnlockOpen(true);
+  };
+  const handleOpenFile = (item) => guardLocked(item, () => openFileNow(item));
+  const confirmUnlock = async () => {
+    const pw = unlockPw;
+    if (!pw) return;
+    let valid = false;
+    try {
+      valid = await verifyStoragePassword(session.token, pw);
+    } catch {
+      valid = false;
+    }
+    if (!valid) return; // 틀리면 아무 반응 없음
+    const run = unlockRunRef.current;
+    unlockRunRef.current = null;
+    setUnlockOpen(false);
+    setUnlockPw("");
+    run?.();
+  };
+  const cancelUnlock = () => {
+    unlockRunRef.current = null;
+    setUnlockOpen(false);
+    setUnlockPw("");
+  };
+
+  // 정보 패널의 암호화 체크박스: 선택한 하나를 잠그거나 푼다(잠그려면 통합 암호가 있어야 한다).
+  const toggleInfoLock = async () => {
+    const item = visibleItems.find((it) => selectedIds.has(it.id));
+    if (!item || (!item.locked && !hasStoragePw)) return;
+    try {
+      await setFilesLocked(session.token, [item.id], !item.locked);
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("암호화 설정을 바꾸지 못했습니다");
+    }
   };
 
   // 선택된 항목을 기기에 저장한다(다운로드 대기열에 넣고 선택은 바로 푼다). 항목이 하나뿐이면 폴더는
@@ -481,6 +557,7 @@ export default function App() {
     cancelMove();
     setRenameOpen(false);
     setInfoOpen(false);
+    setUnlockOpen(false);
   };
 
   // 선택 메뉴의 정보: 하나만 선택했을 때만 동작한다. 파일은 이미 불러온 항목 값을, 폴더는 서버가 하위 모든
@@ -745,6 +822,7 @@ export default function App() {
         onOpenTags={() => setShowTags(true)}
         onOpenDuplicates={() => setShowDuplicates(true)}
         onBack={() => setShowSettings(false)}
+        onStoragePasswordChange={setHasStoragePw}
         onLogout={() => {
           clearSession();
           setSession(null);
@@ -800,7 +878,7 @@ export default function App() {
               parentId={parentId}
               favorites={favoritesView}
               searchQuery={searchQuery}
-              onOpenFolder={openFolder}
+              onOpenFolder={(item) => guardLocked(item, () => openFolder(item))}
               onOpenFile={handleOpenFile}
               refreshKey={refreshKey}
               selectionMode={selectedIds.size > 0}
@@ -844,6 +922,14 @@ export default function App() {
             onMoveSelected={handleMoveSelected}
             onRenameSelected={handleRenameSelected}
             onInfoSelected={handleInfoSelected}
+            infoLocked={Boolean(visibleItems.find((it) => selectedIds.has(it.id))?.locked)}
+            infoLockDisabled={!hasStoragePw && !visibleItems.find((it) => selectedIds.has(it.id))?.locked}
+            onToggleInfoLock={toggleInfoLock}
+            unlockOpen={unlockOpen}
+            unlockPw={unlockPw}
+            onChangeUnlockPw={setUnlockPw}
+            onConfirmUnlock={confirmUnlock}
+            onCancelUnlock={cancelUnlock}
             allSelected={allSelected}
             onToggleSelectAll={handleToggleSelectAll}
             onDownloadSelected={handleDownloadSelected}
@@ -874,7 +960,7 @@ export default function App() {
       {viewerIndex !== null && (
         <FileViewer
           session={session}
-          items={mediaItems}
+          items={viewerItems}
           initialIndex={viewerIndex}
           onClose={() => setViewerIndex(null)}
         />
