@@ -194,83 +194,9 @@ export default function BottomSearchBar({
         ? onCancelMove
         : onCancelDelete;
 
-  // 패널이 열려 있어도 파일·폴더 타일을 "꾹 눌러"(또는 탭해) 선택을 켜거나
-  // 끌 수 있어야 한다 — 패널을 계속 연 채로 대상을 더하거나 뺄 수 있게
-  // 하기 위해서다. 스크림이 화면을 덮고 있어 진짜 포인터다운이 타일
-  // 자신에게는 닿지 않으므로, 스크림에서 받은 실제 포인터다운·이동·업
-  // 좌표를 그대로 타일에 합성 이벤트로 전달한다 — 그래야 타일의
-  // useLongPress 훅이 원래와 똑같이 꾹 누른 시간을 재서 탭/꾹 누르기를
-  // 구분할 수 있다(클릭만 흉내 내면 "짧게 탭"밖에 재현할 수 없어 꾹 누르기
-  // 자체는 절대 발동하지 않는다).
-  //
-  // 포인터다운 시점에 찾은 그 타일 참조를 forwardTileRef에 그대로 들고
-  // 있다가 이동·업도 같은 타일로 보낸다 — 도중에 좌표로 다시 찾지 않는다.
-  // 포인터다운에서 이미 타일을 찾아 처리했다면, 뒤이은 click은 좌표를 다시
-  // 확인하지 않고 그냥 건너뛴다(handledByPointerRef).
-  const forwardTileRef = useRef(null);
-  const handledByPointerRef = useRef(false);
-  const dispatchToTile = (tile, type, e) => {
-    tile.dispatchEvent(
-      new PointerEvent(type, {
-        bubbles: true,
-        cancelable: true,
-        pointerId: e.pointerId,
-        pointerType: e.pointerType,
-        clientX: e.clientX,
-        clientY: e.clientY,
-        button: e.button,
-      })
-    );
-  };
-  const stopForwardingToTile = () => {
-    window.removeEventListener("pointermove", onForwardTileMove);
-    window.removeEventListener("pointerup", onForwardTileUp);
-    window.removeEventListener("pointercancel", onForwardTileUp);
-    forwardTileRef.current = null;
-  };
-  function onForwardTileMove(e) {
-    const tile = forwardTileRef.current;
-    if (!tile) return;
-    dispatchToTile(tile, "pointermove", e);
-  }
-  function onForwardTileUp(e) {
-    const tile = forwardTileRef.current;
-    stopForwardingToTile();
-    if (!tile) return;
-    dispatchToTile(tile, e.type === "pointercancel" ? "pointercancel" : "pointerup", e);
-  }
-  const handleScrimPointerDown = (e) => {
-    const stack = document.elementsFromPoint(e.clientX, e.clientY);
-    const tile = stack.find((el) => el.classList?.contains("drive-tile-btn") || el.classList?.contains("drive-row"));
-    if (!tile) return;
-    forwardTileRef.current = tile;
-    handledByPointerRef.current = true;
-    dispatchToTile(tile, "pointerdown", e);
-    window.addEventListener("pointermove", onForwardTileMove);
-    window.addEventListener("pointerup", onForwardTileUp);
-    window.addEventListener("pointercancel", onForwardTileUp);
-  };
-  // 패널이 닫히는 등으로 컴포넌트가 도중에 사라져도 걸어 둔 window 리스너가
-  // 남지 않게 정리한다.
-  useEffect(() => stopForwardingToTile, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // 위 포인터다운에서 이미 타일을 찾아 눌러 처리했다면, 뒤이은 click은
-  // 다시 좌표를 확인하지 않고 넘어간다(handledByPointerRef 설명 참고).
-  // 그 외(포인터 이벤트를 못 쓰는 환경 등)에는 예전처럼 클릭 좌표로 타일을
-  // 찾아 탭을 흉내 내고, 타일도 아니면 빈 자리를 눌렀다고 보고 취소한다.
-  const handleScrimClick = (e) => {
-    if (handledByPointerRef.current) {
-      handledByPointerRef.current = false;
-      return;
-    }
-    const stack = document.elementsFromPoint(e.clientX, e.clientY);
-    const tile = stack.find((el) => el.classList?.contains("drive-tile-btn") || el.classList?.contains("drive-row"));
-    if (tile) {
-      tile.click();
-      return;
-    }
-    onCancelScrim?.();
-  };
+  // 패널이 열려 있는 동안 화면의 어느 곳을 눌러도(파일·폴더 타일 포함) 그 기능은 취소되고 하단바 패널이
+  // 닫힌다. 타일을 눌러도 선택은 건드리지 않는다 — 열어 둔 기능의 대상(선택)이 도중에 바뀌지 않게 한다.
+  const handleScrimClick = () => onCancelScrim?.();
 
   // 스크롤하는 동안 하단바를 가운데 작은 가로 알약(⌄만 보임)으로 접고, 스크롤이 멈추면(250ms 동안 스크롤
   // 이벤트가 없으면) 다시 펼친다. 패널이 열려 있거나 검색창에 입력 중일 때는 접지 않는다.
@@ -297,7 +223,7 @@ export default function BottomSearchBar({
   return (
     <>
       {panelOpen && (
-        <div className="search-bar-scrim is-blurred" onClick={handleScrimClick} onPointerDown={handleScrimPointerDown} />
+        <div className="search-bar-scrim is-blurred" onClick={handleScrimClick} />
       )}
       <div className="bottom-search-wrap">
         <div
