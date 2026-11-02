@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BackIcon, EditIcon, FileIcon, SettingsIcon } from "./icons";
+import { BackIcon, CheckIcon, DownloadIcon, EditIcon, FileIcon, SettingsIcon } from "./icons";
 import HeaderMoreButton from "./HeaderMoreButton";
 import SelectionMoreButton from "./SelectionMoreButton";
 import Spinner from "./Spinner";
@@ -81,6 +81,9 @@ export default function BottomSearchBar({
   onMoveSelected,
   onRenameSelected,
   onInfoSelected,
+  allSelected,
+  onToggleSelectAll,
+  onDownloadSelected,
   onConfirmInfo,
   infoDisabled,
   infoOpen,
@@ -361,17 +364,29 @@ export default function BottomSearchBar({
               선택이 풀리면(동작을 마치면 선택이 풀린다) 다시 + 버튼으로 돌아온다. 둘 다 누르면
               왼쪽으로 펼쳐진다. */}
           <div className="search-dock-actions">
-            {/* 왼쪽 끝의 뒤로 가기. 최상위(홈)에서도 자리는 지키되 표준 비활성 투명도로 흐려지고 눌리지
-                않는다. */}
-            <button
-              className="header-settings dock-back"
-              type="button"
-              aria-label="뒤로"
-              disabled={!canGoBack}
-              onClick={onBack}
-            >
-              <DockBackIcon />
-            </button>
+            {/* 왼쪽 끝 버튼: 파일·폴더를 선택하는 동안은 전체 선택/해제(체크 아이콘), 아니면 뒤로 가기.
+                뒤로 가기는 최상위(홈)에서도 자리는 지키되 표준 비활성 투명도로 흐려지고 눌리지 않는다. */}
+            {hasSelection ? (
+              <button
+                className="header-settings dock-back"
+                type="button"
+                aria-label={allSelected ? "전체 해제" : "전체 선택"}
+                aria-pressed={Boolean(allSelected)}
+                onClick={() => onToggleSelectAll?.(!allSelected)}
+              >
+                <CheckIcon size={22} strokeWidth={2} />
+              </button>
+            ) : (
+              <button
+                className="header-settings dock-back"
+                type="button"
+                aria-label="뒤로"
+                disabled={!canGoBack}
+                onClick={onBack}
+              >
+                <DockBackIcon />
+              </button>
+            )}
             {/* + 와 삼점은 같은 자리를 번갈아 쓴다 — 전환 애니메이션 없이 그 자리의 버튼(아이콘)만 바뀐다.
                 펼침 애니메이션(누르면 왼쪽으로 늘어나는 것)은 각자 그대로다. */}
             {hasSelection ? (
@@ -385,10 +400,17 @@ export default function BottomSearchBar({
             ) : (
               <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} />
             )}
-            {onOpenSettings && (
-              <button className="header-settings" type="button" aria-label="설정" onClick={onOpenSettings}>
-                <SettingsIcon size={19} />
+            {/* 오른쪽 끝 버튼: 선택하는 동안은 다운로드(아래 화살표, 선택한 항목을 기기에 저장), 아니면 설정. */}
+            {hasSelection ? (
+              <button className="header-settings" type="button" aria-label="다운로드" onClick={onDownloadSelected}>
+                <DownloadIcon size={19} />
               </button>
+            ) : (
+              onOpenSettings && (
+                <button className="header-settings" type="button" aria-label="설정" onClick={onOpenSettings}>
+                  <SettingsIcon size={19} />
+                </button>
+              )
             )}
           </div>
           </div>
