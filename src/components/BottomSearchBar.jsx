@@ -53,6 +53,7 @@ function FolderIcon({ size = 18 }) {
 // 여러 상태 중 둘 이상 동시에 열릴 수는 없으므로(App.jsx가 하나를 열 때 나머지를 닫는다)
 // 패널·검색바 내용물은 그때그때 하나만 그린다.
 export default function BottomSearchBar({
+  inactive = false,
   searchQuery,
   onSearch,
   confirmOpen,
@@ -267,7 +268,7 @@ export default function BottomSearchBar({
       )}
       <div className="bottom-search-wrap">
         <div
-          className={`search-dock${panelOpen ? " has-confirm" : ""}${collapsed ? " is-collapsed" : ""}`}
+          className={`search-dock${panelOpen ? " has-confirm" : ""}${collapsed ? " is-collapsed" : ""}${inactive ? " is-inactive" : ""}`}
           onClick={(e) => {
             // 패널이 열려 있을 때 하단바 안의 빈 곳(제목·여백·버튼 사이)을 눌러도 바깥 빈 곳과 같이 취소한다.
             // 버튼·입력창·이동 목록처럼 실제로 눌리는 것은 제외.
@@ -368,7 +369,7 @@ export default function BottomSearchBar({
               enterKeyHint={textEntryOpen ? "done" : "search"}
               placeholder={textEntryOpen ? "여기에 입력하세요" : "검색"}
               value={textValue}
-              disabled={inputDisabled}
+              disabled={inputDisabled || inactive}
               onChange={(e) => onTextChange(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key !== "Enter") return;
@@ -427,7 +428,7 @@ export default function BottomSearchBar({
                 infoDisabled={infoDisabled}
               />
             ) : (
-              <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} />
+              <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} disabled={inactive} />
             )}
             {/* 오른쪽 끝 버튼: 선택하는 동안은 다운로드(아래 화살표, 선택한 항목을 기기에 저장), 아니면 설정. */}
             {hasSelection ? (
@@ -435,8 +436,8 @@ export default function BottomSearchBar({
                 <DownloadIcon size={19} />
               </button>
             ) : (
-              onOpenSettings && (
-                <button className="header-settings" type="button" aria-label="설정" onClick={onOpenSettings}>
+              (onOpenSettings || inactive) && (
+                <button className="header-settings" type="button" aria-label="설정" disabled={inactive} onClick={onOpenSettings}>
                   <SettingsIcon size={19} />
                 </button>
               )

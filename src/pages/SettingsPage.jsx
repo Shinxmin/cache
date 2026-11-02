@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import ThemeSwitch from "../components/ThemeSwitch";
 import StoragePasswordSection from "../components/StoragePasswordSection";
-import { BackIcon, ChevronRightIcon } from "../components/icons";
+import BottomSearchBar from "../components/BottomSearchBar";
+import { ChevronRightIcon } from "../components/icons";
 import { APP_VERSION } from "../lib/version";
 import { getStorageUsed } from "../lib/drive";
 import { formatBytes, STORAGE_QUOTA_BYTES } from "../lib/format";
@@ -40,13 +41,10 @@ export default function SettingsPage({
     <>
       <header className="page-header page-header--static page-header--no-blur">
         <div className="page-header-row">
-          <button className="header-back" type="button" aria-label="뒤로" onClick={onBack}>
-            <BackIcon />
-          </button>
           <h1 className="page-title">설정</h1>
         </div>
       </header>
-      <div className="page page--flush">
+      <div className="page page--flush page--has-dock">
         <div className="settings-list">
           <div className="settings-row settings-row--toggle">
             <span className="settings-row-label">테마</span>
@@ -82,6 +80,9 @@ export default function SettingsPage({
           <p className="settings-version">v{APP_VERSION}</p>
         </div>
       </div>
+      {/* 홈 화면과 같은 하단바. 검색창·+·설정 버튼은 표준 비활성 디자인으로 흐려지고, < 버튼만 눌려서
+          설정을 닫는다. */}
+      <BottomSearchBar inactive canGoBack onBack={onBack} />
     </>
   );
 }
