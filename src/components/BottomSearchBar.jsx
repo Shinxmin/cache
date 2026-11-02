@@ -300,7 +300,16 @@ export default function BottomSearchBar({
         <div className="search-bar-scrim is-blurred" onClick={handleScrimClick} onPointerDown={handleScrimPointerDown} />
       )}
       <div className="bottom-search-wrap">
-        <div className={`search-dock${panelOpen ? " has-confirm" : ""}${collapsed ? " is-collapsed" : ""}`}>
+        <div
+          className={`search-dock${panelOpen ? " has-confirm" : ""}${collapsed ? " is-collapsed" : ""}`}
+          onClick={(e) => {
+            // 패널이 열려 있을 때 하단바 안의 빈 곳(제목·여백·버튼 사이)을 눌러도 바깥 빈 곳과 같이 취소한다.
+            // 버튼·입력창·이동 목록처럼 실제로 눌리는 것은 제외.
+            if (!panelOpen) return;
+            if (e.target.closest("button, input, a, .move-list, .move-path")) return;
+            onCancelScrim?.();
+          }}
+        >
           {/* 스크롤하는 동안 하단바가 접혀 가운데 작은 가로 알약이 되면 이 꺾쇠(⌄) 하나만 보인다. */}
           <span className="search-dock-collapsed-icon" aria-hidden="true">
             <ChevronDownIcon />
