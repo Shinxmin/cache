@@ -739,6 +739,21 @@ main.page {
 }
 /* 하단바 아래 줄의 버튼들: + 버튼과 선택 메뉴(삼점)는 같은 자리를 번갈아 쓰고(둘 중 하나만 45px
    폭으로 보인다), 그 오른쪽에 설정 버튼이 8px 떨어져 있다. */
+/* 설정 화면의 하단바(inactive): 검색창·+·설정 버튼은 표준 비활성 투명도로 흐려지고 눌리지 않으며,
+   뒤로 가기(<)만 활성이다. */
+.search-dock.is-inactive .search-bar {
+  opacity: var(--studio-disabled);
+  pointer-events: none;
+}
+.search-dock.is-inactive .header-more--add,
+.search-dock.is-inactive .search-dock-actions .header-settings:not(.dock-back) {
+  opacity: var(--studio-disabled);
+  pointer-events: none;
+}
+/* 하단바가 떠 있는 화면(설정)은 목록 아래에 하단바 높이(120px)만큼 여백을 둔다. */
+.page--has-dock {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 120px + 16.1px + 16px);
+}
 .search-dock-actions .header-more {
   margin-right: 0;
 }

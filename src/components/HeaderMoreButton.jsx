@@ -23,7 +23,7 @@ function FolderIcon() {
 //
 // 애니메이션은 순수 CSS다 — 바깥 박스(overflow:hidden)의 width만 트랜지션하고, 안쪽 3항목 행은
 // 항상 justify-content: flex-end로 오른쪽 정렬해 둔다. 업로드/새 폴더를 누르면 그 자리에서 닫는다.
-export default function HeaderMoreButton({ onUpload, onNewFolder, hidden = false }) {
+export default function HeaderMoreButton({ onUpload, onNewFolder, hidden = false, disabled = false }) {
   const [open, setOpen] = useState(false);
   // 파일·폴더를 선택하는 동안에는 이 자리를 선택 메뉴(삼점)가 대신 쓴다 — 접히며 사라지고(열려
   // 있었다면 닫힌다), 선택이 풀리면 다시 펼쳐지며 돌아온다.
@@ -84,6 +84,7 @@ export default function HeaderMoreButton({ onUpload, onNewFolder, hidden = false
           type="button"
           aria-label={open ? "닫기" : "추가"}
           aria-expanded={open}
+          disabled={disabled}
           onClick={toggle}
         >
           <span className="header-more-icon">
