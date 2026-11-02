@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import PageHeader from "./components/PageHeader";
+import StorageSection from "./components/StorageSection";
 import BottomSearchBar from "./components/BottomSearchBar";
 import SplashScreen from "./components/SplashScreen";
 import AuthPage from "./pages/AuthPage";
@@ -789,8 +790,8 @@ export default function App() {
       {(
         <>
           <main className="page">
-            <PageHeader
-              title={title}
+            <PageHeader title={title} />
+            <StorageSection
               storageUsed={storageUsed}
               storageRegion={storageRegion}
               storageLatency={storageLatency}

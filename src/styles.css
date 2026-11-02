@@ -221,7 +221,7 @@ main.page {
 .page-brand-box {
   position: relative;
   z-index: 1;
-  margin-top: 6px;
+  margin: 6px 0 18px;
   padding: 14px 16px 15px;
   border: 1px solid rgba(128, 128, 128, 0.28);
   border-radius: 24px;
@@ -604,8 +604,52 @@ main.page {
   backdrop-filter: blur(28px) saturate(200%);
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-border);
   overflow: hidden;
-  /* 이 헤더의 다른 원형 글래스 버튼들과 동일한 눌림 애니메이션 */
-  transition: transform 0.35s var(--spring);
+  width: 100%;
+  min-height: 0;
+  margin: 0 auto;
+  /* 이 헤더의 다른 원형 글래스 버튼들과 동일한 눌림 애니메이션 + 스크롤 중 접힘/펼침 */
+  transition: transform 0.35s var(--spring), width 0.45s var(--spring), min-height 0.45s var(--spring), background 0.3s var(--ease);
+}
+/* ── 스크롤 중 접힘: 스크롤하는 동안 하단바 전체가 가운데의 작은 가로 알약(96×30px)으로 줄어들고
+   안의 내용은 사라진 채 꺾쇠(⌄) 하나만 가운데에 보인다. 스크롤이 멈추면 원래대로 펼쳐진다.
+   높이는 내용 묶음(.search-dock-body)을 grid 1fr↔0fr로 접어 자연스럽게 애니메이션한다. 접힐 때는
+   내용이 먼저 빠르게 사라지고, 펼칠 때는 크기가 거의 돌아온 뒤에 내용이 나타난다. ── */
+.search-dock-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.45s var(--spring), opacity 0.2s var(--ease) 0.2s;
+}
+.search-dock-body-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+.search-dock.is-collapsed {
+  width: 96px;
+  min-height: 30px;
+  /* 작은 알약 뒤로 목록 글자가 비쳐 꺾쇠와 겹쳐 보이지 않도록, 접혀 있는 동안은 불투명한 면으로 칠한다. */
+  background: var(--surface);
+}
+.search-dock.is-collapsed .search-dock-body {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  pointer-events: none;
+  transition: grid-template-rows 0.45s var(--spring), opacity 0.12s var(--ease);
+}
+.search-dock-collapsed-icon {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--icon);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s var(--ease);
+}
+.search-dock.is-collapsed .search-dock-collapsed-icon {
+  opacity: 1;
+  transition: opacity 0.2s var(--ease) 0.15s;
 }
 .search-dock::before {
   /* 유리 윗면에 비치는 얇은 하이라이트 — 독 전체에 한 번만 그린다 */
