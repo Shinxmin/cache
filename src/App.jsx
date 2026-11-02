@@ -558,7 +558,7 @@ export default function App() {
     // 정보 패널의 검색바는 이름 입력창이다 — 기존 이름을 먼저 채워 둔다.
     setRenameName(item.name);
     setInfoOpen(true);
-    const build = (createdAt, files, size) => [formatDateTime(createdAt), `${files}개 파일 • ${formatBytes(size)}`];
+    const build = (createdAt, files, size) => [formatDateTime(createdAt), `${files}개 파일, ${formatBytes(size)}`];
     if (!item.is_folder) {
       setInfoLines(build(item.created_at, 1, item.size));
       return;

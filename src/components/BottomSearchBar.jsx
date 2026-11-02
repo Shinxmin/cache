@@ -264,7 +264,7 @@ export default function BottomSearchBar({
           <div className="search-dock-body" aria-hidden={collapsed}>
           <div className="search-dock-body-inner">
           <div
-            className={`search-bar-confirm-panel${displayMode === "move" ? " mode-move" : ""}${panelOpen ? " is-open" : ""}`}
+            className={`search-bar-confirm-panel${displayMode === "move" ? " mode-move" : ""}${displayMode === "info" ? " mode-info" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
           >
             <div className="search-bar-confirm-content" key={displayMode}>
