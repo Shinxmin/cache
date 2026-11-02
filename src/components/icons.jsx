@@ -160,7 +160,7 @@ export function DuplicateIcon({ size = 18 }) {
 }
 
 // 선택된 항목 배지에 쓰는 체크마크. 체크박스(Checkbox.jsx)와 같은 획 스타일이다.
-export function CheckIcon({ size = 13 }) {
+export function CheckIcon({ size = 13, strokeWidth = 3 }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -168,7 +168,7 @@ export function CheckIcon({ size = 13 }) {
       height={size}
       fill="none"
       stroke="currentColor"
-      strokeWidth="3"
+      strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"

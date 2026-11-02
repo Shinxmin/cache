@@ -44,6 +44,7 @@ import {
 import { isImage, isVideo } from "./lib/thumbnail";
 import { isOptimizableFile } from "./lib/optimize";
 import { extensionOf } from "./lib/filename";
+import useTransferQueue from "./hooks/useTransferQueue";
 import { formatBytes, formatDateTime } from "./lib/format";
 import { isSearchActive } from "./lib/search";
 import { loadTheme, saveTheme } from "./lib/theme";
@@ -322,40 +323,25 @@ export default function App() {
     setSelectedIds(checked ? new Set(visibleItems.map((it) => it.id)) : new Set());
   };
 
-  // 업로드·다운로드 실행. 전송 현황 화면은 없어졌으므로 실패했을 때만 알린다.
-  const track = async (name, direction, run) => {
-    try {
-      await run(() => {});
-      return true;
-    } catch {
-      window.alert(direction === "up" ? `${name} 업로드에 실패했습니다` : `${name} 다운로드에 실패했습니다`);
-      return false;
-    }
-  };
+  // 업로드·다운로드는 종류별 대기열(useTransferQueue)에 작업으로 넣는다 — 하나가 끝나야 다음 것을 처리하고,
+  // 진행 중에도 다른 동작을 계속 할 수 있다. 진행도·실패는 헤더 오른쪽의 원형 버튼이 보여준다.
+  const { transfers, enqueue, ack: ackTransfer } = useTransferQueue();
 
-  // 확장자 제한 없이 고른 파일을 순서대로 R2에 올린다. 헤더의 원형 게이지는
-  // 지금 올리는 파일 하나가 아니라 이번에 고른 파일 전체 기준 진행도를 보여준다.
-  // 즐겨찾기 화면에서 눌렀다면 업로드 결과(방금 올린 파일)를 볼 수 있도록
-  // 먼저 즐겨찾기를 닫아 파일 화면으로 나온다.
-  const handleUpload = async (fileList) => {
+  // 확장자 제한 없이 고른 파일을 대기열에 넣어 순서대로 R2에 올린다. 즐겨찾기 화면에서 눌렀다면 업로드
+  // 결과(방금 올린 파일)를 볼 수 있도록 먼저 즐겨찾기를 닫아 파일 화면으로 나온다.
+  const handleUpload = (fileList) => {
     if (showFavorites) setShowFavorites(false);
     const files = Array.from(fileList ?? []);
     const target = parentId;
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const ok = await track(file.name, "up", (onProgress) =>
-        uploadFile({
-          token: session.token,
-          userId: session.userId,
-          file,
-          parentId: target,
-          onProgress: (p) => {
-            onProgress(p);
-          },
-        })
-      );
-      if (ok) setRefreshKey((k) => k + 1);
-    }
+    enqueue(
+      "up",
+      files.map((file) => ({
+        run: async (onProgress) => {
+          await uploadFile({ token: session.token, userId: session.userId, file, parentId: target, onProgress });
+          setRefreshKey((k) => k + 1);
+        },
+      }))
+    );
   };
 
   // 새 폴더도 업로드와 같은 이유로, 즐겨찾기 화면에서 눌렀다면 먼저
@@ -405,76 +391,30 @@ export default function App() {
       setViewerIndex(idx >= 0 ? idx : 0);
       return;
     }
-    return track(item.name, "down", (onProgress) =>
-      downloadFile({
-        token: session.token,
-        item,
-        onProgress: (p) => {
-          onProgress(p);
-        },
-      })
-    );
+    enqueue("down", [{ run: (onProgress) => downloadFile({ token: session.token, item, onProgress }) }]);
+    return undefined;
   };
 
-  // 선택된 항목을 내려받는다. 항목이 하나뿐이면 폴더는 "폴더 이름.zip"으로,
-  // 일반 파일은 그대로 내려받는다. 2개 이상이면(폴더·파일 섞여 있어도) 전부
-  // 한 zip 하나로 묶어 내려받는다.
-  const handleDownloadSelected = async () => {
+  // 선택된 항목을 기기에 저장한다(다운로드 대기열에 넣고 선택은 바로 푼다). 항목이 하나뿐이면 폴더는
+  // "폴더 이름.zip"으로, 일반 파일은 그대로 내려받는다. 2개 이상이면(폴더·파일 섞여 있어도) 전부 한 zip
+  // 하나로 묶어 내려받는다.
+  const handleDownloadSelected = () => {
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
     if (!targets.length) return;
-
+    const token = session.token;
+    let run;
     if (targets.length === 1) {
       const item = targets[0];
-      const onProgress = () => {};
-      if (item.is_folder) {
-        await track(`${item.name}.zip`, "down", (progress) =>
-          downloadFolderAsZip({
-            token: session.token,
-            folder: item,
-            onProgress: (p) => {
-              progress(p);
-              onProgress(p);
-            },
-          })
-        );
-      } else if (item.split_pair) {
-        // 스플릿 프리셋 항목은 하나로 합쳐 받지 않고 A·B를 각자 따로 받는다.
-        await track(item.name, "down", (progress) =>
-          downloadSplitPresetFiles({
-            token: session.token,
-            item,
-            onProgress: (p) => {
-              progress(p);
-              onProgress(p);
-            },
-          })
-        );
-      } else {
-        await track(item.name, "down", (progress) =>
-          downloadFile({
-            token: session.token,
-            item,
-            onProgress: (p) => {
-              progress(p);
-              onProgress(p);
-            },
-          })
-        );
-      }
-      return;
+      if (item.is_folder) run = (onProgress) => downloadFolderAsZip({ token, folder: item, onProgress });
+      // 스플릿 프리셋 항목은 하나로 합쳐 받지 않고 A·B를 각자 따로 받는다.
+      else if (item.split_pair) run = (onProgress) => downloadSplitPresetFiles({ token, item, onProgress });
+      else run = (onProgress) => downloadFile({ token, item, onProgress });
+    } else {
+      const zipName = `선택한 항목 ${targets.length}개.zip`;
+      run = (onProgress) => downloadSelectionAsZip({ token, items: targets, zipName, onProgress });
     }
-
-    const zipName = `선택한 항목 ${targets.length}개.zip`;
-    await track(zipName, "down", (progress) =>
-      downloadSelectionAsZip({
-        token: session.token,
-        items: targets,
-        zipName,
-        onProgress: (p) => {
-          progress(p);
-        },
-      })
-    );
+    enqueue("down", [{ run }]);
+    setSelectedIds(new Set());
   };
 
   // 선택된 항목 중 이미지·영상만 대상으로 썸네일 블러를 토글한다. 전체가
@@ -844,7 +784,7 @@ export default function App() {
       {(
         <>
           <main className="page">
-            <PageHeader title={title} />
+            <PageHeader title={title} transfers={transfers} onAckTransfer={ackTransfer} />
             {/* 스토리지 섹션은 파일 최상위(홈)에서만 보인다 — 하위 폴더·즐겨찾기·검색 결과에서는 숨긴다. */}
             {folderPath.length === 0 && !favoritesView && !isSearchActive(searchQuery) && (
               <StorageSection
@@ -904,6 +844,9 @@ export default function App() {
             onMoveSelected={handleMoveSelected}
             onRenameSelected={handleRenameSelected}
             onInfoSelected={handleInfoSelected}
+            allSelected={allSelected}
+            onToggleSelectAll={handleToggleSelectAll}
+            onDownloadSelected={handleDownloadSelected}
             onConfirmInfo={confirmInfo}
             infoDisabled={selectedIds.size !== 1}
             infoOpen={infoOpen}
