@@ -411,13 +411,18 @@ export default function BottomSearchBar({
             >
               <DockBackIcon />
             </button>
-            <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} hidden={Boolean(hasSelection)} />
-            <SelectionMoreButton
-              visible={Boolean(hasSelection)}
-              onDelete={onDeleteSelected}
-              onMove={onMoveSelected}
-              onRename={onRenameSelected}
-            />
+            {/* + 와 삼점은 같은 자리를 번갈아 쓴다 — 전환 애니메이션 없이 그 자리의 버튼(아이콘)만 바뀐다.
+                펼침 애니메이션(누르면 왼쪽으로 늘어나는 것)은 각자 그대로다. */}
+            {hasSelection ? (
+              <SelectionMoreButton
+                visible
+                onDelete={onDeleteSelected}
+                onMove={onMoveSelected}
+                onRename={onRenameSelected}
+              />
+            ) : (
+              <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} />
+            )}
             {onOpenSettings && (
               <button className="header-settings" type="button" aria-label="설정" onClick={onOpenSettings}>
                 <SettingsIcon size={19} />
