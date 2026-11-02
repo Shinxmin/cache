@@ -81,6 +81,7 @@ export default function BottomSearchBar({
   onMoveSelected,
   onRenameSelected,
   onInfoSelected,
+  onConfirmInfo,
   infoDisabled,
   infoOpen,
   infoLines,
@@ -109,7 +110,7 @@ export default function BottomSearchBar({
   const panelOpen = confirmOpen || newFolderOpen || renameOpen || moveOpen || infoOpen;
 
   // 검색바가 검색 대신 값을 입력받는 상태 — 새 폴더·이름 바꾸기.
-  const textEntryOpen = newFolderOpen || renameOpen;
+  const textEntryOpen = newFolderOpen || renameOpen || infoOpen;
   // 입력창을 쓰지 않는 패널(삭제 확인·이동)이 열려 있을 때는 검색바
   // 입력을 아예 비활성화한다 — 패널이 열려 있는 동안 검색어를 바꿔 지금 폴더
   // 목록 자체가 통째로 달라지는 걸 막기 위해서다.
@@ -186,13 +187,24 @@ export default function BottomSearchBar({
   // 막지만 목록에서 미리 눌리지 않게 해 둔다.
   const moveExcluded = moveExcludedIds ?? new Set();
 
-  const textValue = newFolderOpen ? newFolderName : renameOpen ? renameName : searchQuery;
+  const textValue = newFolderOpen ? newFolderName : renameOpen || infoOpen ? renameName : searchQuery;
   const onTextChange = (value) => {
     if (newFolderOpen) onChangeNewFolderName?.(value);
-    else if (renameOpen) onChangeRenameName?.(value);
+    else if (renameOpen || infoOpen) onChangeRenameName?.(value);
     else onSearch?.(value);
   };
-  const submitText = () => (newFolderOpen ? submitFolder() : renameOpen ? submitRename() : undefined);
+  // 정보 패널의 검색바는 이름 입력창이다 — 기존 이름이 채워져 있고, 확인하면 이름이 바뀌었을 때만 바꾼다.
+  const canSubmitInfo = Boolean(renameName?.trim()) && !renameBusy;
+  const submitInfo = async () => {
+    if (!canSubmitInfo) return;
+    setRenameBusy(true);
+    try {
+      await onConfirmInfo();
+    } finally {
+      setRenameBusy(false);
+    }
+  };
+  const submitText = () => (newFolderOpen ? submitFolder() : renameOpen ? submitRename() : infoOpen ? submitInfo() : undefined);
   const onCancelScrim = newFolderOpen
     ? onCancelNewFolder
     : renameOpen
@@ -272,7 +284,6 @@ export default function BottomSearchBar({
               ) : displayMode === "move" ? (
                 <>
                   <p className="search-bar-confirm-title search-bar-confirm-title--studio">이동</p>
-                  <p className="search-bar-confirm-desc">{moveItemCount}개 파일</p>
                   {movePath.length > 0 && (
                     <div className="move-path">
                       <button type="button" className="move-path-back" aria-label="상위 폴더로" onClick={onMoveBack}>
@@ -308,10 +319,7 @@ export default function BottomSearchBar({
                   </ul>
                 </>
               ) : (
-                <>
-                  <p className="search-bar-confirm-title search-bar-confirm-title--studio">삭제</p>
-                  <p className="search-bar-confirm-desc search-bar-confirm-desc--bottom">해당 항목은 휴지통에서 복구 및 삭제할 수 있습니다</p>
-                </>
+                <p className="search-bar-confirm-title search-bar-confirm-title--studio">삭제</p>
               )}
             </div>
           </div>
@@ -341,8 +349,8 @@ export default function BottomSearchBar({
               <button
                 type="button"
                 className="search-bar-inline-confirm"
-                onClick={confirmOpen ? confirm : infoOpen ? onCancelInfo : moveOpen ? submitMove : submitText}
-                disabled={confirmOpen ? busy : infoOpen ? false : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
+                onClick={confirmOpen ? confirm : infoOpen ? submitInfo : moveOpen ? submitMove : submitText}
+                disabled={confirmOpen ? busy : infoOpen ? !canSubmitInfo : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
               >
                 확인
               </button>

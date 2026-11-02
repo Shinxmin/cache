@@ -555,6 +555,8 @@ export default function App() {
     if (!item) return;
     closeAllToolPanels();
     setInfoLines(null);
+    // 정보 패널의 검색바는 이름 입력창이다 — 기존 이름을 먼저 채워 둔다.
+    setRenameName(item.name);
     setInfoOpen(true);
     const build = (createdAt, files, size) => [formatDateTime(createdAt), `${files}개 파일 • ${formatBytes(size)}`];
     if (!item.is_folder) {
@@ -591,6 +593,26 @@ export default function App() {
     closeAllToolPanels();
     setRenameName(targets.length === 1 ? targets[0].name : "");
     setRenameOpen(true);
+  };
+
+  // 정보 패널의 확인: 이름을 바꾸지 않았으면 그냥 닫고, 바꿨으면 이름을 저장한다.
+  const confirmInfo = async () => {
+    const typed = renameName.trim();
+    const item = visibleItems.find((it) => selectedIds.has(it.id));
+    if (!typed || !item) return;
+    if (typed === item.name) {
+      setInfoOpen(false);
+      return;
+    }
+    try {
+      await renameFiles(session.token, [{ id: item.id, name: typed }]);
+      setInfoOpen(false);
+      setRenameName("");
+      setSelectedIds(new Set());
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("이름을 바꾸지 못했습니다");
+    }
   };
 
   // 확인: 하나면 입력한 이름 그대로, 여러 개면 "입력한 이름_1", "_2"…에 각자 원래 확장자를 붙인다.
@@ -882,6 +904,7 @@ export default function App() {
             onMoveSelected={handleMoveSelected}
             onRenameSelected={handleRenameSelected}
             onInfoSelected={handleInfoSelected}
+            onConfirmInfo={confirmInfo}
             infoDisabled={selectedIds.size !== 1}
             infoOpen={infoOpen}
             infoLines={infoLines}

@@ -926,17 +926,11 @@ main.page {
 .search-bar-confirm-desc {
   margin: 3px 0 0;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--panel-text-2);
   text-align: left;
 }
-/* 삭제 확인의 본문만 제목 바로 밑이 아니라 패널 맨 아래 좌측에 붙인다 —
-   부모(.search-bar-confirm-panel)가 flex-column이라 margin-top:auto를
-   주면 남는 세로 공간을 전부 먹고 아래로 밀려난다. */
-.search-bar-confirm-desc--bottom {
-  margin-top: auto;
-}
-/* 정보 패널 본문: 삭제 패널 본문(.search-bar-confirm-desc--bottom)과 같은 자리에서 시작하는 두 줄. */
+/* 정보 패널 본문: 제목 밑에서 시작하는 두 줄. */
 .search-bar-confirm-info {
   margin-top: auto;
   display: flex;
@@ -1888,7 +1882,7 @@ main.page {
 .move-path-name {
   min-width: 0;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--panel-text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1940,7 +1934,7 @@ main.page {
 .move-row-name {
   min-width: 0;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--panel-text);
   overflow: hidden;
   text-overflow: ellipsis;
