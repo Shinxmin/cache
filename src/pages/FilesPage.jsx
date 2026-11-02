@@ -3,7 +3,7 @@ import { folderSizes, listFavorites, listFiles, searchFiles, thumbnailUrls } fro
 import { formatBytes } from "../lib/format";
 import { isOptimizableFile } from "../lib/optimize";
 import { isSearchActive, parseSearchQuery } from "../lib/search";
-import { CheckIcon, FileIcon, FolderIcon, PersonIcon, PersonOffIcon } from "../components/icons";
+import { CheckIcon, FileIcon, FolderIcon, LockIcon, PersonIcon, PersonOffIcon } from "../components/icons";
 import { StarIcon } from "../components/toolkitIcons";
 import Spinner from "../components/Spinner";
 import useLongPress from "../hooks/useLongPress";
@@ -89,9 +89,17 @@ function sizeLabel(item, revealed, folderSizeMap) {
 
 // 갤러리 타일 하나. 꾹 누르면 선택 모드로 들어가고(App.jsx가 스튜디오 툴킷을
 // 띄운다), 선택된 동안은 눌린 것처럼 살짝 눌려 보이며 체크 배지가 뜬다.
-function GalleryTile({ item, thumb, selected, size, pickIcon, onPickIcon, onClearIcon, pickDim, onTap, onLongPress }) {
+function GalleryTile({ item, thumb: thumbUrl, selected, size, pickIcon, onPickIcon, onClearIcon, pickDim, onTap, onLongPress }) {
   const press = useLongPress(onTap, onLongPress);
   const optimizable = !item.is_folder && isOptimizableFile(item.name, item.mime);
+  // 암호화(잠금)된 항목은 썸네일을 보여주지 않는다 — 파일은 문서 아이콘, 폴더는 폴더 아이콘으로 보이고
+  // 좌상단에 작은 자물쇠 아이콘이 붙는다.
+  const thumb = item.locked ? null : thumbUrl;
+  const lockBadge = item.locked ? (
+    <span className="drive-lock-badge" aria-label="암호화됨">
+      <LockIcon size={13} />
+    </span>
+  ) : null;
   return (
     <button
       className={`drive-tile-btn${selected ? " selected" : ""}${pickDim ? " is-pick-dim" : ""}`}
@@ -125,13 +133,14 @@ function GalleryTile({ item, thumb, selected, size, pickIcon, onPickIcon, onClea
         // 썸네일이 없는 폴더·일반 파일도 제목(+용량)을 타일 밖이 아니라 안쪽
         // 아래에 겹쳐서 보여준다(썸네일 타일과 같은 자리).
         <span className="drive-tile">
+          {lockBadge}
           {pickIcon && <ThumbActions variant="tile" size={15} item={item} onPick={onPickIcon} onClear={onClearIcon} />}
           {item.is_folder ? (
             <FolderIcon size={44} className="drive-tile-icon-small" />
           ) : (
             // 썸네일이 있어야 하는 이미지·영상인데 아직 안 왔을 때(로딩 중)
             // 잠깐 보이는 이 파일 아이콘도 폴더 아이콘과 같은 작은 크기로.
-            <FileIcon size={38} className={item.thumb_key ? "drive-tile-icon-small" : undefined} />
+            <FileIcon size={38} className={item.thumb_key && !item.locked ? "drive-tile-icon-small" : undefined} />
           )}
           {selected && (
             <span className="drive-select-badge">
@@ -162,6 +171,11 @@ function ListRow({ item, selected, size, pickIcon, onPickIcon, onClearIcon, pick
       <span className="drive-row-text">
         <span className="drive-row-title-line">
           <NameWithStar className="drive-row-name" name={item.name} favorite={item.favorite} />
+          {item.locked && (
+            <span className="drive-lock-inline" aria-label="암호화됨">
+              <LockIcon size={12} />
+            </span>
+          )}
           {pickIcon && <ThumbActions variant="row" size={15} item={item} onPick={onPickIcon} onClear={onClearIcon} />}
         </span>
         {size && <span className="drive-row-size">{size}</span>}
