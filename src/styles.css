@@ -2102,8 +2102,22 @@ main.page {
   flex-direction: row;
   gap: 8px;
 }
+/* 암호 입력란 한 줄: 입력란은 섹션 폭의 2/3(높이는 40px의 85%인 34px), 오른쪽 빈 곳에 확인 버튼. */
+.settings-pw-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.settings-pw-line .settings-pw-input {
+  flex: 0 0 66.667%;
+  min-width: 0;
+}
+.settings-pw-line .settings-pw-btn {
+  flex: none;
+  height: 34px;
+}
 .settings-pw-input {
-  height: 40px;
+  height: 34px;
   padding: 0 12px;
   border-radius: 12px;
   border: 0;
