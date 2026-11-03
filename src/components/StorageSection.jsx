@@ -1,6 +1,15 @@
 import { useRef, useState } from "react";
-import { ChevronRightIcon, OpenInNewIcon } from "./icons";
+import { OpenInNewIcon } from "./icons";
 import { formatBytes, formatStorageCost, parseBytes } from "../lib/format";
+
+// 휴지통 줄의 > 아이콘: 기본 꺾쇠보다 살짝 얇은 선(두께 2.2)으로 그린다.
+function ThinChevron({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+      <path d="M9 5.5 15.5 12 9 18.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 // 설정의 스토리지 섹션. "3.0GB / 5.0GB"의 총용량(오른쪽)은 연한 회색 둥근 상자로 감싸져 있고, 누르면 팝업
 // 없이 그 자리에서 글자를 고칠 수 있다(엔터·바깥 터치로 확정, Esc로 취소).
@@ -90,10 +99,10 @@ export default function StorageSection({
           <dd>{formatStorageCost(storageBillingBytes)}</dd>
         </div>
       </dl>
-      {/* 휴지통: 청구 금액 바로 밑. 누르면 휴지통 화면이 열린다. */}
+      {/* 휴지통: 청구 금액 밑 구분선 아래. > 는 "휴지통" 글자 바로 오른쪽에 붙는다. 누르면 휴지통 화면이 열린다. */}
       <button className="storage-trash-link" type="button" onClick={onOpenTrash}>
         <span>휴지통</span>
-        <ChevronRightIcon size={18} />
+        <ThinChevron size={16} />
       </button>
     </section>
   );
