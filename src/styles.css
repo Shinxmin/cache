@@ -292,6 +292,14 @@ main.page {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
+/* 네트워크 섹션: 지역·레이턴시를 한 줄에 왼쪽 정렬로 나란히. 스토리지 섹션은 청구 금액 하나만. */
+.storage-stats--row {
+  display: flex;
+  gap: 36px;
+}
+.storage-stats--single {
+  grid-template-columns: 1fr;
+}
 .storage-stat {
   min-width: 0;
   display: flex;
@@ -2056,8 +2064,13 @@ main.page {
 }
 .settings-pw-head {
   justify-content: space-between;
+  height: 40px;
   border-bottom: 0;
   cursor: default;
+}
+.settings-pw-head .settings-row-label {
+  font-size: 13px;
+  font-weight: 600;
 }
 .settings-pw-state {
   font-size: 13px;
@@ -2140,9 +2153,14 @@ main.page {
 .settings-card-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-start;
+  /* 제목(아이콘 + 글자)과 오른쪽의 테마 스위치 사이 여백 */
+  gap: 22px;
   padding: 14px 0 15px;
+}
+/* 보안 카드: 제목 줄 밑에 통합 암호 영역이 이어진다. */
+.settings-card--security .settings-card-head {
+  padding-bottom: 4px;
 }
 /* 총용량(3.0GB / 5.0GB의 오른쪽): 연한 회색 둥근 상자. 누르면 같은 자리에서 입력창으로 바뀐다. */
 .storage-quota {

@@ -2,7 +2,8 @@ import ThemeSwitch from "../components/ThemeSwitch";
 import StoragePasswordSection from "../components/StoragePasswordSection";
 import BottomSearchBar from "../components/BottomSearchBar";
 import StorageSection from "../components/StorageSection";
-import { ChevronRightIcon, ThemeIcon } from "../components/icons";
+import NetworkSection from "../components/NetworkSection";
+import { ChevronRightIcon, SecurityIcon, ThemeIcon } from "../components/icons";
 import { APP_VERSION } from "../lib/version";
 
 // 설정 화면. 예전엔 하단 내비바의 한 탭이었지만, 하단 내비바 자체가
@@ -46,12 +47,17 @@ export default function SettingsPage({
           <StorageSection
             storageUsed={storageUsed}
             storageBillingBytes={storageBillingBytes}
-            storageRegion={storageRegion}
-            storageLatency={storageLatency}
             quotaBytes={quotaBytes}
             onChangeQuota={onChangeQuota}
           />
-          <section className="settings-card">
+          <NetworkSection storageRegion={storageRegion} storageLatency={storageLatency} />
+          <section className="settings-card settings-card--security">
+            <div className="settings-card-head">
+              <div className="page-brand">
+                <SecurityIcon size={23} />
+                <h2 className="page-brand-title">보안</h2>
+              </div>
+            </div>
             <StoragePasswordSection session={session} onChange={onStoragePasswordChange} />
           </section>
           <section className="settings-card">
