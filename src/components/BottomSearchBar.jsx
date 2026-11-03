@@ -376,7 +376,7 @@ export default function BottomSearchBar({
               enterKeyHint={textEntryOpen ? "done" : "search"}
               placeholder={textEntryOpen ? "여기에 입력하세요" : "검색"}
               value={textValue}
-              disabled={inputDisabled || inactive}
+              disabled={inputDisabled || (inactive && !panelOpen)}
               onChange={(e) => onTextChange(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key !== "Enter") return;
