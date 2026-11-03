@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { OpenInNewIcon } from "./icons";
+import { ChevronRightIcon, OpenInNewIcon } from "./icons";
 import { formatBytes, formatStorageCost, parseBytes } from "../lib/format";
 
 // 설정의 스토리지 섹션. "3.0GB / 5.0GB"의 총용량(오른쪽)은 연한 회색 둥근 상자로 감싸져 있고, 누르면 팝업
@@ -9,6 +9,7 @@ export default function StorageSection({
   storageBillingBytes = 0,
   quotaBytes,
   onChangeQuota,
+  onOpenTrash,
 }) {
   const storagePercent = Math.min(100, (storageUsed / quotaBytes) * 100);
   const [editing, setEditing] = useState(false);
@@ -89,6 +90,11 @@ export default function StorageSection({
           <dd>{formatStorageCost(storageBillingBytes)}</dd>
         </div>
       </dl>
+      {/* 휴지통: 청구 금액 바로 밑. 누르면 휴지통 화면이 열린다. */}
+      <button className="storage-trash-link" type="button" onClick={onOpenTrash}>
+        <span>휴지통</span>
+        <ChevronRightIcon size={18} />
+      </button>
     </section>
   );
 }

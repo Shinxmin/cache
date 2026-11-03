@@ -181,12 +181,6 @@ export async function setFilesLocked(token, ids, locked) {
   return rpcResult(await supabase.rpc("set_files_locked", { p_token: token, p_ids: ids, p_locked: locked }));
 }
 
-// 설정 → 중복된 파일. 같은 종류·같은 크기의 파일 중 그룹마다 가장 먼저 올린 하나(원본)를
-// 뺀 나머지(중복본)만 돌려준다 — 서버(list_duplicate_files)가 계산한다.
-export async function listDuplicateFiles(token) {
-  return rpcResult(await supabase.rpc("list_duplicate_files", { p_token: token }));
-}
-
 // ── 하이라이트 클립(스튜디오 "하이라이트" 섹션) ────────────────────────
 // 동영상 하나에 저장해 둔 구간(클립) 목록. 클립은 계정에 저장되므로 다른
 // 기기에서 열어도 같은 목록이 뜬다.

@@ -297,6 +297,19 @@ main.page {
   display: flex;
   gap: 24px;
 }
+/* 스토리지 섹션 안의 휴지통 이동 줄: 소제목과 같은 글자 크기·굵기, 오른쪽 끝에 화살표. */
+.storage-trash-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text);
+}
+.storage-trash-link svg {
+  color: var(--icon);
+}
 .storage-stats--single {
   grid-template-columns: 1fr;
 }
