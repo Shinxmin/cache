@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import CheckboxVisual from "./Checkbox";
 import { deleteStoragePassword, getStoragePasswordStatus, setStoragePassword } from "../lib/drive";
 
 // 설정의 "스토리지 통합 암호" 섹션. 이 암호 하나로 암호화(잠금)한 모든 파일·폴더를 연다.
@@ -77,7 +78,11 @@ export default function StoragePasswordSection({ session, onChange }) {
     <div className="settings-pw">
       <div className="settings-row settings-pw-head">
         <span className="settings-row-label">스토리지 통합 암호</span>
-        <span className="settings-pw-state">{hasPw === null ? "" : hasPw ? "설정됨" : "미설정"}</span>
+        {/* 설정 여부를 알려 주는 체크박스(체크 = 통합 암호가 설정돼 있음). 상태 표시일 뿐이라 눌러서 바꿀 수 없다. */}
+        <span className="checkbox settings-pw-check" role="img" aria-label={hasPw ? "설정됨" : "미설정"}>
+          <input type="checkbox" checked={Boolean(hasPw)} readOnly tabIndex={-1} aria-hidden="true" onClick={(e) => e.preventDefault()} />
+          <CheckboxVisual />
+        </span>
       </div>
       {hasPw && !active && (
         <div className="settings-pw-actions">
