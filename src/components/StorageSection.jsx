@@ -7,8 +7,6 @@ import { formatBytes, formatStorageCost, parseBytes } from "../lib/format";
 export default function StorageSection({
   storageUsed = 0,
   storageBillingBytes = 0,
-  storageRegion = "",
-  storageLatency = null,
   quotaBytes,
   onChangeQuota,
 }) {
@@ -85,17 +83,8 @@ export default function StorageSection({
           )}
         </span>
       </div>
-      {/* 지역(버킷 위치의 대륙) · 레이턴시(이 기기→R2 왕복, 10초마다 다시 잼) · 청구 금액(10GB 초과분 ×
-          $0.015/GB, 페이지를 새로 불러올 때만 계산). */}
-      <dl className="storage-stats">
-        <div className="storage-stat">
-          <dt>지역</dt>
-          <dd>{storageRegion || "—"}</dd>
-        </div>
-        <div className="storage-stat">
-          <dt>레이턴시</dt>
-          <dd>{storageLatency == null ? "—" : `${storageLatency}ms`}</dd>
-        </div>
+      {/* 청구 금액(10GB 초과분 × $0.015/GB, 페이지를 새로 불러올 때만 계산). 지역·레이턴시는 네트워크 섹션. */}
+      <dl className="storage-stats storage-stats--single">
         <div className="storage-stat">
           <dt>청구 금액</dt>
           <dd>{formatStorageCost(storageBillingBytes)}</dd>

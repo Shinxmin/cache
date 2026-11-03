@@ -262,3 +262,21 @@ export function ThemeIcon({ size = 18 }) {
     </svg>
   );
 }
+
+// 구글 머티리얼 디자인의 네트워크(lan) 아이콘. 설정의 네트워크 섹션 제목 앞에 쓴다.
+export function NetworkIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M13 22h8v-7h-3v-4h-5V9h3V2H8v7h3v2H6v4H3v7h8v-7H8v-2h8v2h-3z" />
+    </svg>
+  );
+}
+
+// 구글 머티리얼 디자인의 보안(security, 방패) 아이콘. 설정의 보안 섹션 제목 앞에 쓴다.
+export function SecurityIcon({ size = 18 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
+    </svg>
+  );
+}
