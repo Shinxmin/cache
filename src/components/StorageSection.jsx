@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { LayersIcon, OpenInNewIcon } from "./icons";
+import { OpenInNewIcon } from "./icons";
 import { formatBytes, formatStorageCost, parseBytes } from "../lib/format";
 
 // 설정의 스토리지 섹션. "3.0GB / 5.0GB"의 총용량(오른쪽)은 연한 회색 둥근 상자로 감싸져 있고, 누르면 팝업
@@ -34,7 +34,6 @@ export default function StorageSection({
   return (
     <section className="page-brand-box">
       <div className="page-brand">
-        <LayersIcon size={23} />
         <h2 className="page-brand-title">스토리지</h2>
         <a
           className="page-brand-link"

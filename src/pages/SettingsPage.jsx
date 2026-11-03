@@ -3,7 +3,7 @@ import StoragePasswordSection from "../components/StoragePasswordSection";
 import BottomSearchBar from "../components/BottomSearchBar";
 import StorageSection from "../components/StorageSection";
 import NetworkSection from "../components/NetworkSection";
-import { ChevronRightIcon, SecurityIcon, ThemeIcon } from "../components/icons";
+import { ChevronRightIcon } from "../components/icons";
 import { APP_VERSION } from "../lib/version";
 
 // 설정 화면. 예전엔 하단 내비바의 한 탭이었지만, 하단 내비바 자체가
@@ -38,7 +38,6 @@ export default function SettingsPage({
           <section className="settings-card">
             <div className="settings-card-head">
               <div className="page-brand">
-                <ThemeIcon size={23} />
                 <h2 className="page-brand-title">테마</h2>
               </div>
               <ThemeSwitch mode={themeMode} onChange={onChangeThemeMode} />
@@ -54,7 +53,6 @@ export default function SettingsPage({
           <section className="settings-card settings-card--security">
             <div className="settings-card-head">
               <div className="page-brand">
-                <SecurityIcon size={23} />
                 <h2 className="page-brand-title">보안</h2>
               </div>
             </div>
@@ -72,10 +70,23 @@ export default function SettingsPage({
               <ChevronRightIcon size={18} />
             </button>
           </section>
-          <button className="settings-logout" type="button" onClick={onLogout}>
-            로그아웃
-          </button>
-          <p className="settings-version">v{APP_VERSION}</p>
+          {/* 정보 섹션: 제목 밑에 현재 버전과 로그아웃. */}
+          <section className="page-brand-box">
+            <div className="page-brand">
+              <h2 className="page-brand-title">정보</h2>
+            </div>
+            <div className="settings-info-row">
+              <dl className="storage-stats storage-stats--row">
+                <div className="storage-stat">
+                  <dt>버전</dt>
+                  <dd>v{APP_VERSION}</dd>
+                </div>
+              </dl>
+              <button className="settings-logout" type="button" onClick={onLogout}>
+                로그아웃
+              </button>
+            </div>
+          </section>
         </div>
       </div>
       {/* 홈 화면과 같은 하단바. 검색창·+·설정 버튼은 표준 비활성 디자인으로 흐려지고, < 버튼만 눌려서
