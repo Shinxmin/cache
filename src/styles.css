@@ -297,12 +297,16 @@ main.page {
   display: flex;
   gap: 24px;
 }
-/* 스토리지 섹션 안의 휴지통 이동 줄: 소제목과 같은 글자 크기·굵기, 오른쪽 끝에 화살표. */
+/* 스토리지 섹션 안의 휴지통 이동 줄: 소제목과 같은 글자 크기·굵기, 글자 바로 오른쪽에 화살표. */
 .storage-trash-link {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 2px;
   width: 100%;
+  /* 청구 금액과 구분하는 가로선 */
+  padding-top: 12px;
+  border-top: 1px solid rgba(128, 128, 128, 0.28);
   font-size: 13px;
   font-weight: 400;
   color: var(--text);
