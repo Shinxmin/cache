@@ -1,11 +1,9 @@
-import { useEffect, useState } from "react";
 import ThemeSwitch from "../components/ThemeSwitch";
 import StoragePasswordSection from "../components/StoragePasswordSection";
 import BottomSearchBar from "../components/BottomSearchBar";
-import { ChevronRightIcon } from "../components/icons";
+import StorageSection from "../components/StorageSection";
+import { ChevronRightIcon, ThemeIcon } from "../components/icons";
 import { APP_VERSION } from "../lib/version";
-import { getStorageUsed } from "../lib/drive";
-import { formatBytes, STORAGE_QUOTA_BYTES } from "../lib/format";
 
 // 설정 화면. 예전엔 하단 내비바의 한 탭이었지만, 하단 내비바 자체가
 // 없어진 뒤로는 파일 탭 헤더의 톱니바퀴 버튼으로 여는 화면이 됐다
@@ -18,23 +16,14 @@ export default function SettingsPage({
   onOpenDuplicates,
   onBack,
   onStoragePasswordChange,
+  storageUsed,
+  storageBillingBytes,
+  storageRegion,
+  storageLatency,
+  quotaBytes,
+  onChangeQuota,
   onLogout,
 }) {
-  // 이 화면이 직접 계정 전체 사용량을
-  // 불러온다(App.jsx를 거치지 않는다).
-  const [storageUsed, setStorageUsed] = useState(0);
-  useEffect(() => {
-    let cancelled = false;
-    getStorageUsed(session.token)
-      .then((bytes) => {
-        if (!cancelled) setStorageUsed(bytes);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [session.token]);
-  const storagePercent = Math.min(100, (storageUsed / STORAGE_QUOTA_BYTES) * 100);
   return (
     <>
       <header className="page-header page-header--static page-header--no-blur">
@@ -46,24 +35,22 @@ export default function SettingsPage({
         <div className="settings-list">
           {/* 각 기능 섹션은 홈의 스토리지 섹션처럼 테두리로 감싼 독립된 상자다. */}
           <section className="settings-card">
-            <div className="settings-row settings-row--toggle">
-              <span className="settings-row-label">테마</span>
+            <div className="settings-card-head">
+              <div className="page-brand">
+                <ThemeIcon size={23} />
+                <h2 className="page-brand-title">테마</h2>
+              </div>
               <ThemeSwitch mode={themeMode} onChange={onChangeThemeMode} />
             </div>
           </section>
-          <section className="settings-card">
-            <div className="settings-row settings-storage-row">
-              <span className="settings-row-label">용량</span>
-              <div className="settings-storage-right">
-                <div className="settings-storage-bar">
-                  <div className="settings-storage-fill" style={{ width: `${storagePercent}%` }} />
-                </div>
-                <span className="settings-storage-text">
-                  {formatBytes(storageUsed)} / {formatBytes(STORAGE_QUOTA_BYTES)}
-                </span>
-              </div>
-            </div>
-          </section>
+          <StorageSection
+            storageUsed={storageUsed}
+            storageBillingBytes={storageBillingBytes}
+            storageRegion={storageRegion}
+            storageLatency={storageLatency}
+            quotaBytes={quotaBytes}
+            onChangeQuota={onChangeQuota}
+          />
           <section className="settings-card">
             <StoragePasswordSection session={session} onChange={onStoragePasswordChange} />
           </section>

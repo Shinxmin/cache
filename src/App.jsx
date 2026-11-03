@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import PageHeader from "./components/PageHeader";
-import StorageSection from "./components/StorageSection";
 import BottomSearchBar from "./components/BottomSearchBar";
 import SplashScreen from "./components/SplashScreen";
 import AuthPage from "./pages/AuthPage";
@@ -47,7 +46,7 @@ import { isImage, isVideo } from "./lib/thumbnail";
 import { isOptimizableFile } from "./lib/optimize";
 import { extensionOf } from "./lib/filename";
 import useTransferQueue from "./hooks/useTransferQueue";
-import { formatBytes, formatDateTime } from "./lib/format";
+import { formatBytes, formatDateTime, loadQuotaBytes, saveQuotaBytes } from "./lib/format";
 import { isSearchActive } from "./lib/search";
 import { loadTheme, saveTheme } from "./lib/theme";
 
@@ -156,6 +155,8 @@ export default function App() {
 
   // 스토리지 섹션(헤더)의 사용량. 목록이 새로 고쳐질 때마다 다시 받는다.
   const [storageUsed, setStorageUsed] = useState(0);
+  // 스토리지 섹션의 총용량(최댓값). 설정에서 직접 고칠 수 있고 이 기기에 저장된다.
+  const [quotaBytes, setQuotaBytes] = useState(loadQuotaBytes);
   // 청구 금액 계산에 쓰는 용량. 페이지를 새로 불러올 때(세션당 처음 한 번)만 정해지고, 그 뒤 업로드·
   // 삭제로 사용량이 바뀌어도 다시 계산하지 않는다.
   const [storageBillingBytes, setStorageBillingBytes] = useState(0);
@@ -246,8 +247,9 @@ export default function App() {
   }, [session?.token]);
 
   // 레이턴시는 10초마다 다시 잰다. 화면이 숨겨져 있는 동안(다른 탭·앱)은 쉬었다가 돌아오면 바로 잰다.
+  // (스토리지 섹션이 있는 설정 화면이 열려 있는 동안만 잰다.)
   useEffect(() => {
-    if (!session) return undefined;
+    if (!session || !showSettings) return undefined;
     let cancelled = false;
     let timer = 0;
     let running = false;
@@ -272,7 +274,7 @@ export default function App() {
       clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [session?.token, session?.userId]);
+  }, [session?.token, session?.userId, showSettings]);
 
   const showToast = (message) => {
     clearTimeout(toastTimerRef.current);
@@ -816,6 +818,15 @@ export default function App() {
         onOpenDuplicates={() => setShowDuplicates(true)}
         onBack={() => setShowSettings(false)}
         onStoragePasswordChange={setHasStoragePw}
+        storageUsed={storageUsed}
+        storageBillingBytes={storageBillingBytes}
+        storageRegion={storageRegion}
+        storageLatency={storageLatency}
+        quotaBytes={quotaBytes}
+        onChangeQuota={(bytes) => {
+          setQuotaBytes(bytes);
+          saveQuotaBytes(bytes);
+        }}
         onLogout={() => {
           clearSession();
           setSession(null);
@@ -856,15 +867,6 @@ export default function App() {
         <>
           <main className="page">
             <PageHeader title={title} transfers={transfers} onAckTransfer={ackTransfer} />
-            {/* 스토리지 섹션은 파일 최상위(홈)에서만 보인다 — 하위 폴더·즐겨찾기·검색 결과에서는 숨긴다. */}
-            {folderPath.length === 0 && !favoritesView && !isSearchActive(searchQuery) && (
-              <StorageSection
-                storageUsed={storageUsed}
-                storageRegion={storageRegion}
-                storageLatency={storageLatency}
-                storageBillingBytes={storageBillingBytes}
-              />
-            )}
             <FilesPage
               session={session}
               viewMode={viewMode}

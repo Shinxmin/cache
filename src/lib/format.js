@@ -23,6 +23,34 @@ export function formatBytes(bytes) {
 // 분모로만 쓴다. 나중에 설정에서 바꿀 수 있게 할 값이다.
 export const STORAGE_QUOTA_BYTES = 10 * 1024 ** 3;
 
+// 설정의 스토리지 섹션에서 직접 고친 최댓값(총용량). 이 기기에 저장된다.
+const QUOTA_KEY = "cache_storage_quota_bytes";
+export function loadQuotaBytes() {
+  try {
+    const n = Number(localStorage.getItem(QUOTA_KEY));
+    return Number.isFinite(n) && n > 0 ? n : STORAGE_QUOTA_BYTES;
+  } catch {
+    return STORAGE_QUOTA_BYTES;
+  }
+}
+export function saveQuotaBytes(bytes) {
+  try {
+    localStorage.setItem(QUOTA_KEY, String(bytes));
+  } catch {
+    /* 저장소를 못 쓰는 환경이면 이번 세션에서만 유지된다 */
+  }
+}
+
+// "5", "5GB", "1.5 tb", "500MB"처럼 입력한 용량 글자를 바이트로 바꾼다(단위가 없으면 GB). 못 읽으면 null.
+export function parseBytes(text) {
+  const m = String(text ?? "").trim().match(/^(\d+(?:\.\d+)?)\s*(b|kb|mb|gb|tb)?$/i);
+  if (!m) return null;
+  const unit = (m[2] || "gb").toLowerCase();
+  const pow = { b: 0, kb: 1, mb: 2, gb: 3, tb: 4 }[unit];
+  const bytes = Math.round(parseFloat(m[1]) * 1024 ** pow);
+  return bytes > 0 ? bytes : null;
+}
+
 // Cloudflare R2 저장 요금: 무료 10GB를 넘는 부분에 GB당 월 $0.015. 소수 두 자리 달러로 표기한다.
 const R2_FREE_BYTES = 10 * 1024 ** 3;
 const R2_PRICE_PER_GB = 0.015;
