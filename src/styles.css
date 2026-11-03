@@ -766,7 +766,7 @@ main.page {
    폭으로 보인다), 그 오른쪽에 설정 버튼이 8px 떨어져 있다. */
 /* 설정 화면의 하단바(inactive): 검색창·+·설정 버튼은 표준 비활성 투명도로 흐려지고 눌리지 않으며,
    뒤로 가기(<)만 활성이다. */
-.search-dock.is-inactive .search-bar {
+.search-dock.is-inactive:not(.has-confirm) .search-bar {
   opacity: var(--studio-disabled);
   pointer-events: none;
 }
@@ -2099,9 +2099,6 @@ main.page {
   pointer-events: auto;
   cursor: pointer;
 }
-.settings-pw-input:disabled {
-  opacity: var(--studio-disabled);
-}
 .settings-pw-check .checkbox-box {
   width: 16px;
   height: 16px;
@@ -2110,80 +2107,6 @@ main.page {
 .settings-pw-check .checkbox-box svg {
   width: 11px;
   height: 11px;
-}
-.settings-pw-state {
-  font-size: 13px;
-  color: var(--text-2);
-}
-.settings-pw-form,
-.settings-pw > .settings-pw-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 0 0 12px;
-}
-.settings-pw > .settings-pw-actions,
-.settings-pw-form .settings-pw-actions {
-  flex-direction: row;
-  gap: 8px;
-}
-/* 암호 입력란 한 줄: 입력란은 섹션 폭의 2/3(높이는 40px의 85%인 34px), 오른쪽 빈 곳에 확인 버튼. */
-.settings-pw-line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.settings-pw-line .settings-pw-input {
-  flex: 0 0 66.667%;
-  min-width: 0;
-}
-.settings-pw-line .settings-pw-btn {
-  flex: none;
-  height: 34px;
-}
-.settings-pw-input {
-  height: 34px;
-  padding: 0 12px;
-  border-radius: 12px;
-  border: 0;
-  outline: none;
-  font-family: inherit;
-  font-size: 15px;
-  color: var(--text);
-  background: var(--glass);
-  box-shadow: inset 0 0 0 1px var(--glass-border);
-}
-.settings-pw-input::placeholder {
-  color: var(--text-2);
-}
-.settings-pw-btn {
-  height: 34px;
-  padding: 0 16px;
-  border-radius: 999px;
-  font-size: 14px;
-  color: var(--text);
-  background: rgba(128, 128, 128, 0.22);
-  transition: transform 0.35s var(--spring);
-}
-.settings-pw-btn:active {
-  transform: scale(0.94);
-}
-.settings-pw-btn:disabled {
-  opacity: var(--studio-disabled);
-}
-.settings-pw-btn--primary {
-  color: var(--bg);
-  background: var(--text);
-}
-.settings-pw-error {
-  margin: 0;
-  font-size: 13px;
-  color: var(--danger);
-}
-.settings-pw-hint {
-  margin: 0;
-  font-size: 12px;
-  color: var(--text-2);
 }
 
 /* ── 설정 탭 리스트: 지금은 스튜디오 툴킷 on/off 한 줄뿐이다. ── */

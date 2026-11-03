@@ -810,6 +810,7 @@ export default function App() {
         viewMode={viewMode}
         onOpenTrash={() => setShowTrash(true)}
         onBack={() => setShowSettings(false)}
+        hasStoragePw={hasStoragePw}
         onStoragePasswordChange={setHasStoragePw}
         storageUsed={storageUsed}
         storageBillingBytes={storageBillingBytes}
