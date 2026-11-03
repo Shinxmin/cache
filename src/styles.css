@@ -2132,6 +2132,36 @@ main.page {
   border: 1px solid rgba(128, 128, 128, 0.28);
   border-radius: 24px;
 }
+/* 설정 안의 스토리지 섹션도 다른 카드와 같은 간격으로 쌓인다. */
+.settings-list .page-brand-box {
+  margin: 0 0 14px;
+}
+/* 테마 카드: 스토리지 섹션과 같은 크기의 제목 줄(아이콘 + 18px 제목) 오른쪽 끝에 테마 스위치. */
+.settings-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0 15px;
+}
+/* 총용량(3.0GB / 5.0GB의 오른쪽): 연한 회색 둥근 상자. 누르면 같은 자리에서 입력창으로 바뀐다. */
+.storage-quota {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  color: var(--text);
+  background: rgba(128, 128, 128, 0.22);
+  cursor: text;
+}
+.storage-quota--input {
+  box-sizing: content-box;
+  flex: none;
+  max-width: 100%;
+  outline: none;
+  cursor: text;
+}
 .settings-card .settings-row,
 .settings-card .settings-pw {
   border-bottom: 0;
