@@ -3,7 +3,6 @@ import StoragePasswordSection from "../components/StoragePasswordSection";
 import BottomSearchBar from "../components/BottomSearchBar";
 import StorageSection from "../components/StorageSection";
 import NetworkSection from "../components/NetworkSection";
-import { ChevronRightIcon } from "../components/icons";
 import { APP_VERSION } from "../lib/version";
 
 // 설정 화면. 예전엔 하단 내비바의 한 탭이었지만, 하단 내비바 자체가
@@ -14,7 +13,6 @@ export default function SettingsPage({
   themeMode,
   onChangeThemeMode,
   onOpenTrash,
-  onOpenDuplicates,
   onBack,
   onStoragePasswordChange,
   storageUsed,
@@ -48,6 +46,7 @@ export default function SettingsPage({
             storageBillingBytes={storageBillingBytes}
             quotaBytes={quotaBytes}
             onChangeQuota={onChangeQuota}
+            onOpenTrash={onOpenTrash}
           />
           <NetworkSection storageRegion={storageRegion} storageLatency={storageLatency} />
           <section className="settings-card settings-card--security">
@@ -57,18 +56,6 @@ export default function SettingsPage({
               </div>
             </div>
             <StoragePasswordSection session={session} onChange={onStoragePasswordChange} />
-          </section>
-          <section className="settings-card">
-            <button className="settings-row settings-row--link" type="button" onClick={onOpenDuplicates}>
-              <span className="settings-row-label">중복된 파일</span>
-              <ChevronRightIcon size={18} />
-            </button>
-          </section>
-          <section className="settings-card">
-            <button className="settings-row settings-row--link" type="button" onClick={onOpenTrash}>
-              <span className="settings-row-label">휴지통</span>
-              <ChevronRightIcon size={18} />
-            </button>
           </section>
           {/* 정보 섹션: 제목 밑에 현재 버전과 로그아웃. */}
           <section className="page-brand-box">
