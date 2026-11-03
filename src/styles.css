@@ -2284,24 +2284,21 @@ main.page {
 }
 /* 설정 목록 맨 밑, 가운데 정렬된 작은 밑줄 텍스트. 다른 행들과 달리
    테두리·아이콘 없이 글자만 있다. */
+/* 정보 섹션: 제목 밑 한 줄에 버전(왼쪽)과 로그아웃(오른쪽 끝). */
+.settings-info-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
 .settings-logout {
-  align-self: center;
-  margin-top: 32px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-2);
   text-decoration: underline;
   transition: opacity 0.2s var(--ease);
 }
 .settings-logout:active {
   opacity: 0.55;
-}
-/* 로그아웃 바로 밑, 같은 폰트 크기·색으로 표기하는 앱 버전. 버튼이
-   아니라 정보성 텍스트라 밑줄·눌림 효과는 주지 않는다. */
-.settings-version {
-  align-self: center;
-  margin: 6px 0 0;
-  font-size: 12px;
-  color: var(--text-2);
 }
 
 /* ── 로그인/회원가입 화면: 비로그인 상태에서 앱 전체를 대신해 뜬다. 입력창은
