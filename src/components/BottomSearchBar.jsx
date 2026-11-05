@@ -54,7 +54,7 @@ function FolderIcon({ size = 18 }) {
 // 패널·검색바 내용물은 그때그때 하나만 그린다.
 export default function BottomSearchBar({
   inactive = false,
-  // 파일 뷰어 위에 뜰 때: 검색바·+ 는 비활성, < 는 뷰어 닫기, 오른쪽 끝은 설정 대신 선택 메뉴(삼점). 뷰어보다 위에 그려진다.
+  // 파일 뷰어 위에 뜰 때: 검색바는 비활성, < 는 뷰어 닫기, 가운데는 다운로드, 오른쪽 끝은 설정 대신 선택 메뉴(삼점). 뷰어보다 위에 그려진다.
   viewerMode = false,
   // 휴지통처럼 일부 버튼만 막는 화면용: 설정/+ 버튼 비활성, 선택 메뉴 항목 교체, 선택 중에도 좌우 버튼(<·설정)을
   // 전체 선택/다운로드로 바꾸지 않기, 삭제 패널 제목 교체.
@@ -427,9 +427,9 @@ export default function BottomSearchBar({
                 <DockBackIcon />
               </button>
             )}
-            {/* 가운데 버튼: 선택 중(기본)엔 다운로드, 아니면 + (뷰어 위에서는 비활성 +).
+            {/* 가운데 버튼: 선택 중(기본)·뷰어 위에서는 다운로드, 아니면 +.
                 휴지통처럼 좌우 버튼을 바꾸지 않는 화면(swapSideButtons=false)은 예전처럼 + 자리에 삼점이 온다. */}
-            {selMode && swapSideButtons ? (
+            {(selMode && swapSideButtons) || viewerMode ? (
               <button className="header-settings" type="button" aria-label="다운로드" onClick={onDownloadSelected}>
                 <DownloadIcon size={19} />
               </button>
