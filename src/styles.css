@@ -1591,9 +1591,9 @@ main.page {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* 아래쪽은 뒤로 가기(<) 버튼(하단 45px 원 + 여백)만큼 비워 두어 세로로 긴 이미지·영상이라도 버튼을
+  /* 아래쪽은 하단바(높이 120px + 여백)만큼 비워 두어 세로로 긴 이미지·영상이라도 버튼을
      침범하지 않게 하고, 위쪽은 안전 영역 + 20px만 띄운다. */
-  padding: calc(env(safe-area-inset-top, 0px) + 20px) 20px calc(env(safe-area-inset-bottom, 0px) + 96px);
+  padding: calc(env(safe-area-inset-top, 0px) + 20px) 20px calc(env(safe-area-inset-bottom, 0px) + 160px);
   /* 브라우저가 세로 스와이프로 오인해 스크롤/당겨서 새로고침 제스처를
      가로채지 않도록, 터치 동작을 전부 이 컴포넌트가 직접 처리한다. */
   touch-action: none;
