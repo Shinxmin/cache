@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { fileUrl } from "../lib/drive";
 import { isImage, isVideo } from "../lib/thumbnail";
-import BottomSearchBar from "../components/BottomSearchBar";
 import Spinner from "../components/Spinner";
 import VideoClipPanel from "../components/VideoClipPanel";
 import useDarkOverlay from "../hooks/useDarkOverlay";
@@ -18,7 +17,7 @@ const SWIPE_THRESHOLD = 50;
 // 받아보고, 있으면 닫기(X) 버튼과 같은 줄 아래에 목록을 얹어 보여준다(제목을
 // 누르면 그 구간으로 이동해 재생). 새 하이라이트를 만드는 건 스튜디오
 // 패널이 맡으므로 여기서는 보기·이름 고치기·지우기만 할 수 있다.
-export default function FileViewer({ session, items, initialIndex, onClose }) {
+export default function FileViewer({ session, items, initialIndex, onClose, onItemChange }) {
   const [index, setIndex] = useState(initialIndex);
   const [url, setUrl] = useState(null);
   const [failed, setFailed] = useState(false);
@@ -38,6 +37,11 @@ export default function FileViewer({ session, items, initialIndex, onClose }) {
   const item = items[index];
 
   useDarkOverlay();
+
+  // 지금 보고 있는 항목을 App에 알린다 — 하단바(삼점의 삭제·이동·정보)가 이 항목을 대상으로 동작한다.
+  useEffect(() => {
+    if (item) onItemChange?.(item);
+  }, [item?.id]);
 
   useEffect(() => {
     if (!item) return;
@@ -88,10 +92,7 @@ export default function FileViewer({ session, items, initialIndex, onClose }) {
 
   return (
     <div className="viewer-overlay" onClick={onOverlayClick}>
-      {/* 하단바: 검색·+·설정은 비활성(흐리게), 이전(<) 버튼만 켜져 있어 누르면 뷰어를 닫는다. 바 위를 눌러도 뷰어는 닫히지 않는다. */}
-      <div onClick={(e) => e.stopPropagation()}>
-        <BottomSearchBar inactive searchQuery="" onSearch={() => {}} canGoBack onBack={onClose} />
-      </div>
+      {/* 하단바는 App이 이 뷰어 위에 그린다(viewerMode): 검색·+ 비활성, < 로 닫기, 삼점으로 삭제·이동·정보. */}
       {isVideo(item.mime) && (
         <VideoClipPanel session={session} item={item} video={videoEl} onHasContentChange={setHasClipPanel} />
       )}
