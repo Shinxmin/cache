@@ -176,6 +176,9 @@ export default function App() {
     [visibleItems]
   );
   const [viewerItems, setViewerItems] = useState([]);
+  // 뷰어가 지금 보여주는 항목 id. 뷰어가 열려 있는 동안은 이 항목 하나가 선택된 것으로 다뤄
+  // 하단바 삼점(삭제·이동·정보)이 선택 메뉴와 똑같은 로직으로 동작한다.
+  const [viewerCurrentId, setViewerCurrentId] = useState(null);
 
   useEffect(() => {
     const stored = loadSession();
@@ -328,6 +331,17 @@ export default function App() {
   const handleSearch = (value) => {
     setSearchQuery(value);
   };
+
+  const closeViewer = () => {
+    setViewerIndex(null);
+    setViewerCurrentId(null);
+    setSelectedIds(new Set());
+    closeAllToolPanels();
+  };
+  // 이름 바꾸기 확인 뒤에는 선택이 풀리는데, 뷰어가 열려 있으면 보고 있는 항목을 다시 선택해 둔다.
+  useEffect(() => {
+    if (viewerIndex !== null && viewerCurrentId && selectedIds.size === 0) setSelectedIds(new Set([viewerCurrentId]));
+  }, [viewerIndex, viewerCurrentId, selectedIds]);
 
   const allSelected = visibleItems.length > 0 && visibleItems.every((it) => selectedIds.has(it.id));
 
@@ -528,7 +542,7 @@ export default function App() {
     if (!ids.length) return;
     try {
       await trashFiles(session.token, ids);
-      setSelectedIds(new Set());
+      closeViewer();
       setRefreshKey((k) => k + 1);
     } catch {
       window.alert("휴지통으로 이동하지 못했습니다");
@@ -718,7 +732,7 @@ export default function App() {
     try {
       await moveFiles(session.token, ids, destinationId);
       cancelMove();
-      setSelectedIds(new Set());
+      closeViewer();
       setRefreshKey((k) => k + 1);
     } catch {
       window.alert("옮기지 못했습니다");
@@ -884,6 +898,7 @@ export default function App() {
           </main>
           <BottomSearchBar
             key={favoritesView ? "favorites" : "files"}
+            viewerMode={viewerIndex !== null}
             searchQuery={searchQuery}
             onSearch={handleSearch}
             confirmOpen={deleteConfirmOpen}
@@ -896,9 +911,11 @@ export default function App() {
             onCancelNewFolder={cancelNewFolder}
             onUpload={handleUpload}
             onNewFolder={handleNewFolder}
-            canGoBack={folderPath.length > 0 || favoritesView}
+            canGoBack={viewerIndex !== null || folderPath.length > 0 || favoritesView}
             onBack={() => {
-              if (favoritesView) {
+              if (viewerIndex !== null) {
+                closeViewer();
+              } else if (favoritesView) {
                 setShowFavorites(false);
                 setSearchQuery("");
                 setSelectedIds(new Set());
@@ -951,7 +968,11 @@ export default function App() {
           session={session}
           items={viewerItems}
           initialIndex={viewerIndex}
-          onClose={() => setViewerIndex(null)}
+          onClose={closeViewer}
+          onItemChange={(it) => {
+            setViewerCurrentId(it.id);
+            setSelectedIds(new Set([it.id]));
+          }}
         />
       )}
       {splitCompareTargets && (

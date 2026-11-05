@@ -770,6 +770,17 @@ main.page {
   opacity: var(--studio-disabled);
   pointer-events: none;
 }
+.search-dock.is-viewer:not(.has-confirm) .search-bar {
+  opacity: var(--studio-disabled);
+  pointer-events: none;
+}
+/* 뷰어 위에 뜨는 하단바와 그 막은 뷰어(z-index 50)보다 위에 그린다. */
+.bottom-search-wrap.is-elevated {
+  z-index: 60;
+}
+.search-bar-scrim.is-elevated {
+  z-index: 59;
+}
 .search-dock.is-inactive .header-more--add,
 .search-dock.is-inactive .search-dock-actions .header-settings:not(.dock-back) {
   opacity: var(--studio-disabled);

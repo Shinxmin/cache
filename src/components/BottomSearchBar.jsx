@@ -54,6 +54,8 @@ function FolderIcon({ size = 18 }) {
 // 패널·검색바 내용물은 그때그때 하나만 그린다.
 export default function BottomSearchBar({
   inactive = false,
+  // 파일 뷰어 위에 뜰 때: 검색바·+ 는 비활성, < 는 뷰어 닫기, 오른쪽 끝은 설정 대신 선택 메뉴(삼점). 뷰어보다 위에 그려진다.
+  viewerMode = false,
   // 휴지통처럼 일부 버튼만 막는 화면용: 설정/+ 버튼 비활성, 선택 메뉴 항목 교체, 선택 중에도 좌우 버튼(<·설정)을
   // 전체 선택/다운로드로 바꾸지 않기, 삭제 패널 제목 교체.
   settingsDisabled = false,
@@ -117,6 +119,7 @@ export default function BottomSearchBar({
   const [folderBusy, setFolderBusy] = useState(false);
   const [moveBusy, setMoveBusy] = useState(false);
   const [renameBusy, setRenameBusy] = useState(false);
+  const selMode = hasSelection && !viewerMode;
   const panelOpen = confirmOpen || newFolderOpen || renameOpen || moveOpen || infoOpen || unlockOpen;
 
   // 검색바가 검색 대신 값을 입력받는 상태 — 새 폴더·이름 바꾸기.
@@ -271,11 +274,11 @@ export default function BottomSearchBar({
   return (
     <>
       {panelOpen && (
-        <div className="search-bar-scrim is-blurred" onClick={handleScrimClick} />
+        <div className={`search-bar-scrim is-blurred${viewerMode ? " is-elevated" : ""}`} onClick={handleScrimClick} />
       )}
-      <div className="bottom-search-wrap">
+      <div className={`bottom-search-wrap${viewerMode ? " is-elevated" : ""}`}>
         <div
-          className={`search-dock${panelOpen ? " has-confirm" : ""}${collapsed ? " is-collapsed" : ""}${inactive ? " is-inactive" : ""}`}
+          className={`search-dock${panelOpen ? " has-confirm" : ""}${collapsed ? " is-collapsed" : ""}${inactive ? " is-inactive" : ""}${viewerMode ? " is-viewer" : ""}`}
           onClick={(e) => {
             // 패널이 열려 있을 때 하단바 안의 빈 곳(제목·여백·버튼 사이)을 눌러도 바깥 빈 곳과 같이 취소한다.
             // 버튼·입력창·이동 목록처럼 실제로 눌리는 것은 제외.
@@ -376,7 +379,7 @@ export default function BottomSearchBar({
               enterKeyHint={textEntryOpen ? "done" : "search"}
               placeholder={textEntryOpen ? "여기에 입력하세요" : "검색"}
               value={textValue}
-              disabled={inputDisabled || (inactive && !panelOpen)}
+              disabled={inputDisabled || ((inactive || viewerMode) && !panelOpen)}
               onChange={(e) => onTextChange(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key !== "Enter") return;
@@ -403,7 +406,7 @@ export default function BottomSearchBar({
           <div className="search-dock-actions">
             {/* 왼쪽 끝 버튼: 파일·폴더를 선택하는 동안은 전체 선택/해제(체크 아이콘), 아니면 뒤로 가기.
                 뒤로 가기는 최상위(홈)에서도 자리는 지키되 표준 비활성 투명도로 흐려지고 눌리지 않는다. */}
-            {hasSelection && swapSideButtons ? (
+            {selMode && swapSideButtons ? (
               <button
                 className="header-settings dock-back"
                 type="button"
@@ -424,9 +427,13 @@ export default function BottomSearchBar({
                 <DockBackIcon />
               </button>
             )}
-            {/* + 와 삼점은 같은 자리를 번갈아 쓴다 — 전환 애니메이션 없이 그 자리의 버튼(아이콘)만 바뀐다.
-                펼침 애니메이션(누르면 왼쪽으로 늘어나는 것)은 각자 그대로다. */}
-            {hasSelection ? (
+            {/* 가운데 버튼: 선택 중(기본)엔 다운로드, 아니면 + (뷰어 위에서는 비활성 +).
+                휴지통처럼 좌우 버튼을 바꾸지 않는 화면(swapSideButtons=false)은 예전처럼 + 자리에 삼점이 온다. */}
+            {selMode && swapSideButtons ? (
+              <button className="header-settings" type="button" aria-label="다운로드" onClick={onDownloadSelected}>
+                <DownloadIcon size={19} />
+              </button>
+            ) : selMode ? (
               <SelectionMoreButton
                 visible
                 actions={selectionActions}
@@ -436,13 +443,18 @@ export default function BottomSearchBar({
                 infoDisabled={infoDisabled}
               />
             ) : (
-              <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} disabled={inactive || plusDisabled} />
+              <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} disabled={inactive || plusDisabled || viewerMode} />
             )}
-            {/* 오른쪽 끝 버튼: 선택하는 동안은 다운로드(아래 화살표, 선택한 항목을 기기에 저장), 아니면 설정. */}
-            {hasSelection && swapSideButtons ? (
-              <button className="header-settings" type="button" aria-label="다운로드" onClick={onDownloadSelected}>
-                <DownloadIcon size={19} />
-              </button>
+            {/* 오른쪽 끝 버튼: 선택 중이거나 뷰어 위에서는 삼점(삭제·이동·정보), 아니면 설정. */}
+            {(selMode && swapSideButtons) || viewerMode ? (
+              <SelectionMoreButton
+                visible
+                actions={selectionActions}
+                onDelete={onDeleteSelected}
+                onMove={onMoveSelected}
+                onInfo={onInfoSelected}
+                infoDisabled={infoDisabled}
+              />
             ) : (
               (onOpenSettings || inactive || settingsDisabled) && (
                 <button className="header-settings" type="button" aria-label="설정" disabled={inactive || settingsDisabled} onClick={onOpenSettings}>
