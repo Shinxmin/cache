@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { fileUrl } from "../lib/drive";
-import { DockBackIcon, DuplicateIcon } from "../components/icons";
+import { DuplicateIcon } from "../components/icons";
+import BottomSearchBar from "../components/BottomSearchBar";
 import Spinner from "../components/Spinner";
 import useDarkOverlay from "../hooks/useDarkOverlay";
 
@@ -84,9 +85,10 @@ export default function SplitCompareViewer({ session, items, onClose, onSavePres
       >
         <DuplicateIcon />
       </button>
-      <button className="header-settings viewer-back" type="button" aria-label="뒤로" onClick={onClose}>
-        <DockBackIcon />
-      </button>
+      {/* 하단바: 검색·+·설정은 비활성(흐리게), 이전(<) 버튼만 켜져 있어 누르면 뷰어를 닫는다. 바 위를 눌러도 뷰어는 닫히지 않는다. */}
+      <div onClick={(e) => e.stopPropagation()}>
+        <BottomSearchBar inactive searchQuery="" onSearch={() => {}} canGoBack onBack={onClose} />
+      </div>
       <div className="split-compare" onClick={(e) => e.stopPropagation()}>
         {failed && <p className="viewer-note">불러오지 못했습니다</p>}
         {!failed && (!urlA || !urlB) && (
