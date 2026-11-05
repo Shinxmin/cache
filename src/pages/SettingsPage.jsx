@@ -119,6 +119,8 @@ export default function SettingsPage({
           설정을 닫는다. */}
       <BottomSearchBar
         inactive
+        searchQuery=""
+        onSearch={() => {}}
         canGoBack
         onBack={onBack}
         unlockOpen={pwMode !== null}
