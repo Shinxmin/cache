@@ -8,13 +8,14 @@ const RING_C = 2 * Math.PI * RING_R;
 
 function TransferButton({ kind, stat, onAck }) {
   const failed = stat.failed > 0;
+  const finished = !stat.active && stat.total > 0 && stat.done >= stat.total;
   const fraction = stat.total ? Math.min(1, (stat.done + stat.current) / stat.total) : 0;
   const label = kind === "down" ? "다운로드" : "업로드";
   return (
     <button
-      className={`header-settings transfer-btn${failed ? " is-failed" : ""}`}
+      className={`header-settings transfer-btn${failed ? " is-failed" : ""}${finished ? " is-done" : ""}`}
       type="button"
-      aria-label={failed ? `${label} 실패 — 눌러서 닫기` : `${label} 진행 중`}
+      aria-label={failed ? `${label} 실패 — 눌러서 닫기` : finished ? `${label} 완료 — 눌러서 닫기` : `${label} 진행 중`}
       onClick={onAck}
     >
       <svg className="transfer-ring" viewBox="0 0 45 45" width="45" height="45" aria-hidden="true">
@@ -37,7 +38,7 @@ function TransferButton({ kind, stat, onAck }) {
 // 자체에 포함되지 않는다 — 문서를 아무리 스크롤해도 이 박스는 절대 움직이거나
 // 사라지지 않는다. 제목만 그린다 — 스토리지 섹션은 본문(StorageSection)이라 스크롤하면 함께 올라가
 // 사라지고, 뒤로 가기·업로드·새 폴더(+)·선택 메뉴(삼점)·설정 버튼은 하단바에 있다. 제목 줄 오른쪽에는
-// 다운로드·업로드가 진행 중일 때만 원형 진행도 버튼이 뜬다(실패하면 빨갛게 남고, 누르면 사라진다).
+// 다운로드·업로드가 진행 중일 때만 원형 진행도 버튼이 뜬다(끝나면(실패하면 빨갛게) 그대로 남고, 누르면 사라진다).
 export default function PageHeader({ title, transfers, onAckTransfer }) {
   const ref = useRef(null);
 

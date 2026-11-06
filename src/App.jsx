@@ -21,9 +21,7 @@ import {
   getStoragePasswordStatus,
   setFilesLocked,
   verifyStoragePassword,
-  getStorageRegion,
   getStorageUsed,
-  measureStorageLatency,
   renameFiles,
   createFolder,
   createSplitPreset,
@@ -160,8 +158,6 @@ export default function App() {
   const [storageBillingBytes, setStorageBillingBytes] = useState(0);
   const billingLoadedRef = useRef(false);
   // 스토리지 섹션의 지역(버킷 위치의 대륙)과 레이턴시(이 기기→R2 왕복 ms). 세션마다 한 번 잰다.
-  const [storageRegion, setStorageRegion] = useState("");
-  const [storageLatency, setStorageLatency] = useState(null);
 
   // 이미지·영상은 누르면 다운로드하지 않고 이 화면에서 바로 크게 보여준다.
   // 뷰어 안에서 스와이프로 이전/다음으로 넘기려면 지금 폴더의 미디어 목록과
@@ -233,49 +229,6 @@ export default function App() {
       cancelled = true;
     };
   }, [session?.token]);
-
-  useEffect(() => {
-    if (!session) return undefined;
-    let cancelled = false;
-    getStorageRegion(session.token)
-      .then((region) => {
-        if (!cancelled) setStorageRegion(region);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [session?.token]);
-
-  // 레이턴시는 10초마다 다시 잰다. 화면이 숨겨져 있는 동안(다른 탭·앱)은 쉬었다가 돌아오면 바로 잰다.
-  // (스토리지 섹션이 있는 설정 화면이 열려 있는 동안만 잰다.)
-  useEffect(() => {
-    if (!session || !showSettings) return undefined;
-    let cancelled = false;
-    let timer = 0;
-    let running = false;
-    const tick = async () => {
-      clearTimeout(timer);
-      if (running) return;
-      running = true;
-      if (!document.hidden) {
-        const ms = await measureStorageLatency(session.token, session.userId).catch(() => null);
-        if (!cancelled && ms != null) setStorageLatency(ms);
-      }
-      running = false;
-      if (!cancelled) timer = setTimeout(tick, 10000);
-    };
-    const onVisible = () => {
-      if (!document.hidden) tick();
-    };
-    tick();
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, [session?.token, session?.userId, showSettings]);
 
   const showToast = (message) => {
     clearTimeout(toastTimerRef.current);
@@ -828,8 +781,6 @@ export default function App() {
         onStoragePasswordChange={setHasStoragePw}
         storageUsed={storageUsed}
         storageBillingBytes={storageBillingBytes}
-        storageRegion={storageRegion}
-        storageLatency={storageLatency}
         quotaBytes={quotaBytes}
         onChangeQuota={(bytes) => {
           setQuotaBytes(bytes);
