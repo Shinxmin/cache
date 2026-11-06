@@ -58,7 +58,7 @@ export default function BottomSearchBar({
   viewerMode = false,
   // 스튜디오: 검색바만 비활성(+는 켜져 있음), + 안의 업로드 파일 종류 제한과 두 번째 항목(불러오기)
   searchDisabled = false,
-  // 스튜디오 화면 하단바: 검색바를 없애고 세로폭을 이동 화면(리스트 3줄)과 같게 고정한다.
+  // 스튜디오 화면 하단바: 세로폭을 이동 화면(리스트 3줄)과 같게 고정하고, 검색바는 연필 아이콘·플레이스홀더 없음으로 쓴다.
   studioDock = false,
   plusAccept,
   plusSecondLabel,
@@ -283,7 +283,7 @@ export default function BottomSearchBar({
   const collapsed = scrolling && !panelOpen && !typing;
 
   // 검색바 아이콘은 이름을 입력받는 동안(새 폴더·이름 바꾸기) 돋보기 대신 연필 아이콘이 된다.
-  const searchBarIcon = textEntryOpen ? <EditIcon size={20} /> : <SearchIcon />;
+  const searchBarIcon = textEntryOpen || studioDock ? <EditIcon size={20} /> : <SearchIcon />;
 
   return (
     <>
@@ -400,7 +400,7 @@ export default function BottomSearchBar({
               autoComplete={unlockOpen ? "off" : undefined}
               inputMode={textEntryOpen ? "text" : "search"}
               enterKeyHint={textEntryOpen ? "done" : "search"}
-              placeholder={textEntryOpen ? "여기에 입력하세요" : "검색"}
+              placeholder={studioDock ? "" : textEntryOpen ? "여기에 입력하세요" : "검색"}
               value={textValue}
               disabled={inputDisabled || ((inactive || viewerMode || searchDisabled) && !panelOpen)}
               onChange={(e) => onTextChange(e.target.value)}
@@ -411,7 +411,7 @@ export default function BottomSearchBar({
                 e.currentTarget.blur();
               }}
             />
-            {(panelOpen || importMode) && (
+            {(panelOpen || (importMode && hasSelection)) && (
               <button
                 type="button"
                 className="search-bar-inline-confirm"
