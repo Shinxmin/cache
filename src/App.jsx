@@ -8,6 +8,8 @@ import FilesPage from "./pages/FilesPage";
 import TrashPage from "./pages/TrashPage";
 import FileViewer from "./pages/FileViewer";
 import SplitCompareViewer from "./pages/SplitCompareViewer";
+import StudioPage from "./pages/StudioPage";
+import StudioSection from "./components/StudioSection";
 import Toast from "./components/Toast";
 import {
   clearSession,
@@ -115,6 +117,7 @@ export default function App() {
   // 꾹 눌러(또는 전체 선택으로) 선택된 항목의 id 집합.
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [showTrash, setShowTrash] = useState(false);
+  const [showStudio, setShowStudio] = useState(false);
   // 스튜디오 툴킷의 삭제(휴지통) 아이콘을 누르면 켜진다. 이 동작만 별도
   // 모달 대신 하단 검색바가 위로 확장되며 그 자리에서 확인을 받는다
   // (BottomSearchBar 참고) — 다른 삭제·복원 확인은 전부 그대로 ConfirmModal.
@@ -798,6 +801,10 @@ export default function App() {
     );
   }
 
+  if (showStudio) {
+    return <StudioPage onBack={() => setShowStudio(false)} />;
+  }
+
   if (showTrash) {
     return <TrashPage session={session} onBack={() => setShowTrash(false)} />;
   }
@@ -860,6 +867,8 @@ export default function App() {
         <>
           <main className="page">
             <PageHeader title={title} transfers={transfers} onAckTransfer={ackTransfer} />
+            {/* 홈 최상위(폴더 안·즐겨찾기·검색 중이 아닐 때)에서만 맨 위에 뜨는 스튜디오 섹션 */}
+            {parentId === null && !favoritesView && !searchQuery && <StudioSection onOpen={() => setShowStudio(true)} />}
             <FilesPage
               session={session}
               viewMode={viewMode}
