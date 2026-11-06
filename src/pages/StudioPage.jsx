@@ -6,16 +6,14 @@ import { ImportIcon } from "../components/icons";
 export const STUDIO_ACCEPT =
   "image/*,video/*,.jpeg,.jpg,.png,.apng,.gif,.webp,.mp4,.avi,.mov,.m4v,.mkv,.webm";
 
-// 스튜디오 화면. 하단바: 검색바는 없고(세로폭은 이동 화면 리스트 3줄일 때와 같음, 안쪽 요소는 추후 추가), 설정은 비활성, 뒤로(<)는 홈으로, + 는 켜져 있고 안에 업로드(기존 로직,
+// 스튜디오 화면. 하단바: 세로폭은 이동 화면 리스트 3줄일 때와 같고(안쪽 요소는 추후 추가), 검색바는 연필 아이콘·플레이스홀더 없이 기본 비활성(입력이 필요한 기능을 쓸 때만 켠다), 설정은 비활성, 뒤로(<)는 홈으로, + 는 켜져 있고 안에 업로드(기존 로직,
 // 이미지·동영상·움짤만 선택)와 불러오기(내 파일에서 골라 가져오기)가 있다.
 export default function StudioPage({ files, onUpload, onImport, onBack, transfers, onAckTransfer }) {
   return (
     <>
       <PageHeader title="스튜디오" transfers={transfers} onAckTransfer={onAckTransfer} />
       <div className="page page--has-dock page--studio-dock">
-        {files.length === 0 ? (
-          <p className="studio-empty">불러온 파일이 없습니다. 하단 + 로 업로드하거나 불러오세요.</p>
-        ) : (
+        {files.length > 0 && (
           <ul className="studio-files">
             {files.map((it) => (
               <li className="studio-file" key={it.id}>
@@ -27,6 +25,7 @@ export default function StudioPage({ files, onUpload, onImport, onBack, transfer
       </div>
       <BottomSearchBar
         studioDock
+        searchDisabled
         settingsDisabled
         searchQuery=""
         onSearch={() => {}}
