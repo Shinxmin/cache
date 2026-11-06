@@ -2598,3 +2598,23 @@ main.page {
   font-size: 13px;
   color: var(--text-2);
 }
+
+/* 스튜디오 하단바: 검색바 없음, 세로폭 308px(= 이동 화면에서 폴더 리스트가 3줄일 때의 하단바 높이). 버튼 줄은 맨 아래. */
+.search-dock.is-studio-dock {
+  height: 308px;
+}
+.search-dock.is-studio-dock .search-dock-body,
+.search-dock.is-studio-dock .search-dock-body-inner {
+  height: 100%;
+}
+.search-dock.is-studio-dock .search-bar {
+  display: none;
+}
+.search-dock.is-studio-dock .search-dock-body-inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.page--studio-dock {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 308px + 16.1px + 16px);
+}

@@ -58,6 +58,8 @@ export default function BottomSearchBar({
   viewerMode = false,
   // 스튜디오: 검색바만 비활성(+는 켜져 있음), + 안의 업로드 파일 종류 제한과 두 번째 항목(불러오기)
   searchDisabled = false,
+  // 스튜디오 화면 하단바: 검색바를 없애고 세로폭을 이동 화면(리스트 3줄)과 같게 고정한다.
+  studioDock = false,
   plusAccept,
   plusSecondLabel,
   plusSecondIcon,
@@ -290,7 +292,7 @@ export default function BottomSearchBar({
       )}
       <div className={`bottom-search-wrap${viewerMode ? " is-elevated" : ""}`}>
         <div
-          className={`search-dock${panelOpen ? " has-confirm" : ""}${collapsed ? " is-collapsed" : ""}${inactive ? " is-inactive" : ""}${viewerMode || searchDisabled ? " is-viewer" : ""}`}
+          className={`search-dock${panelOpen ? " has-confirm" : ""}${collapsed ? " is-collapsed" : ""}${inactive ? " is-inactive" : ""}${viewerMode || searchDisabled ? " is-viewer" : ""}${studioDock ? " is-studio-dock" : ""}`}
           onClick={(e) => {
             // 패널이 열려 있을 때 하단바 안의 빈 곳(제목·여백·버튼 사이)을 눌러도 바깥 빈 곳과 같이 취소한다.
             // 버튼·입력창·이동 목록처럼 실제로 눌리는 것은 제외.

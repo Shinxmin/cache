@@ -365,11 +365,40 @@ export default function App() {
     setFolderPath([]);
     importPicked.current = new Map();
   };
-  const confirmImport = () => {
+  // 확인: 고른 파일을 그대로, 고른 폴더는 폴더 자체가 아니라 그 안(하위 폴더 포함)의 이미지·움짤·동영상을 전부 가져온다.
+  // 가져온 목록은 새로고침하지 않는 한(앱 상태) 스튜디오를 나갔다 와도 그대로 유지된다.
+  const importBusy = useRef(false);
+  const confirmImport = async () => {
+    if (importBusy.current) return;
     const picked = [...selectedIds].map((id) => importPicked.current.get(id)).filter(Boolean);
     if (!picked.length) return;
-    setStudioFiles((prev) => [...prev, ...picked.filter((p) => !prev.some((x) => x.id === p.id))]);
-    exitImport();
+    importBusy.current = true;
+    try {
+      const out = [];
+      const seen = new Set();
+      const add = (it) => {
+        if (seen.has(it.id)) return;
+        seen.add(it.id);
+        out.push(it);
+      };
+      const walk = async (folder) => {
+        const children = await listFiles(session.token, folder.id);
+        for (const child of children) {
+          if (child.is_folder) await walk(child);
+          else if (isImportable(child)) add(child);
+        }
+      };
+      for (const it of picked) {
+        if (it.is_folder) await walk(it);
+        else add(it);
+      }
+      setStudioFiles((prev) => [...prev, ...out.filter((p) => !prev.some((x) => x.id === p.id))]);
+      exitImport();
+    } catch {
+      window.alert("파일을 불러오지 못했습니다");
+    } finally {
+      importBusy.current = false;
+    }
   };
 
   // 업로드·다운로드는 종류별 대기열(useTransferQueue)에 작업으로 넣는다 — 하나가 끝나야 다음 것을 처리하고,
