@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BackIcon, CheckIcon, DockBackIcon, DownloadIcon, EditIcon, FileIcon, SettingsIcon } from "./icons";
+import { BackIcon, CheckIcon, ChevronRightIcon, DockBackIcon, DownloadIcon, EditIcon, FileIcon, SettingsIcon } from "./icons";
 import HeaderMoreButton from "./HeaderMoreButton";
 import SelectionMoreButton from "./SelectionMoreButton";
 import CheckboxVisual from "./Checkbox";
@@ -96,6 +96,10 @@ export default function BottomSearchBar({
   onConfirmInfo,
   infoDisabled,
   infoMulti,
+  onInfoPrev,
+  onInfoNext,
+  infoPrevDisabled,
+  infoNextDisabled,
   infoOpen,
   infoLines,
   onCancelInfo,
@@ -317,6 +321,15 @@ export default function BottomSearchBar({
                       </span>
                       <span className="info-lock-label">암호화</span>
                     </label>
+                    {/* 제목 줄 오른쪽 끝: 이전·다음 파일로 넘기는 < > (여러 개 선택 중에는 비활성). */}
+                    <div className="info-nav">
+                      <button className="info-nav-btn" type="button" aria-label="이전 파일" disabled={infoPrevDisabled} onClick={() => onInfoPrev?.()}>
+                        <DockBackIcon size={16} />
+                      </button>
+                      <button className="info-nav-btn" type="button" aria-label="다음 파일" disabled={infoNextDisabled} onClick={() => onInfoNext?.()}>
+                        <ChevronRightIcon size={16} />
+                      </button>
+                    </div>
                   </div>
                   {/* 삭제 패널 본문과 같은 글꼴·색·위치(패널 맨 아래 왼쪽)에서 시작하는 두 줄. */}
                   <div className="search-bar-confirm-info">

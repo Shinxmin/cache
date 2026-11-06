@@ -537,11 +537,16 @@ export default function App() {
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
     if (!targets.length) return;
     closeAllToolPanels();
+    setInfoOpen(true);
+    loadInfo(targets);
+  };
+
+  // 정보 패널의 내용(두 줄 + 이름 칸)을 대상 항목(들)으로 채운다.
+  const loadInfo = async (targets) => {
     setInfoLines(null);
     if (targets.length > 1) {
       // 여러 개: "N개 항목" / "M개 파일, 합계 용량"(폴더는 서버가 하위까지 합산). 이름 칸은 비워 두고, 입력하면 일괄 이름 바꾸기다.
       setRenameName("");
-      setInfoOpen(true);
       const sums = await Promise.all(
         targets.map(async (it) => {
           if (!it.is_folder) return { files: 1, size: it.size || 0 };
@@ -561,7 +566,6 @@ export default function App() {
     const item = targets[0];
     // 정보 패널의 검색바는 이름 입력창이다 — 기존 이름을 먼저 채워 둔다.
     setRenameName(item.name);
-    setInfoOpen(true);
     const build = (createdAt, files, size) => [formatDateTime(createdAt), `${files}개 파일, ${formatBytes(size)}`];
     if (!item.is_folder) {
       setInfoLines(build(item.created_at, 1, item.size));
@@ -573,6 +577,19 @@ export default function App() {
     } catch {
       setInfoLines(build(item.created_at, 0, 0));
     }
+  };
+
+  // 정보 패널 제목 줄의 < > : 바로 앞·뒤 파일로 선택을 옮기고 정보를 다시 채운다(뷰어가 열려 있으면 뷰어도 함께 넘어간다).
+  const infoSource = viewerIndex !== null ? viewerItems : visibleItems;
+  const infoCurIdx = selectedIds.size === 1 ? infoSource.findIndex((it) => selectedIds.has(it.id)) : -1;
+  const infoPrevDisabled = infoCurIdx <= 0;
+  const infoNextDisabled = infoCurIdx < 0 || infoCurIdx >= infoSource.length - 1;
+  const handleInfoNav = (dir) => {
+    const target = infoSource[infoCurIdx + dir];
+    if (infoCurIdx < 0 || !target) return;
+    if (viewerIndex !== null) setViewerIndex(infoCurIdx + dir);
+    else setSelectedIds(new Set([target.id]));
+    loadInfo([target]);
   };
 
   // 선택 메뉴의 삭제: 하단 검색바의 삭제 확인 패널을 연다(이미 열려 있으면 닫는다).
@@ -936,6 +953,10 @@ export default function App() {
             onDownloadSelected={handleDownloadSelected}
             onConfirmInfo={confirmInfo}
             infoMulti={selectedIds.size > 1}
+            onInfoPrev={() => handleInfoNav(-1)}
+            onInfoNext={() => handleInfoNav(1)}
+            infoPrevDisabled={infoPrevDisabled}
+            infoNextDisabled={infoNextDisabled}
             infoOpen={infoOpen}
             infoLines={infoLines}
             onCancelInfo={() => setInfoOpen(false)}
@@ -966,6 +987,8 @@ export default function App() {
           onClose={closeViewer}
           onItemChange={(it) => {
             setViewerCurrentId(it.id);
+            const vi = viewerItems.findIndex((x) => x.id === it.id);
+            if (vi >= 0) setViewerIndex(vi);
             setSelectedIds(new Set([it.id]));
           }}
         />
