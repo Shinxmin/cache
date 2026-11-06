@@ -213,6 +213,7 @@ export default function FilesPage({
   onLongPressItem,
   onItemsChange,
   thumbPickMode = false,
+  dimItem,
   onPickThumb,
   onOpenThumbPicker,
   onClearThumb,
@@ -334,7 +335,7 @@ export default function FilesPage({
     selectionMode &&
     selectedIds.size === 1 &&
     selectedIds.has(item.id);
-  const pickDimmed = (item) => (thumbPickMode && !isThumbPickable(item));
+  const pickDimmed = (item) => (thumbPickMode && !isThumbPickable(item)) || Boolean(dimItem?.(item));
 
   if (state === "loading") return <p className="drive-note"><Spinner /></p>;
   if (state === "error") return <p className="drive-note">파일을 불러오지 못했습니다</p>;
