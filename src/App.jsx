@@ -545,7 +545,7 @@ export default function App() {
   const loadInfo = async (targets) => {
     setInfoLines(null);
     if (targets.length > 1) {
-      // 여러 개: "N개 항목" / "M개 파일, 합계 용량"(폴더는 서버가 하위까지 합산). 이름 칸은 비워 두고, 입력하면 일괄 이름 바꾸기다.
+      // 여러 개: "N개 항목" / "M개 파일, 합계 용량"(폴더는 서버가 하위까지 합산). 보기 전용(이름 칸·암호화는 비활성).
       setRenameName("");
       const sums = await Promise.all(
         targets.map(async (it) => {
@@ -620,25 +620,9 @@ export default function App() {
   const confirmInfo = async () => {
     const typed = renameName.trim();
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    // 여러 개를 선택한 정보 패널은 보기 전용이다 — 일괄 이름 바꾸기·암호화는 적용하지 않고 확인은 그냥 닫는다.
     if (targets.length > 1) {
-      // 여러 개: 이름을 비워 두면 그냥 닫고, 입력하면 "이름_1", "_2"…로 일괄 바꾼다.
-      if (!typed) {
-        setInfoOpen(false);
-        return;
-      }
-      const renames = targets.map((it, i) => {
-        const ext = it.is_folder ? "" : extensionOf(it.name);
-        return { id: it.id, name: `${typed}_${i + 1}${ext ? `.${ext}` : ""}` };
-      });
-      try {
-        await renameFiles(session.token, renames);
-        setInfoOpen(false);
-        setRenameName("");
-        setSelectedIds(new Set());
-        setRefreshKey((k) => k + 1);
-      } catch {
-        window.alert("이름을 바꾸지 못했습니다");
-      }
+      setInfoOpen(false);
       return;
     }
     const item = targets[0];
@@ -941,7 +925,7 @@ export default function App() {
             onRenameSelected={handleRenameSelected}
             onInfoSelected={handleInfoSelected}
             infoLocked={selectedIds.size > 0 && visibleItems.filter((it) => selectedIds.has(it.id)).every((it) => it.locked)}
-            infoLockDisabled={!hasStoragePw && !(selectedIds.size > 0 && visibleItems.filter((it) => selectedIds.has(it.id)).every((it) => it.locked))}
+            infoLockDisabled={selectedIds.size > 1 || !hasStoragePw && !(selectedIds.size > 0 && visibleItems.filter((it) => selectedIds.has(it.id)).every((it) => it.locked))}
             onToggleInfoLock={toggleInfoLock}
             unlockOpen={unlockOpen}
             unlockPw={unlockPw}
