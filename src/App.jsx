@@ -175,6 +175,7 @@ export default function App() {
   // 뷰어가 지금 보여주는 항목 id. 뷰어가 열려 있는 동안은 이 항목 하나가 선택된 것으로 다뤄
   // 하단바 삼점(삭제·이동·정보)이 선택 메뉴와 똑같은 로직으로 동작한다.
   const [viewerCurrentId, setViewerCurrentId] = useState(null);
+  const [infoTargetId, setInfoTargetId] = useState(null);
 
   useEffect(() => {
     const stored = loadSession();
@@ -426,12 +427,10 @@ export default function App() {
 
   // 정보 패널의 암호화 체크박스: 선택한 하나를 잠그거나 푼다(잠그려면 통합 암호가 있어야 한다).
   const toggleInfoLock = async () => {
-    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
-    if (!targets.length) return;
-    const allLocked = targets.every((it) => it.locked);
-    if (!allLocked && !hasStoragePw) return;
+    const item = infoItem;
+    if (!item || (!item.locked && !hasStoragePw)) return;
     try {
-      await setFilesLocked(session.token, targets.map((it) => it.id), !allLocked);
+      await setFilesLocked(session.token, [item.id], !item.locked);
       setRefreshKey((k) => k + 1);
     } catch {
       window.alert("암호화 설정을 바꾸지 못했습니다");
@@ -529,6 +528,10 @@ export default function App() {
 
   // 선택 메뉴의 정보: 하나만 선택했을 때만 동작한다. 파일은 이미 불러온 항목 값을, 폴더는 서버가 하위 모든
   // 폴더·파일을 합산한 값을 쓴다.
+  // 정보 패널이 지금 보여주는 항목. 하나만 선택했으면 그 항목, 여러 개를 선택했으면 선택한 항목 중 < > 로 고른 하나
+  // (정보·이름 수정·암호화가 모두 이 항목 하나에 개별로 적용된다).
+  const selectedItems = visibleItems.filter((it) => selectedIds.has(it.id));
+  const infoItem = selectedItems.find((it) => it.id === infoTargetId) ?? selectedItems[0];
   const handleInfoSelected = async () => {
     if (infoOpen) {
       closeAllToolPanels();
@@ -537,32 +540,14 @@ export default function App() {
     const targets = visibleItems.filter((it) => selectedIds.has(it.id));
     if (!targets.length) return;
     closeAllToolPanels();
+    setInfoTargetId(targets[0].id);
     setInfoOpen(true);
-    loadInfo(targets);
+    loadInfo([targets[0]]);
   };
 
   // 정보 패널의 내용(두 줄 + 이름 칸)을 대상 항목(들)으로 채운다.
   const loadInfo = async (targets) => {
     setInfoLines(null);
-    if (targets.length > 1) {
-      // 여러 개: "N개 항목" / "M개 파일, 합계 용량"(폴더는 서버가 하위까지 합산). 보기 전용(이름 칸·암호화는 비활성).
-      setRenameName("");
-      const sums = await Promise.all(
-        targets.map(async (it) => {
-          if (!it.is_folder) return { files: 1, size: it.size || 0 };
-          try {
-            const info = await getItemInfo(session.token, it.id);
-            return { files: info.files || 0, size: info.size || 0 };
-          } catch {
-            return { files: 0, size: 0 };
-          }
-        }),
-      );
-      const files = sums.reduce((a, x) => a + x.files, 0);
-      const size = sums.reduce((a, x) => a + x.size, 0);
-      setInfoLines([`${targets.length}개 항목`, `${files}개 파일, ${formatBytes(size)}`]);
-      return;
-    }
     const item = targets[0];
     // 정보 패널의 검색바는 이름 입력창이다 — 기존 이름을 먼저 채워 둔다.
     setRenameName(item.name);
@@ -580,15 +565,20 @@ export default function App() {
   };
 
   // 정보 패널 제목 줄의 < > : 바로 앞·뒤 파일로 선택을 옮기고 정보를 다시 채운다(뷰어가 열려 있으면 뷰어도 함께 넘어간다).
-  const infoSource = viewerIndex !== null ? viewerItems : visibleItems;
-  const infoCurIdx = selectedIds.size === 1 ? infoSource.findIndex((it) => selectedIds.has(it.id)) : -1;
+  // 여러 개를 선택했으면 선택한 항목들 안에서, 하나만 선택했으면 목록(뷰어가 열려 있으면 뷰어 목록)의 앞·뒤 파일로 넘긴다.
+  const infoMultiSel = selectedIds.size > 1;
+  const infoSource = infoMultiSel ? selectedItems : viewerIndex !== null ? viewerItems : visibleItems;
+  const infoCurIdx = infoItem ? infoSource.findIndex((it) => it.id === infoItem.id) : -1;
   const infoPrevDisabled = infoCurIdx <= 0;
   const infoNextDisabled = infoCurIdx < 0 || infoCurIdx >= infoSource.length - 1;
   const handleInfoNav = (dir) => {
     const target = infoSource[infoCurIdx + dir];
     if (infoCurIdx < 0 || !target) return;
-    if (viewerIndex !== null) setViewerIndex(infoCurIdx + dir);
-    else setSelectedIds(new Set([target.id]));
+    setInfoTargetId(target.id);
+    if (!infoMultiSel) {
+      if (viewerIndex !== null) setViewerIndex(infoCurIdx + dir);
+      else setSelectedIds(new Set([target.id]));
+    }
     loadInfo([target]);
   };
 
@@ -619,13 +609,7 @@ export default function App() {
   // 정보 패널의 확인: 이름을 바꾸지 않았으면 그냥 닫고, 바꿨으면 이름을 저장한다.
   const confirmInfo = async () => {
     const typed = renameName.trim();
-    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
-    // 여러 개를 선택한 정보 패널은 보기 전용이다 — 일괄 이름 바꾸기·암호화는 적용하지 않고 확인은 그냥 닫는다.
-    if (targets.length > 1) {
-      setInfoOpen(false);
-      return;
-    }
-    const item = targets[0];
+    const item = infoItem;
     if (!typed || !item) return;
     if (typed === item.name) {
       setInfoOpen(false);
@@ -633,6 +617,11 @@ export default function App() {
     }
     try {
       await renameFiles(session.token, [{ id: item.id, name: typed }]);
+      if (selectedIds.size > 1) {
+        // 여러 개를 선택해 둔 경우: 선택·패널을 유지해 다음 항목도 이어서 고칠 수 있다.
+        setRefreshKey((k) => k + 1);
+        return;
+      }
       setInfoOpen(false);
       setRenameName("");
       setSelectedIds(new Set());
@@ -924,8 +913,8 @@ export default function App() {
             onMoveSelected={handleMoveSelected}
             onRenameSelected={handleRenameSelected}
             onInfoSelected={handleInfoSelected}
-            infoLocked={selectedIds.size > 0 && visibleItems.filter((it) => selectedIds.has(it.id)).every((it) => it.locked)}
-            infoLockDisabled={selectedIds.size > 1 || !hasStoragePw && !(selectedIds.size > 0 && visibleItems.filter((it) => selectedIds.has(it.id)).every((it) => it.locked))}
+            infoLocked={Boolean(infoItem?.locked)}
+            infoLockDisabled={!hasStoragePw && !infoItem?.locked}
             onToggleInfoLock={toggleInfoLock}
             unlockOpen={unlockOpen}
             unlockPw={unlockPw}
@@ -936,7 +925,6 @@ export default function App() {
             onToggleSelectAll={handleToggleSelectAll}
             onDownloadSelected={handleDownloadSelected}
             onConfirmInfo={confirmInfo}
-            infoMulti={selectedIds.size > 1}
             onInfoPrev={() => handleInfoNav(-1)}
             onInfoNext={() => handleInfoNav(1)}
             infoPrevDisabled={infoPrevDisabled}
