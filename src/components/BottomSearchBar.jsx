@@ -95,6 +95,7 @@ export default function BottomSearchBar({
   onDownloadSelected,
   onConfirmInfo,
   infoDisabled,
+  infoMulti,
   infoOpen,
   infoLines,
   onCancelInfo,
@@ -210,7 +211,7 @@ export default function BottomSearchBar({
     else onSearch?.(value);
   };
   // 정보 패널의 검색바는 이름 입력창이다 — 기존 이름이 채워져 있고, 확인하면 이름이 바뀌었을 때만 바꾼다.
-  const canSubmitInfo = Boolean(renameName?.trim()) && !renameBusy;
+  const canSubmitInfo = (infoMulti || Boolean(renameName?.trim())) && !renameBusy;
   const submitInfo = async () => {
     if (!canSubmitInfo) return;
     setRenameBusy(true);
@@ -377,7 +378,7 @@ export default function BottomSearchBar({
               autoComplete={unlockOpen ? "off" : undefined}
               inputMode={textEntryOpen ? "text" : "search"}
               enterKeyHint={textEntryOpen ? "done" : "search"}
-              placeholder={textEntryOpen ? "여기에 입력하세요" : "검색"}
+              placeholder={infoOpen && infoMulti ? "이름 일괄 변경 (선택)" : textEntryOpen ? "여기에 입력하세요" : "검색"}
               value={textValue}
               disabled={inputDisabled || ((inactive || viewerMode) && !panelOpen)}
               onChange={(e) => onTextChange(e.target.value)}
