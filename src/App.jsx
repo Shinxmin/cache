@@ -45,6 +45,7 @@ import { isImage, isVideo } from "./lib/thumbnail";
 
 // 스튜디오로 불러올 수 있는 파일: 이미지·동영상·움짤(폴더는 제외).
 const IMPORT_EXT = /\.(jpe?g|png|apng|gif|webp|mp4|avi|mov|m4v|mkv|webm)$/i;
+const isImportPickable = (it) => it.is_folder || isImportable(it);
 const isImportable = (it) => !it.is_folder && (isImage(it.mime) || isVideo(it.mime) || IMPORT_EXT.test(it.name || ""));
 import { isOptimizableFile } from "./lib/optimize";
 import { extensionOf } from "./lib/filename";
@@ -311,7 +312,7 @@ export default function App() {
   }, [viewerIndex, viewerCurrentId, selectedIds]);
 
   const allSelected = importMode
-    ? visibleItems.some(isImportable) && visibleItems.filter(isImportable).every((it) => selectedIds.has(it.id))
+    ? visibleItems.some(isImportPickable) && visibleItems.filter(isImportPickable).every((it) => selectedIds.has(it.id))
     : visibleItems.length > 0 && visibleItems.every((it) => selectedIds.has(it.id));
 
   const toggleSelect = (item) => {
@@ -326,7 +327,7 @@ export default function App() {
   const handleToggleSelectAll = (checked) => {
     if (importMode) {
       // 불러오기: 지금 보이는 가져올 수 있는 파일만 전체 선택/해제한다.
-      const ids = visibleItems.filter(isImportable);
+      const ids = visibleItems.filter(isImportPickable);
       setSelectedIds((prev) => {
         const next = new Set(prev);
         ids.forEach((it) => {
@@ -342,13 +343,10 @@ export default function App() {
     setSelectedIds(checked ? new Set(visibleItems.map((it) => it.id)) : new Set());
   };
 
-  // 불러오기에서 탭: 폴더는 열고, 이미지·동영상·움짤은 선택을 토글한다(다른 파일은 눌리지 않는다).
+  // 불러오기: 꾹 눌러 선택을 시작하고, 선택한 뒤에는 탭으로 이어서 토글한다(폴더도 선택되고, 다른 파일은 눌리지 않는다).
+  // 선택이 없을 때 폴더를 탭하면 평소처럼 폴더가 열린다.
   const importTap = (item) => {
-    if (item.is_folder) {
-      openFolder(item);
-      return;
-    }
-    if (!isImportable(item)) return;
+    if (!isImportPickable(item)) return;
     importPicked.current.set(item.id, item);
     toggleSelect(item);
   };
@@ -464,7 +462,11 @@ export default function App() {
     setUnlockPw("");
     setUnlockOpen(true);
   };
-  const handleOpenFile = (item) => guardLocked(item, () => openFileNow(item));
+  // 불러오기 선택 중에는 파일을 탭해도 열거나 내려받지 않는다.
+  const handleOpenFile = (item) => {
+    if (importMode) return;
+    guardLocked(item, () => openFileNow(item));
+  };
   const confirmUnlock = async () => {
     const pw = unlockPw;
     if (!pw) return;
@@ -946,11 +948,11 @@ export default function App() {
               onOpenFolder={(item) => guardLocked(item, () => openFolder(item))}
               onOpenFile={handleOpenFile}
               refreshKey={refreshKey}
-              selectionMode={selectedIds.size > 0 || importMode}
+              selectionMode={selectedIds.size > 0}
               dimItem={importMode ? (it) => !it.is_folder && !isImportable(it) : undefined}
               selectedIds={selectedIds}
               onToggleSelect={importMode ? importTap : toggleSelect}
-              onLongPressItem={importMode ? () => {} : toggleSelect}
+              onLongPressItem={importMode ? importTap : toggleSelect}
               onItemsChange={setVisibleItems}
               thumbPickMode={Boolean(thumbPickFolder)}
               onPickThumb={pickThumb}
