@@ -792,6 +792,7 @@ main.page {
 }
 /* 하단바의 + / 설정 버튼이 막혀 있을 때(휴지통 등)의 표준 비활성 디자인. */
 .header-more--add.is-disabled,
+.header-more--selection.is-disabled,
 .search-dock-actions .header-settings:disabled {
   opacity: var(--studio-disabled);
   pointer-events: none;
@@ -2567,4 +2568,33 @@ main.page {
 /* 진행 막대가 있는 동안(또는 저장 중) 스튜디오 안의 모든 기능·버튼·텍스트 터치를 막는다. */
 .search-bar-confirm-panel.is-locked .search-bar-confirm-content {
   pointer-events: none;
+}
+
+/* 스튜디오 화면: 불러온 파일 목록 */
+.studio-files {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.studio-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  border-bottom: 1px solid var(--glass-border);
+  font-size: 14px;
+  color: var(--text);
+}
+.studio-file-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.studio-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-2);
 }
