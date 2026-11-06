@@ -7,13 +7,10 @@ const EMPTY = { total: 0, done: 0, failed: 0, current: 0, active: false };
 // B는 대기열에 들어가 A가 끝나는 대로 이어서 받는다.
 //
 // 상태(종류별): total(이번 묶음의 전체 작업 수) · done(끝난 수, 실패 포함) · failed(실패 수) ·
-// current(지금 하는 작업의 진행도 0~1) · active(처리 중). 대기열이 비면 실패가 없을 때는 잠깐 뒤
-// 상태를 비워 헤더 버튼이 사라지게 하고, 실패가 하나라도 있으면 사용자가 ack(종류)를 부를 때까지
-// (헤더 버튼을 누를 때까지) 그대로 둔다.
+// current(지금 하는 작업의 진행도 0~1) · active(처리 중). 대기열이 비어 끝나면(성공이든 실패든) 헤더 버튼은
+// 사라지지 않고, 사용자가 ack(종류)를 부를 때까지(헤더 버튼을 누를 때까지) 그대로 남는다.
 //
 // 작업은 { run(onProgress) } 형태이고 run이 던지면 실패로 센다.
-const HIDE_DELAY_MS = 700;
-
 export default function useTransferQueue() {
   const [state, setState] = useState({ down: EMPTY, up: EMPTY });
   const stats = useRef({ down: { ...EMPTY }, up: { ...EMPTY } });
@@ -51,19 +48,13 @@ export default function useTransferQueue() {
     }
     st.active = false;
     commit(kind);
-    if (st.failed === 0) {
-      timers.current[kind] = setTimeout(() => {
-        const now = stats.current[kind];
-        if (!now.active && now.failed === 0) reset(kind);
-      }, HIDE_DELAY_MS);
-    }
   };
 
   const enqueue = (kind, jobs) => {
     if (!jobs.length) return;
     const st = stats.current[kind];
     clearTimeout(timers.current[kind]);
-    // 지난 묶음이 깨끗이 끝난 채 사라지길 기다리던 중이면 새 묶음으로 시작한다(실패가 남아 있으면 이어서 센다).
+    // 지난 묶음이 깨끗이 끝난 채 닫히길 기다리던 중이면 새 묶음으로 시작한다(실패가 남아 있으면 이어서 센다).
     if (!st.active && st.failed === 0 && st.done === st.total) {
       stats.current[kind] = { ...EMPTY };
     }
@@ -73,7 +64,7 @@ export default function useTransferQueue() {
     drain(kind);
   };
 
-  // 실패가 남아 있던 헤더 버튼을 눌러 치운다. 처리 중에는 치우지 않는다.
+  // 끝난(또는 실패한) 헤더 버튼을 눌러 치운다. 처리 중에는 치우지 않는다.
   const ack = (kind) => {
     if (stats.current[kind].active) return;
     reset(kind);

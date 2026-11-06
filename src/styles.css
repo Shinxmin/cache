@@ -798,6 +798,8 @@ main.page {
 }
 .search-dock-actions .header-more {
   margin-right: 0;
+  /* 오른쪽 끝의 삼점이 바로 왼쪽의 다운로드·+ 버튼과 8px 간격을 두도록 */
+  margin-left: 8px;
 }
 /* 하단바 아래 줄 왼쪽 끝의 뒤로 가기. 설정 버튼과 같은 45px 원형 유리 버튼(.header-settings)에 21px
    아이콘. 최상위(홈)에서는 표준 비활성 투명도(--studio-disabled)로 흐려지고 눌리지 않는다. 나머지
@@ -2035,7 +2037,7 @@ main.page {
   padding: 0;
   display: flex;
   flex-direction: column;
-  max-height: 140px;
+  max-height: 132px; /* 44px 줄 3개 — 4줄째부터는 스크롤 */
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;

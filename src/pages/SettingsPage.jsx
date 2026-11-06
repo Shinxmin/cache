@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import StoragePasswordSection from "../components/StoragePasswordSection";
 import BottomSearchBar from "../components/BottomSearchBar";
 import StorageSection from "../components/StorageSection";
-import NetworkSection from "../components/NetworkSection";
 import { APP_VERSION } from "../lib/version";
 import { deleteStoragePassword, setStoragePassword } from "../lib/drive";
 
@@ -20,8 +19,6 @@ export default function SettingsPage({
   onStoragePasswordChange,
   storageUsed,
   storageBillingBytes,
-  storageRegion,
-  storageLatency,
   quotaBytes,
   onChangeQuota,
   onLogout,
@@ -87,7 +84,6 @@ export default function SettingsPage({
             onChangeQuota={onChangeQuota}
             onOpenTrash={onOpenTrash}
           />
-          <NetworkSection storageRegion={storageRegion} storageLatency={storageLatency} />
           <section className="settings-card settings-card--security">
             <div className="settings-card-head">
               <div className="page-brand">
