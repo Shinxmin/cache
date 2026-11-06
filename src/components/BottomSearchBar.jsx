@@ -132,7 +132,7 @@ export default function BottomSearchBar({
   // 입력창을 쓰지 않는 패널(삭제 확인·이동)이 열려 있을 때는 검색바
   // 입력을 아예 비활성화한다 — 패널이 열려 있는 동안 검색어를 바꿔 지금 폴더
   // 목록 자체가 통째로 달라지는 걸 막기 위해서다.
-  const inputDisabled = panelOpen && !textEntryOpen;
+  const inputDisabled = (panelOpen && !textEntryOpen) || (infoOpen && infoMulti);
   const inputRef = useRef(null);
 
   // 패널이 닫히는 동안(max-height·opacity 트랜지션 0.25~0.35초)에도 DOM은
@@ -391,7 +391,7 @@ export default function BottomSearchBar({
               autoComplete={unlockOpen ? "off" : undefined}
               inputMode={textEntryOpen ? "text" : "search"}
               enterKeyHint={textEntryOpen ? "done" : "search"}
-              placeholder={infoOpen && infoMulti ? "이름 일괄 변경 (선택)" : textEntryOpen ? "여기에 입력하세요" : "검색"}
+              placeholder={infoOpen && infoMulti ? "" : textEntryOpen ? "여기에 입력하세요" : "검색"}
               value={textValue}
               disabled={inputDisabled || ((inactive || viewerMode) && !panelOpen)}
               onChange={(e) => onTextChange(e.target.value)}
