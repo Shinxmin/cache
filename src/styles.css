@@ -1576,6 +1576,33 @@ main.page {
     bottom: calc(env(safe-area-inset-bottom, 0px) + 4.6px + 16px);
   }
 }
+/* 뷰어 오른쪽 위의 이전·다음(< >) 버튼 묶음. 클립 패널(z-index 1)보다 위에 둔다. */
+.viewer-nav {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 14px);
+  right: 20px;
+  z-index: 2;
+  display: flex;
+  gap: 8px;
+}
+.viewer-nav-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--icon);
+  background: rgba(128, 128, 128, 0.18);
+  transition: transform 0.35s var(--spring);
+}
+.viewer-nav-btn:active {
+  transform: scale(0.88);
+}
+.viewer-nav-btn:disabled {
+  opacity: var(--studio-disabled);
+  pointer-events: none;
+}
 /* 스플릿 비교 전용: 오른쪽 위의 프리셋 저장 버튼. */
 .viewer-preset {
   position: absolute;

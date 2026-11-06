@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { fileUrl } from "../lib/drive";
 import { isImage, isVideo } from "../lib/thumbnail";
+import { ChevronRightIcon, DockBackIcon } from "../components/icons";
 import Spinner from "../components/Spinner";
 import VideoClipPanel from "../components/VideoClipPanel";
 import useDarkOverlay from "../hooks/useDarkOverlay";
@@ -93,6 +94,15 @@ export default function FileViewer({ session, items, initialIndex, onClose, onIt
   return (
     <div className="viewer-overlay" onClick={onOverlayClick}>
       {/* 하단바는 App이 이 뷰어 위에 그린다(viewerMode): 검색·+ 비활성, < 로 닫기, 삼점으로 삭제·이동·정보. */}
+      {/* 오른쪽 위(제목 줄 오른쪽 정렬 자리): 이전·다음 파일로 넘기는 < > 버튼. 첫·끝 파일에서는 해당 쪽이 비활성. */}
+      <div className="viewer-nav" onClick={(e) => e.stopPropagation()}>
+        <button className="viewer-nav-btn" type="button" aria-label="이전 파일" disabled={index <= 0} onClick={goPrev}>
+          <DockBackIcon size={18} />
+        </button>
+        <button className="viewer-nav-btn" type="button" aria-label="다음 파일" disabled={index >= items.length - 1} onClick={goNext}>
+          <ChevronRightIcon size={18} />
+        </button>
+      </div>
       {isVideo(item.mime) && (
         <VideoClipPanel session={session} item={item} video={videoEl} onHasContentChange={setHasClipPanel} />
       )}

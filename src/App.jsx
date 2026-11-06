@@ -426,10 +426,12 @@ export default function App() {
 
   // 정보 패널의 암호화 체크박스: 선택한 하나를 잠그거나 푼다(잠그려면 통합 암호가 있어야 한다).
   const toggleInfoLock = async () => {
-    const item = visibleItems.find((it) => selectedIds.has(it.id));
-    if (!item || (!item.locked && !hasStoragePw)) return;
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    if (!targets.length) return;
+    const allLocked = targets.every((it) => it.locked);
+    if (!allLocked && !hasStoragePw) return;
     try {
-      await setFilesLocked(session.token, [item.id], !item.locked);
+      await setFilesLocked(session.token, targets.map((it) => it.id), !allLocked);
       setRefreshKey((k) => k + 1);
     } catch {
       window.alert("암호화 설정을 바꾸지 못했습니다");
@@ -532,11 +534,31 @@ export default function App() {
       closeAllToolPanels();
       return;
     }
-    if (selectedIds.size !== 1) return;
-    const item = visibleItems.find((it) => selectedIds.has(it.id));
-    if (!item) return;
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    if (!targets.length) return;
     closeAllToolPanels();
     setInfoLines(null);
+    if (targets.length > 1) {
+      // 여러 개: "N개 항목" / "M개 파일, 합계 용량"(폴더는 서버가 하위까지 합산). 이름 칸은 비워 두고, 입력하면 일괄 이름 바꾸기다.
+      setRenameName("");
+      setInfoOpen(true);
+      const sums = await Promise.all(
+        targets.map(async (it) => {
+          if (!it.is_folder) return { files: 1, size: it.size || 0 };
+          try {
+            const info = await getItemInfo(session.token, it.id);
+            return { files: info.files || 0, size: info.size || 0 };
+          } catch {
+            return { files: 0, size: 0 };
+          }
+        }),
+      );
+      const files = sums.reduce((a, x) => a + x.files, 0);
+      const size = sums.reduce((a, x) => a + x.size, 0);
+      setInfoLines([`${targets.length}개 항목`, `${files}개 파일, ${formatBytes(size)}`]);
+      return;
+    }
+    const item = targets[0];
     // 정보 패널의 검색바는 이름 입력창이다 — 기존 이름을 먼저 채워 둔다.
     setRenameName(item.name);
     setInfoOpen(true);
@@ -580,7 +602,29 @@ export default function App() {
   // 정보 패널의 확인: 이름을 바꾸지 않았으면 그냥 닫고, 바꿨으면 이름을 저장한다.
   const confirmInfo = async () => {
     const typed = renameName.trim();
-    const item = visibleItems.find((it) => selectedIds.has(it.id));
+    const targets = visibleItems.filter((it) => selectedIds.has(it.id));
+    if (targets.length > 1) {
+      // 여러 개: 이름을 비워 두면 그냥 닫고, 입력하면 "이름_1", "_2"…로 일괄 바꾼다.
+      if (!typed) {
+        setInfoOpen(false);
+        return;
+      }
+      const renames = targets.map((it, i) => {
+        const ext = it.is_folder ? "" : extensionOf(it.name);
+        return { id: it.id, name: `${typed}_${i + 1}${ext ? `.${ext}` : ""}` };
+      });
+      try {
+        await renameFiles(session.token, renames);
+        setInfoOpen(false);
+        setRenameName("");
+        setSelectedIds(new Set());
+        setRefreshKey((k) => k + 1);
+      } catch {
+        window.alert("이름을 바꾸지 못했습니다");
+      }
+      return;
+    }
+    const item = targets[0];
     if (!typed || !item) return;
     if (typed === item.name) {
       setInfoOpen(false);
@@ -879,8 +923,8 @@ export default function App() {
             onMoveSelected={handleMoveSelected}
             onRenameSelected={handleRenameSelected}
             onInfoSelected={handleInfoSelected}
-            infoLocked={Boolean(visibleItems.find((it) => selectedIds.has(it.id))?.locked)}
-            infoLockDisabled={!hasStoragePw && !visibleItems.find((it) => selectedIds.has(it.id))?.locked}
+            infoLocked={selectedIds.size > 0 && visibleItems.filter((it) => selectedIds.has(it.id)).every((it) => it.locked)}
+            infoLockDisabled={!hasStoragePw && !(selectedIds.size > 0 && visibleItems.filter((it) => selectedIds.has(it.id)).every((it) => it.locked))}
             onToggleInfoLock={toggleInfoLock}
             unlockOpen={unlockOpen}
             unlockPw={unlockPw}
@@ -891,7 +935,7 @@ export default function App() {
             onToggleSelectAll={handleToggleSelectAll}
             onDownloadSelected={handleDownloadSelected}
             onConfirmInfo={confirmInfo}
-            infoDisabled={selectedIds.size !== 1}
+            infoMulti={selectedIds.size > 1}
             infoOpen={infoOpen}
             infoLines={infoLines}
             onCancelInfo={() => setInfoOpen(false)}
