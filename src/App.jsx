@@ -127,6 +127,8 @@ export default function App() {
   const [importMode, setImportMode] = useState(false);
   const [studioFiles, setStudioFiles] = useState([]);
   const importPicked = useRef(new Map());
+  // 스튜디오 편집 상태(편집 기록·선택한 파일·체크): 스튜디오를 나갔다 와도 새로고침 전까지 유지된다.
+  const studioStore = useRef({ edits: new Map(), activeId: null, checked: new Set() });
   // 스튜디오 툴킷의 삭제(휴지통) 아이콘을 누르면 켜진다. 이 동작만 별도
   // 모달 대신 하단 검색바가 위로 확장되며 그 자리에서 확인을 받는다
   // (BottomSearchBar 참고) — 다른 삭제·복원 확인은 전부 그대로 ConfirmModal.
@@ -894,7 +896,17 @@ export default function App() {
   if (showStudio && !importMode) {
     return (
       <StudioPage
+        session={session}
+        store={studioStore.current}
         files={studioFiles}
+        onSaved={(name) => {
+          setRefreshKey((k) => k + 1);
+          showToast(`${name} 저장했습니다`);
+        }}
+        onRenamed={(map) => {
+          setStudioFiles((prev) => prev.map((f) => (map[f.id] ? { ...f, name: map[f.id] } : f)));
+          setRefreshKey((k) => k + 1);
+        }}
         onUpload={handleUpload}
         onImport={startImport}
         onBack={() => setShowStudio(false)}
