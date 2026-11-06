@@ -2150,6 +2150,16 @@ main.page {
   display: flex;
   flex-direction: column;
 }
+/* 스튜디오 섹션(홈 최상위): 제목 줄 밑에 본문 글씨 한 줄. */
+.studio-card {
+  gap: 8px;
+}
+.studio-card-desc {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-2);
+}
 /* 설정의 기능 섹션 하나: 홈의 스토리지 섹션(.page-brand-box)과 같은 테두리·곡률(24px)의 독립된 상자. */
 .settings-card {
   margin-bottom: 14px;
