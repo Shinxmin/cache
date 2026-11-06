@@ -95,7 +95,6 @@ export default function BottomSearchBar({
   onDownloadSelected,
   onConfirmInfo,
   infoDisabled,
-  infoMulti,
   onInfoPrev,
   onInfoNext,
   infoPrevDisabled,
@@ -132,7 +131,7 @@ export default function BottomSearchBar({
   // 입력창을 쓰지 않는 패널(삭제 확인·이동)이 열려 있을 때는 검색바
   // 입력을 아예 비활성화한다 — 패널이 열려 있는 동안 검색어를 바꿔 지금 폴더
   // 목록 자체가 통째로 달라지는 걸 막기 위해서다.
-  const inputDisabled = (panelOpen && !textEntryOpen) || (infoOpen && infoMulti);
+  const inputDisabled = panelOpen && !textEntryOpen;
   const inputRef = useRef(null);
 
   // 패널이 닫히는 동안(max-height·opacity 트랜지션 0.25~0.35초)에도 DOM은
@@ -215,7 +214,7 @@ export default function BottomSearchBar({
     else onSearch?.(value);
   };
   // 정보 패널의 검색바는 이름 입력창이다 — 기존 이름이 채워져 있고, 확인하면 이름이 바뀌었을 때만 바꾼다.
-  const canSubmitInfo = (infoMulti || Boolean(renameName?.trim())) && !renameBusy;
+  const canSubmitInfo = Boolean(renameName?.trim()) && !renameBusy;
   const submitInfo = async () => {
     if (!canSubmitInfo) return;
     setRenameBusy(true);
@@ -288,7 +287,7 @@ export default function BottomSearchBar({
             // 패널이 열려 있을 때 하단바 안의 빈 곳(제목·여백·버튼 사이)을 눌러도 바깥 빈 곳과 같이 취소한다.
             // 버튼·입력창·이동 목록처럼 실제로 눌리는 것은 제외.
             if (!panelOpen) return;
-            if (e.target.closest("button, input, a, .move-list, .move-path")) return;
+            if (e.target.closest("button, input, label, a, .move-list, .move-path")) return;
             onCancelScrim?.();
           }}
         >
@@ -391,7 +390,7 @@ export default function BottomSearchBar({
               autoComplete={unlockOpen ? "off" : undefined}
               inputMode={textEntryOpen ? "text" : "search"}
               enterKeyHint={textEntryOpen ? "done" : "search"}
-              placeholder={infoOpen && infoMulti ? "" : textEntryOpen ? "여기에 입력하세요" : "검색"}
+              placeholder={textEntryOpen ? "여기에 입력하세요" : "검색"}
               value={textValue}
               disabled={inputDisabled || ((inactive || viewerMode) && !panelOpen)}
               onChange={(e) => onTextChange(e.target.value)}
