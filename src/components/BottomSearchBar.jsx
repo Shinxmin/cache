@@ -60,6 +60,9 @@ export default function BottomSearchBar({
   searchDisabled = false,
   // 스튜디오 화면 하단바: 세로폭을 이동 화면(리스트 3줄)과 같게 고정하고, 검색바는 연필 아이콘·플레이스홀더 없음으로 쓴다.
   studioDock = false,
+  studioContent,
+  // 스튜디오 검색바 입력: { active, value, onChange, onSubmit, canSubmit } — active일 때만 켜지고 확인 버튼이 보인다.
+  studioText,
   plusAccept,
   plusSecondLabel,
   plusSecondIcon,
@@ -143,6 +146,9 @@ export default function BottomSearchBar({
   // 목록 자체가 통째로 달라지는 걸 막기 위해서다.
   const inputDisabled = panelOpen && !textEntryOpen;
   const inputRef = useRef(null);
+  useEffect(() => {
+    if (studioDock && studioText?.active) inputRef.current?.focus();
+  }, [studioDock, studioText?.active]);
 
   // 패널이 닫히는 동안(max-height·opacity 트랜지션 0.25~0.35초)에도 DOM은
   // 그대로 남아 있는데, 내용을 live 플래그로 바로 판단하면 그 플래그가 이미
@@ -216,9 +222,11 @@ export default function BottomSearchBar({
   // 막지만 목록에서 미리 눌리지 않게 해 둔다.
   const moveExcluded = moveExcludedIds ?? new Set();
 
-  const textValue = newFolderOpen ? newFolderName : unlockOpen ? unlockPw : renameOpen || infoOpen ? renameName : searchQuery;
+  const studioActive = Boolean(studioDock && studioText?.active);
+  const textValue = studioDock ? studioText?.value ?? "" : newFolderOpen ? newFolderName : unlockOpen ? unlockPw : renameOpen || infoOpen ? renameName : searchQuery;
   const onTextChange = (value) => {
-    if (newFolderOpen) onChangeNewFolderName?.(value);
+    if (studioDock) studioText?.onChange?.(value);
+    else if (newFolderOpen) onChangeNewFolderName?.(value);
     else if (unlockOpen) onChangeUnlockPw?.(value);
     else if (renameOpen || infoOpen) onChangeRenameName?.(value);
     else onSearch?.(value);
@@ -407,16 +415,17 @@ export default function BottomSearchBar({
               onKeyDown={(e) => {
                 if (e.key !== "Enter") return;
                 // 모바일 키보드의 "검색"/"완료" 확인 버튼도 엔터와 동일한 keydown을 발생시킨다.
-                if (textEntryOpen) submitText();
+                if (studioActive) studioText.onSubmit?.();
+                else if (textEntryOpen) submitText();
                 e.currentTarget.blur();
               }}
             />
-            {(panelOpen || (importMode && hasSelection)) && (
+            {(panelOpen || (importMode && hasSelection) || studioActive) && (
               <button
                 type="button"
                 className="search-bar-inline-confirm"
-                onClick={importMode && !panelOpen ? () => onConfirmImport?.() : confirmOpen ? confirm : unlockOpen ? submitUnlock : infoOpen ? submitInfo : moveOpen ? submitMove : submitText}
-                disabled={importMode && !panelOpen ? !hasSelection : confirmOpen ? busy : unlockOpen ? !canSubmitUnlock : infoOpen ? !canSubmitInfo : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
+                onClick={studioActive && !panelOpen ? () => studioText.onSubmit?.() : importMode && !panelOpen ? () => onConfirmImport?.() : confirmOpen ? confirm : unlockOpen ? submitUnlock : infoOpen ? submitInfo : moveOpen ? submitMove : submitText}
+                disabled={studioActive && !panelOpen ? !studioText.canSubmit : importMode && !panelOpen ? !hasSelection : confirmOpen ? busy : unlockOpen ? !canSubmitUnlock : infoOpen ? !canSubmitInfo : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
               >
                 확인
               </button>
@@ -426,6 +435,7 @@ export default function BottomSearchBar({
               선택하는 동안은 + 버튼 자리를 선택 메뉴(삼점: 삭제·이동·정보)가 대신 쓰고,
               선택이 풀리면(동작을 마치면 선택이 풀린다) 다시 + 버튼으로 돌아온다. 둘 다 누르면
               왼쪽으로 펼쳐진다. */}
+          {studioDock && studioContent}
           <div className="search-dock-actions">
             {/* 왼쪽 끝 버튼: 파일·폴더를 선택하는 동안은 전체 선택/해제(체크 아이콘), 아니면 뒤로 가기.
                 뒤로 가기는 최상위(홈)에서도 자리는 지키되 표준 비활성 투명도로 흐려지고 눌리지 않는다. */}
