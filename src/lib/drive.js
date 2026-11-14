@@ -34,10 +34,28 @@ export async function listFiles(token, parentId = null) {
 export async function listTransferHistory(token) {
   return rpcResult(await supabase.rpc("list_transfer_history", { p_token: token })) ?? [];
 }
-export async function addTransferHistory(token, { kind, name, size, ok }) {
-  return rpcResult(
-    await supabase.rpc("add_transfer_history", { p_token: token, p_kind: kind, p_name: name, p_size: size ?? null, p_ok: ok })
-  );
+// recs: [{ kind, name, size, ok }, ...] — 한 번에 여러 줄(폴더·zip 안의 파일 전부)을 쌓는다. 너무 크면 나눠 보낸다.
+export async function addTransferHistory(token, recs) {
+  const list = Array.isArray(recs) ? recs : [recs];
+  for (let i = 0; i < list.length; i += 500) {
+    const chunk = list.slice(i, i + 500).map((r) => ({ kind: r.kind, name: r.name, size: r.size ?? null, ok: Boolean(r.ok) }));
+    await rpcResult(await supabase.rpc("add_transfer_history_batch", { p_token: token, p_items: chunk }));
+  }
+}
+
+// zip으로 받는 항목들(폴더는 하위 폴더까지) 안의 실제 파일을 하나씩 [{ name, size }]로 모은다 — 기록에 파일마다 남기는 용도.
+export async function listDownloadEntries(token, items) {
+  const out = [];
+  const baseName = (p) => p.slice(p.lastIndexOf("/") + 1);
+  for (const item of items) {
+    if (item.is_folder) {
+      const nested = await collectFolderFiles(token, item.id, item.name);
+      for (const f of nested) out.push({ name: baseName(f.zipPath), size: f.size ?? null });
+    } else if (item.r2_key) {
+      for (const part of zipEntriesFor(item, item.name)) out.push({ name: baseName(part.zipPath), size: item.size ?? null });
+    }
+  }
+  return out;
 }
 export async function deleteTransferHistory(token, ids) {
   return rpcResult(await supabase.rpc("delete_transfer_history", { p_token: token, p_ids: ids }));

@@ -20,6 +20,7 @@ import {
   clearFolderThumbnail,
   getItemInfo,
   addTransferHistory,
+  listDownloadEntries,
   getStoragePasswordStatus,
   setFilesLocked,
   verifyStoragePassword,
@@ -466,10 +467,13 @@ export default function App() {
     let run;
     let recordName;
     let recordSize;
+    let recordEntries;
     if (targets.length === 1) {
       const item = targets[0];
       recordName = item.is_folder ? `${item.name}.zip` : item.name;
       recordSize = item.is_folder ? () => itemBytes(token, item) : item.size;
+      // 폴더 zip은 안의 파일 하나하나를 기록으로 남긴다(540개면 540줄).
+      if (item.is_folder) recordEntries = () => listDownloadEntries(token, [item]);
       if (item.is_folder) run = (onProgress) => downloadFolderAsZip({ token, folder: item, onProgress });
       // 스플릿 프리셋 항목은 하나로 합쳐 받지 않고 A·B를 각자 따로 받는다.
       else if (item.split_pair) run = (onProgress) => downloadSplitPresetFiles({ token, item, onProgress });
@@ -477,13 +481,14 @@ export default function App() {
     } else {
       const zipName = `선택한 항목 ${targets.length}개.zip`;
       recordName = zipName;
+      recordEntries = () => listDownloadEntries(token, targets);
       recordSize = async () => {
         const parts = await Promise.all(targets.map((it) => itemBytes(token, it)));
         return parts.reduce((a, n) => a + (n || 0), 0);
       };
       run = (onProgress) => downloadSelectionAsZip({ token, items: targets, zipName, onProgress });
     }
-    enqueue("down", [{ name: recordName, size: recordSize, run }]);
+    enqueue("down", [{ name: recordName, size: recordSize, entries: recordEntries, run }]);
     setSelectedIds(new Set());
   };
 
