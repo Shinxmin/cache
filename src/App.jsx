@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import HistoryPage from "./pages/HistoryPage";
 import PageHeader from "./components/PageHeader";
 import BottomSearchBar from "./components/BottomSearchBar";
 import SplashScreen from "./components/SplashScreen";
@@ -8,8 +9,6 @@ import FilesPage from "./pages/FilesPage";
 import TrashPage from "./pages/TrashPage";
 import FileViewer from "./pages/FileViewer";
 import SplitCompareViewer from "./pages/SplitCompareViewer";
-import StudioPage from "./pages/StudioPage";
-import StudioSection from "./components/StudioSection";
 import Toast from "./components/Toast";
 import {
   clearSession,
@@ -42,14 +41,10 @@ import {
   uploadFile,
 } from "./lib/drive";
 import { isImage, isVideo } from "./lib/thumbnail";
-
-// 스튜디오로 불러올 수 있는 파일: 이미지·동영상·움짤(폴더는 제외).
-const IMPORT_EXT = /\.(jpe?g|png|apng|gif|webp|mp4|avi|mov|m4v|mkv|webm)$/i;
-const isImportPickable = (it) => it.is_folder || isImportable(it);
-const isImportable = (it) => !it.is_folder && (isImage(it.mime) || isVideo(it.mime) || IMPORT_EXT.test(it.name || ""));
 import { isOptimizableFile } from "./lib/optimize";
 import { extensionOf } from "./lib/filename";
 import useTransferQueue from "./hooks/useTransferQueue";
+import { addHistory } from "./lib/history";
 import { formatBytes, formatDateTime, loadQuotaBytes, saveQuotaBytes } from "./lib/format";
 import { isSearchActive } from "./lib/search";
 import { loadTheme, saveTheme } from "./lib/theme";
@@ -122,13 +117,7 @@ export default function App() {
   // 꾹 눌러(또는 전체 선택으로) 선택된 항목의 id 집합.
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [showTrash, setShowTrash] = useState(false);
-  const [showStudio, setShowStudio] = useState(false);
-  // 스튜디오 "불러오기": 내 파일에서 이미지·동영상·움짤을 눌러 골라(다중) 스튜디오로 가져온다.
-  const [importMode, setImportMode] = useState(false);
-  const [studioFiles, setStudioFiles] = useState([]);
-  const importPicked = useRef(new Map());
-  // 스튜디오 편집 상태(편집 기록·선택한 파일·체크): 스튜디오를 나갔다 와도 새로고침 전까지 유지된다.
-  const studioStore = useRef({ edits: new Map(), activeId: null, checked: new Set() });
+  const [showHistory, setShowHistory] = useState(false);
   // 스튜디오 툴킷의 삭제(휴지통) 아이콘을 누르면 켜진다. 이 동작만 별도
   // 모달 대신 하단 검색바가 위로 확장되며 그 자리에서 확인을 받는다
   // (BottomSearchBar 참고) — 다른 삭제·복원 확인은 전부 그대로 ConfirmModal.
@@ -257,8 +246,6 @@ export default function App() {
   // 폴더를 옮기거나 검색어가 바뀌면(검색 결과 자체가 통째로 달라지므로)
   // 이전에 보이던 항목 기준의 선택은 의미가 없다.
   useEffect(() => {
-    // 스튜디오 불러오기 선택 중에는 폴더를 옮기거나 검색해도 이미 고른 파일을 유지한다.
-    if (importMode) return;
     setSelectedIds(new Set());
   }, [parentId, searchQuery, showFavorites]);
 
@@ -313,9 +300,7 @@ export default function App() {
     if (viewerIndex !== null && viewerCurrentId && selectedIds.size === 0) setSelectedIds(new Set([viewerCurrentId]));
   }, [viewerIndex, viewerCurrentId, selectedIds]);
 
-  const allSelected = importMode
-    ? visibleItems.some(isImportPickable) && visibleItems.filter(isImportPickable).every((it) => selectedIds.has(it.id))
-    : visibleItems.length > 0 && visibleItems.every((it) => selectedIds.has(it.id));
+  const allSelected = visibleItems.length > 0 && visibleItems.every((it) => selectedIds.has(it.id));
 
   const toggleSelect = (item) => {
     setSelectedIds((prev) => {
@@ -327,85 +312,12 @@ export default function App() {
   };
 
   const handleToggleSelectAll = (checked) => {
-    if (importMode) {
-      // 불러오기: 지금 보이는 가져올 수 있는 파일만 전체 선택/해제한다.
-      const ids = visibleItems.filter(isImportPickable);
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        ids.forEach((it) => {
-          if (checked) {
-            next.add(it.id);
-            importPicked.current.set(it.id, it);
-          } else next.delete(it.id);
-        });
-        return next;
-      });
-      return;
-    }
     setSelectedIds(checked ? new Set(visibleItems.map((it) => it.id)) : new Set());
-  };
-
-  // 불러오기: 꾹 눌러 선택을 시작하고, 선택한 뒤에는 탭으로 이어서 토글한다(폴더도 선택되고, 다른 파일은 눌리지 않는다).
-  // 선택이 없을 때 폴더를 탭하면 평소처럼 폴더가 열린다.
-  const importTap = (item) => {
-    if (!isImportPickable(item)) return;
-    importPicked.current.set(item.id, item);
-    toggleSelect(item);
-  };
-  const startImport = () => {
-    importPicked.current = new Map();
-    setSelectedIds(new Set());
-    setSearchQuery("");
-    setFolderPath([]);
-    setShowFavorites(false);
-    setImportMode(true);
-  };
-  const exitImport = () => {
-    setImportMode(false);
-    setSelectedIds(new Set());
-    setSearchQuery("");
-    setFolderPath([]);
-    importPicked.current = new Map();
-  };
-  // 확인: 고른 파일을 그대로, 고른 폴더는 폴더 자체가 아니라 그 안(하위 폴더 포함)의 이미지·움짤·동영상을 전부 가져온다.
-  // 가져온 목록은 새로고침하지 않는 한(앱 상태) 스튜디오를 나갔다 와도 그대로 유지된다.
-  const importBusy = useRef(false);
-  const confirmImport = async () => {
-    if (importBusy.current) return;
-    const picked = [...selectedIds].map((id) => importPicked.current.get(id)).filter(Boolean);
-    if (!picked.length) return;
-    importBusy.current = true;
-    try {
-      const out = [];
-      const seen = new Set();
-      const add = (it) => {
-        if (seen.has(it.id)) return;
-        seen.add(it.id);
-        out.push(it);
-      };
-      const walk = async (folder) => {
-        const children = await listFiles(session.token, folder.id);
-        for (const child of children) {
-          if (child.is_folder) await walk(child);
-          else if (isImportable(child)) add(child);
-        }
-      };
-      for (const it of picked) {
-        if (it.is_folder) await walk(it);
-        else add(it);
-      }
-      setStudioFiles((prev) => [...prev, ...out.filter((p) => !prev.some((x) => x.id === p.id))]);
-      exitImport();
-    } catch {
-      window.alert("파일을 불러오지 못했습니다");
-    } finally {
-      importBusy.current = false;
-    }
   };
 
   // 업로드·다운로드는 종류별 대기열(useTransferQueue)에 작업으로 넣는다 — 하나가 끝나야 다음 것을 처리하고,
   // 진행 중에도 다른 동작을 계속 할 수 있다. 진행도·실패는 헤더 오른쪽의 원형 버튼이 보여준다.
-  const { transfers, enqueue, ack: ackTransfer } = useTransferQueue();
+  const { enqueue } = useTransferQueue(addHistory);
 
   // 확장자 제한 없이 고른 파일을 대기열에 넣어 순서대로 R2에 올린다. 즐겨찾기 화면에서 눌렀다면 업로드
   // 결과(방금 올린 파일)를 볼 수 있도록 먼저 즐겨찾기를 닫아 파일 화면으로 나온다.
@@ -416,6 +328,7 @@ export default function App() {
     enqueue(
       "up",
       files.map((file) => ({
+        name: file.name,
         run: async (onProgress) => {
           await uploadFile({ token: session.token, userId: session.userId, file, parentId: target, onProgress });
           setRefreshKey((k) => k + 1);
@@ -478,7 +391,7 @@ export default function App() {
       setViewerIndex(idx >= 0 ? idx : 0);
       return;
     }
-    enqueue("down", [{ run: (onProgress) => downloadFile({ token: session.token, item, onProgress }) }]);
+    enqueue("down", [{ name: item.name, run: (onProgress) => downloadFile({ token: session.token, item, onProgress }) }]);
   };
 
   // 암호화(잠금)된 항목은 통합 암호를 입력해야 열린다. 검색바가 암호 입력창이 되고, 암호가 맞으면 열리고
@@ -493,11 +406,7 @@ export default function App() {
     setUnlockPw("");
     setUnlockOpen(true);
   };
-  // 불러오기 선택 중에는 파일을 탭해도 열거나 내려받지 않는다.
-  const handleOpenFile = (item) => {
-    if (importMode) return;
-    guardLocked(item, () => openFileNow(item));
-  };
+  const handleOpenFile = (item) => guardLocked(item, () => openFileNow(item));
   const confirmUnlock = async () => {
     const pw = unlockPw;
     if (!pw) return;
@@ -540,17 +449,20 @@ export default function App() {
     if (!targets.length) return;
     const token = session.token;
     let run;
+    let recordName;
     if (targets.length === 1) {
       const item = targets[0];
+      recordName = item.is_folder ? `${item.name}.zip` : item.name;
       if (item.is_folder) run = (onProgress) => downloadFolderAsZip({ token, folder: item, onProgress });
       // 스플릿 프리셋 항목은 하나로 합쳐 받지 않고 A·B를 각자 따로 받는다.
       else if (item.split_pair) run = (onProgress) => downloadSplitPresetFiles({ token, item, onProgress });
       else run = (onProgress) => downloadFile({ token, item, onProgress });
     } else {
       const zipName = `선택한 항목 ${targets.length}개.zip`;
+      recordName = zipName;
       run = (onProgress) => downloadSelectionAsZip({ token, items: targets, zipName, onProgress });
     }
-    enqueue("down", [{ run }]);
+    enqueue("down", [{ name: recordName, run }]);
     setSelectedIds(new Set());
   };
 
@@ -893,27 +805,8 @@ export default function App() {
     );
   }
 
-  if (showStudio && !importMode) {
-    return (
-      <StudioPage
-        session={session}
-        store={studioStore.current}
-        files={studioFiles}
-        onSaved={(name) => {
-          setRefreshKey((k) => k + 1);
-          showToast(`${name} 저장했습니다`);
-        }}
-        onRenamed={(map) => {
-          setStudioFiles((prev) => prev.map((f) => (map[f.id] ? { ...f, name: map[f.id] } : f)));
-          setRefreshKey((k) => k + 1);
-        }}
-        onUpload={handleUpload}
-        onImport={startImport}
-        onBack={() => setShowStudio(false)}
-        transfers={transfers}
-        onAckTransfer={ackTransfer}
-      />
-    );
+  if (showHistory) {
+    return <HistoryPage onBack={() => setShowHistory(false)} />;
   }
 
   if (showTrash) {
@@ -928,6 +821,7 @@ export default function App() {
         onChangeThemeMode={handleChangeThemeMode}
         viewMode={viewMode}
         onOpenTrash={() => setShowTrash(true)}
+        onOpenHistory={() => setShowHistory(true)}
         onBack={() => setShowSettings(false)}
         hasStoragePw={hasStoragePw}
         onStoragePasswordChange={setHasStoragePw}
@@ -977,9 +871,7 @@ export default function App() {
       {(
         <>
           <main className="page">
-            <PageHeader title={title} transfers={transfers} onAckTransfer={ackTransfer} />
-            {/* 홈 최상위(폴더 안·즐겨찾기·검색 중이 아닐 때)에서만 맨 위에 뜨는 스튜디오 섹션 */}
-            {parentId === null && !favoritesView && !searchQuery && !importMode && <StudioSection onOpen={() => setShowStudio(true)} />}
+            <PageHeader title={title} />
             <FilesPage
               session={session}
               viewMode={viewMode}
@@ -990,10 +882,9 @@ export default function App() {
               onOpenFile={handleOpenFile}
               refreshKey={refreshKey}
               selectionMode={selectedIds.size > 0}
-              dimItem={importMode ? (it) => !it.is_folder && !isImportable(it) : undefined}
               selectedIds={selectedIds}
-              onToggleSelect={importMode ? importTap : toggleSelect}
-              onLongPressItem={importMode ? importTap : toggleSelect}
+              onToggleSelect={toggleSelect}
+              onLongPressItem={toggleSelect}
               onItemsChange={setVisibleItems}
               thumbPickMode={Boolean(thumbPickFolder)}
               onPickThumb={pickThumb}
@@ -1017,17 +908,9 @@ export default function App() {
             onCancelNewFolder={cancelNewFolder}
             onUpload={handleUpload}
             onNewFolder={handleNewFolder}
-            importMode={importMode}
-            onConfirmImport={confirmImport}
-            plusDisabled={importMode}
-            settingsDisabled={importMode}
-            canGoBack={importMode || viewerIndex !== null || folderPath.length > 0 || favoritesView}
+            canGoBack={viewerIndex !== null || folderPath.length > 0 || favoritesView}
             onBack={() => {
-              if (importMode) {
-                // 불러오기: 폴더 안이면 한 단계 위로, 최상위면 불러오기를 취소하고 스튜디오 화면으로 돌아간다.
-                if (folderPath.length) setFolderPath((p) => p.slice(0, -1));
-                else exitImport();
-              } else if (viewerIndex !== null) {
+              if (viewerIndex !== null) {
                 closeViewer();
               } else if (favoritesView) {
                 setShowFavorites(false);

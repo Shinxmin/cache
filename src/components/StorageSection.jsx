@@ -19,6 +19,7 @@ export default function StorageSection({
   quotaBytes,
   onChangeQuota,
   onOpenTrash,
+  onOpenHistory,
 }) {
   const storagePercent = Math.min(100, (storageUsed / quotaBytes) * 100);
   const [editing, setEditing] = useState(false);
@@ -102,6 +103,11 @@ export default function StorageSection({
       {/* 휴지통: 청구 금액 밑 구분선 아래. > 는 "휴지통" 글자 바로 오른쪽에 붙는다. 누르면 휴지통 화면이 열린다. */}
       <button className="storage-trash-link" type="button" onClick={onOpenTrash}>
         <span>휴지통</span>
+        <ThinChevron size={16} />
+      </button>
+      {/* 기록: 휴지통 아래 같은 디자인의 줄. 지금까지의 업로드·다운로드 기록(실패 포함)을 보는 화면이 열린다. */}
+      <button className="storage-trash-link" type="button" onClick={onOpenHistory}>
+        <span>기록</span>
         <ThinChevron size={16} />
       </button>
     </section>
