@@ -6,7 +6,7 @@ import Spinner from "../components/Spinner";
 import useLongPress from "../hooks/useLongPress";
 import { formatBytes } from "../lib/format";
 
-// 행 하나(휴지통 리스트와 같은 모양): 왼쪽부터 파일 아이콘, 제목, 정보 한 줄 — "1.jpg  4.5MB 다운로드 성공".
+// 행 하나(휴지통 리스트와 같은 모양): 왼쪽부터 파일 아이콘, 제목, 정보 한 줄 — "1.jpg  (4.5MB 다운로드 성공)".
 // 글자는 검정(다크는 흰색)이고 실패일 때만 "실패"가 연한 빨강이다. 꾹 누르면 선택이 켜지고, 선택이 있는 동안은
 // 탭으로 선택·해제한다.
 function TransferRow({ item, selected, selectionMode, onToggle }) {
@@ -26,8 +26,8 @@ function TransferRow({ item, selected, selectionMode, onToggle }) {
         <span className="drive-row-title-line">
           <span className="drive-row-name">{item.name}</span>
           <span className="history-sub">
-            {item.size != null ? `${formatBytes(item.size)} ` : ""}
-            {label} {item.ok ? "성공" : <span className="history-fail">실패</span>}
+            ({item.size != null ? `${formatBytes(item.size)} ` : ""}
+            {label} {item.ok ? "성공" : <span className="history-fail">실패</span>})
           </span>
         </span>
       </span>
