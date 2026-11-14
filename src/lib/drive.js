@@ -30,6 +30,19 @@ export async function listFiles(token, parentId = null) {
   return sortFileList(rows);
 }
 
+// ── 업로드·다운로드 기록(서버에 영구 저장, 모든 기기에서 같은 기록을 본다) ──
+export async function listTransferHistory(token) {
+  return rpcResult(await supabase.rpc("list_transfer_history", { p_token: token })) ?? [];
+}
+export async function addTransferHistory(token, { kind, name, size, ok }) {
+  return rpcResult(
+    await supabase.rpc("add_transfer_history", { p_token: token, p_kind: kind, p_name: name, p_size: size ?? null, p_ok: ok })
+  );
+}
+export async function deleteTransferHistory(token, ids) {
+  return rpcResult(await supabase.rpc("delete_transfer_history", { p_token: token, p_ids: ids }));
+}
+
 export async function createFolder(token, name, parentId = null) {
   return rpcResult(await supabase.rpc("create_folder", { p_token: token, p_name: name, p_parent_id: parentId }));
 }

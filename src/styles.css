@@ -2559,12 +2559,13 @@ main.page {
   pointer-events: none;
 }
 
-/* 기록 화면: 이름 밑 작은 글씨 "다운로드 성공". 글자색은 기본(라이트 검정·다크 흰색), 실패일 때만 "실패"가 연한 빨강. */
+/* 업로드·다운로드 기록 화면: 이름 오른쪽 한 줄 작은 글씨 "4.5MB 다운로드 성공". 글자색은 기본(라이트 검정·다크 흰색), 실패일 때만 "실패"가 연한 빨강. */
 .history-sub {
-  display: block;
-  margin-top: 2px;
+  flex: none;
+  margin-left: 6px;
   font-size: 12px;
   font-weight: 400;
+  white-space: nowrap;
   color: var(--text);
 }
 .history-fail {

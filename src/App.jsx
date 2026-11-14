@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import HistoryPage from "./pages/HistoryPage";
+import TransfersPage from "./pages/TransfersPage";
 import PageHeader from "./components/PageHeader";
 import BottomSearchBar from "./components/BottomSearchBar";
 import SplashScreen from "./components/SplashScreen";
@@ -19,6 +19,7 @@ import {
 import {
   clearFolderThumbnail,
   getItemInfo,
+  addTransferHistory,
   getStoragePasswordStatus,
   setFilesLocked,
   verifyStoragePassword,
@@ -44,7 +45,6 @@ import { isImage, isVideo } from "./lib/thumbnail";
 import { isOptimizableFile } from "./lib/optimize";
 import { extensionOf } from "./lib/filename";
 import useTransferQueue from "./hooks/useTransferQueue";
-import { addHistory } from "./lib/history";
 import { formatBytes, formatDateTime, loadQuotaBytes, saveQuotaBytes } from "./lib/format";
 import { isSearchActive } from "./lib/search";
 import { loadTheme, saveTheme } from "./lib/theme";
@@ -52,6 +52,17 @@ import { loadTheme, saveTheme } from "./lib/theme";
 const TOAST_MS = 2000;
 
 const THEME_COLORS = { dark: "#000000", light: "#FFFFFF" };
+
+// 폴더·파일의 용량(바이트) — 폴더는 서버가 하위까지 합산한다. 기록에 남기는 용도라 실패하면 null.
+async function itemBytes(token, item) {
+  if (!item.is_folder) return item.size || 0;
+  try {
+    const info = await getItemInfo(token, item.id);
+    return info.size || 0;
+  } catch {
+    return null;
+  }
+}
 
 export default function App() {
   // 설정의 테마 스위치가 고른 값 — "system"(기기 설정을 그대로 따름) |
@@ -117,7 +128,7 @@ export default function App() {
   // 꾹 눌러(또는 전체 선택으로) 선택된 항목의 id 집합.
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [showTrash, setShowTrash] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
+  const [showTransfers, setShowTransfers] = useState(false);
   // 스튜디오 툴킷의 삭제(휴지통) 아이콘을 누르면 켜진다. 이 동작만 별도
   // 모달 대신 하단 검색바가 위로 확장되며 그 자리에서 확인을 받는다
   // (BottomSearchBar 참고) — 다른 삭제·복원 확인은 전부 그대로 ConfirmModal.
@@ -317,7 +328,10 @@ export default function App() {
 
   // 업로드·다운로드는 종류별 대기열(useTransferQueue)에 작업으로 넣는다 — 하나가 끝나야 다음 것을 처리하고,
   // 진행 중에도 다른 동작을 계속 할 수 있다. 진행도·실패는 헤더 오른쪽의 원형 버튼이 보여준다.
-  const { enqueue } = useTransferQueue(addHistory);
+  // 끝난 업로드·다운로드(성공·실패)는 서버에 기록으로 쌓는다. 실패해도 화면 흐름에는 영향이 없다.
+  const { transfers, enqueue, ack: ackTransfer } = useTransferQueue((rec) => {
+    if (session) addTransferHistory(session.token, rec).catch(() => {});
+  });
 
   // 확장자 제한 없이 고른 파일을 대기열에 넣어 순서대로 R2에 올린다. 즐겨찾기 화면에서 눌렀다면 업로드
   // 결과(방금 올린 파일)를 볼 수 있도록 먼저 즐겨찾기를 닫아 파일 화면으로 나온다.
@@ -329,6 +343,7 @@ export default function App() {
       "up",
       files.map((file) => ({
         name: file.name,
+        size: file.size,
         run: async (onProgress) => {
           await uploadFile({ token: session.token, userId: session.userId, file, parentId: target, onProgress });
           setRefreshKey((k) => k + 1);
@@ -391,7 +406,7 @@ export default function App() {
       setViewerIndex(idx >= 0 ? idx : 0);
       return;
     }
-    enqueue("down", [{ name: item.name, run: (onProgress) => downloadFile({ token: session.token, item, onProgress }) }]);
+    enqueue("down", [{ name: item.name, size: item.size, run: (onProgress) => downloadFile({ token: session.token, item, onProgress }) }]);
   };
 
   // 암호화(잠금)된 항목은 통합 암호를 입력해야 열린다. 검색바가 암호 입력창이 되고, 암호가 맞으면 열리고
@@ -450,9 +465,11 @@ export default function App() {
     const token = session.token;
     let run;
     let recordName;
+    let recordSize;
     if (targets.length === 1) {
       const item = targets[0];
       recordName = item.is_folder ? `${item.name}.zip` : item.name;
+      recordSize = item.is_folder ? () => itemBytes(token, item) : item.size;
       if (item.is_folder) run = (onProgress) => downloadFolderAsZip({ token, folder: item, onProgress });
       // 스플릿 프리셋 항목은 하나로 합쳐 받지 않고 A·B를 각자 따로 받는다.
       else if (item.split_pair) run = (onProgress) => downloadSplitPresetFiles({ token, item, onProgress });
@@ -460,9 +477,13 @@ export default function App() {
     } else {
       const zipName = `선택한 항목 ${targets.length}개.zip`;
       recordName = zipName;
+      recordSize = async () => {
+        const parts = await Promise.all(targets.map((it) => itemBytes(token, it)));
+        return parts.reduce((a, n) => a + (n || 0), 0);
+      };
       run = (onProgress) => downloadSelectionAsZip({ token, items: targets, zipName, onProgress });
     }
-    enqueue("down", [{ name: recordName, run }]);
+    enqueue("down", [{ name: recordName, size: recordSize, run }]);
     setSelectedIds(new Set());
   };
 
@@ -574,18 +595,14 @@ export default function App() {
   // 정보 패널 제목 줄의 < > : 바로 앞·뒤 파일로 선택을 옮기고 정보를 다시 채운다(뷰어가 열려 있으면 뷰어도 함께 넘어간다).
   // 여러 개를 선택했으면 선택한 항목들 안에서, 하나만 선택했으면 목록(뷰어가 열려 있으면 뷰어 목록)의 앞·뒤 파일로 넘긴다.
   const infoMultiSel = selectedIds.size > 1;
-  const infoSource = infoMultiSel ? selectedItems : viewerIndex !== null ? viewerItems : visibleItems;
-  const infoCurIdx = infoItem ? infoSource.findIndex((it) => it.id === infoItem.id) : -1;
-  const infoPrevDisabled = infoCurIdx <= 0;
-  const infoNextDisabled = infoCurIdx < 0 || infoCurIdx >= infoSource.length - 1;
+  const infoCurIdx = infoItem ? selectedItems.findIndex((it) => it.id === infoItem.id) : -1;
+  // 하나만 선택했을 땐 < > 가 비활성이고, 여러 개를 선택했을 때만 선택한 파일들 사이를 오간다(선택하지 않은 파일은 볼 수 없다).
+  const infoPrevDisabled = !infoMultiSel || infoCurIdx <= 0;
+  const infoNextDisabled = !infoMultiSel || infoCurIdx < 0 || infoCurIdx >= selectedItems.length - 1;
   const handleInfoNav = (dir) => {
-    const target = infoSource[infoCurIdx + dir];
-    if (infoCurIdx < 0 || !target) return;
+    const target = selectedItems[infoCurIdx + dir];
+    if (!infoMultiSel || infoCurIdx < 0 || !target) return;
     setInfoTargetId(target.id);
-    if (!infoMultiSel) {
-      if (viewerIndex !== null) setViewerIndex(infoCurIdx + dir);
-      else setSelectedIds(new Set([target.id]));
-    }
     loadInfo([target]);
   };
 
@@ -805,8 +822,18 @@ export default function App() {
     );
   }
 
-  if (showHistory) {
-    return <HistoryPage onBack={() => setShowHistory(false)} />;
+  // 업로드·다운로드 기록 화면: 한 번 들어갔다 < 로 나오면 끝난 전송 버튼(우상단)은 사라진다(진행 중인 것은 남는다).
+  if (showTransfers) {
+    return (
+      <TransfersPage
+        session={session}
+        onBack={() => {
+          setShowTransfers(false);
+          ackTransfer("up");
+          ackTransfer("down");
+        }}
+      />
+    );
   }
 
   if (showTrash) {
@@ -821,7 +848,6 @@ export default function App() {
         onChangeThemeMode={handleChangeThemeMode}
         viewMode={viewMode}
         onOpenTrash={() => setShowTrash(true)}
-        onOpenHistory={() => setShowHistory(true)}
         onBack={() => setShowSettings(false)}
         hasStoragePw={hasStoragePw}
         onStoragePasswordChange={setHasStoragePw}
@@ -871,7 +897,7 @@ export default function App() {
       {(
         <>
           <main className="page">
-            <PageHeader title={title} />
+            <PageHeader title={title} transfers={transfers} onOpenTransfers={() => setShowTransfers(true)} />
             <FilesPage
               session={session}
               viewMode={viewMode}

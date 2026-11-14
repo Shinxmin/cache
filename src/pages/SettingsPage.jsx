@@ -14,7 +14,6 @@ export default function SettingsPage({
   themeMode,
   onChangeThemeMode,
   onOpenTrash,
-  onOpenHistory,
   onBack,
   hasStoragePw,
   onStoragePasswordChange,
@@ -84,7 +83,6 @@ export default function SettingsPage({
             quotaBytes={quotaBytes}
             onChangeQuota={onChangeQuota}
             onOpenTrash={onOpenTrash}
-            onOpenHistory={onOpenHistory}
           />
           <section className="settings-card settings-card--security">
             <div className="settings-card-head">
