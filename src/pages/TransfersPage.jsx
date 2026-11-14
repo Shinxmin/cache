@@ -110,7 +110,7 @@ export default function TransfersPage({ session, onBack }) {
     <>
       <header className="page-header page-header--static page-header--no-blur">
         <div className="page-header-row">
-          <h1 className="page-title">업로드·다운로드</h1>
+          <h1 className="page-title">기록</h1>
         </div>
       </header>
       <div className="page page--flush page--has-dock">
