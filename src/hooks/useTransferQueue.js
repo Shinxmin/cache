@@ -10,9 +10,9 @@ const EMPTY = { total: 0, done: 0, failed: 0, current: 0, active: false };
 // current(지금 하는 작업의 진행도 0~1) · active(처리 중). 대기열이 비어 끝나면(성공이든 실패든) 헤더 버튼은
 // 사라지지 않고, 사용자가 ack(종류)를 부를 때까지(헤더 버튼을 누를 때까지) 그대로 남는다.
 //
-// 작업은 { name, size, run(onProgress) } 형태이고 run이 던지면 실패로 센다.
+// 작업은 { name, size, entries, run(onProgress) } 형태이고 run이 던지면 실패로 센다.
 export default function useTransferQueue(onRecord) {
-  // 작업이 끝날 때마다(성공·실패) onRecord({ kind, name, size, ok })로 알린다 — 설정 → 기록에 남는다.
+  // 작업이 끝날 때마다(성공·실패) onRecord([{ kind, name, size, ok }, ...])로 알린다 — 설정 → 기록에 남는다.
   const recordRef = useRef(onRecord);
   recordRef.current = onRecord;
   const [state, setState] = useState({ down: EMPTY, up: EMPTY });
@@ -47,13 +47,26 @@ export default function useTransferQueue(onRecord) {
       st.done += 1;
       if (!ok) st.failed += 1;
       // 크기는 숫자이거나(업로드·파일) 비동기 계산 함수(폴더·묶음 zip)일 수 있다. 못 구해도 기록은 남긴다.
-      let size = null;
-      try {
-        size = typeof job.size === "function" ? await job.size() : (job.size ?? null);
-      } catch {
-        size = null;
+      // zip처럼 한 작업 안에 파일이 여럿이면 job.entries()로 파일마다 기록한다(성공·실패는 작업 결과를 따른다).
+      let recs = null;
+      if (typeof job.entries === "function") {
+        try {
+          const entries = await job.entries();
+          if (entries?.length) recs = entries.map((e) => ({ kind, name: e.name, size: e.size ?? null, ok }));
+        } catch {
+          recs = null;
+        }
       }
-      recordRef.current?.({ kind, name: job.name, size, ok });
+      if (!recs) {
+        let size = null;
+        try {
+          size = typeof job.size === "function" ? await job.size() : (job.size ?? null);
+        } catch {
+          size = null;
+        }
+        recs = [{ kind, name: job.name, size, ok }];
+      }
+      recordRef.current?.(recs);
       st.current = 0;
       commit(kind);
     }
