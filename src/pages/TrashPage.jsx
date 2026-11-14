@@ -83,6 +83,9 @@ export default function TrashPage({ session, onBack }) {
     });
   };
 
+  const allSelected = visible.length > 0 && visible.every((it) => selectedIds.has(it.id));
+  const toggleAll = (checked) => setSelectedIds(checked ? new Set(visible.map((it) => it.id)) : new Set());
+
   const run = async () => {
     const ids = liveSelected;
     if (!ids.length || !action) return;
@@ -130,6 +133,9 @@ export default function TrashPage({ session, onBack }) {
         settingsDisabled
         plusDisabled
         swapSideButtons={false}
+        checkLeft
+        allSelected={allSelected}
+        onToggleSelectAll={toggleAll}
         hasSelection={liveSelected.length > 0}
         selectionActions={actions}
         confirmOpen={Boolean(action)}
