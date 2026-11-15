@@ -120,14 +120,13 @@ export default function StudioPage({ session, files, onUpload, onImport, onOpenS
   const content =
     section === "settings" ? (
       <>
-        <label className="info-thumb">
+        <label className="info-thumb studio-batch">
           <span className="checkbox">
             <input type="checkbox" checked={batch} onChange={(e) => setBatch(e.target.checked)} />
             <CheckboxVisual />
           </span>
           <span className="info-thumb-label">일괄 적용</span>
         </label>
-        <p className="search-bar-confirm-desc">{batch ? "앞으로의 편집·변환이 불러온 모든 파일에 적용돼요" : "\u00a0"}</p>
       </>
     ) : section === "save" ? (
       <>
