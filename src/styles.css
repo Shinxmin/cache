@@ -2560,7 +2560,8 @@ main.page {
 
 /* 스튜디오 하단바: 세로폭 308px(= 이동 화면에서 폴더 리스트가 3줄일 때의 하단바 높이). 버튼 줄은 맨 아래. */
 .search-dock.is-studio-dock {
-  height: 308px;
+  /* 이전(308px)보다 30% 줄인 216px. 정보 패널처럼 항상 열린 정보 영역 + 검색바 + 버튼 줄. */
+  height: 216px;
 }
 .search-dock.is-studio-dock .search-dock-body,
 .search-dock.is-studio-dock .search-dock-body-inner {
@@ -2575,5 +2576,25 @@ main.page {
   margin-top: auto;
 }
 .page--studio-dock {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 308px + 16.1px + 16px);
+  box-sizing: border-box;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 216px + 16.1px + 16px);
+}
+
+/* 스튜디오 뷰포트: 파일 뷰어처럼 한 파일을 크게 보여준다(좌우로 넘기기). */
+.studio-viewport {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: pan-y;
+}
+.studio-media {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
 }
