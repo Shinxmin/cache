@@ -225,9 +225,11 @@ export default function BottomSearchBar({
   // 막지만 목록에서 미리 눌리지 않게 해 둔다.
   const moveExcluded = moveExcludedIds ?? new Set();
 
+  const studioActive = Boolean(studioDock && studioInfo?.editable);
   const textValue = studioDock ? studioInfo?.name ?? "" : newFolderOpen ? newFolderName : renameOpen || infoOpen ? renameName : searchQuery;
   const onTextChange = (value) => {
-    if (newFolderOpen) onChangeNewFolderName?.(value);
+    if (studioDock) studioInfo?.onChangeName?.(value);
+    else if (newFolderOpen) onChangeNewFolderName?.(value);
     else if (renameOpen || infoOpen) onChangeRenameName?.(value);
     else onSearch?.(value);
   };
@@ -311,7 +313,21 @@ export default function BottomSearchBar({
               {studioDock ? (
                 <>
                   <div className="search-bar-confirm-title-row">
-                    <p className="search-bar-confirm-title search-bar-confirm-title--studio">정보</p>
+                    {/* 제목 "정보" 대신: 하단 내비게이션 바 모양(네 모서리 곡선)의 섹션 버튼. 선택된 섹션은 연한 알약으로 표시된다. */}
+                    <div className="studio-seg" role="tablist" aria-label="스튜디오 섹션">
+                      {(studioInfo?.sections ?? []).map((sec) => (
+                        <button
+                          key={sec.id}
+                          type="button"
+                          role="tab"
+                          aria-selected={studioInfo.section === sec.id}
+                          className={`studio-seg-btn${studioInfo.section === sec.id ? " is-on" : ""}`}
+                          onClick={() => studioInfo.onSection?.(sec.id)}
+                        >
+                          {sec.label}
+                        </button>
+                      ))}
+                    </div>
                     <div className="info-nav">
                       <button className="info-nav-btn" type="button" aria-label="이전 파일" disabled={!studioInfo || studioInfo.prevDisabled} onClick={() => studioInfo?.onPrev?.()}>
                         <DockBackIcon size={16} />
@@ -322,8 +338,12 @@ export default function BottomSearchBar({
                     </div>
                   </div>
                   <div className="search-bar-confirm-info">
-                    <p className="search-bar-confirm-desc">{studioInfo?.lines?.[0] ?? "\u00a0"}</p>
-                    <p className="search-bar-confirm-desc">{studioInfo?.lines?.[1] ?? "\u00a0"}</p>
+                    {studioInfo?.content ?? (
+                      <>
+                        <p className="search-bar-confirm-desc">{studioInfo?.lines?.[0] ?? "\u00a0"}</p>
+                        <p className="search-bar-confirm-desc">{studioInfo?.lines?.[1] ?? "\u00a0"}</p>
+                      </>
+                    )}
                   </div>
                 </>
               ) : displayMode === "newFolder" ? (
@@ -448,7 +468,7 @@ export default function BottomSearchBar({
             <input
               ref={inputRef}
               className="search-bar-input"
-              type={textEntryOpen ? "text" : "search"}
+              type={textEntryOpen || studioActive ? "text" : "search"}
               inputMode={textEntryOpen ? "text" : "search"}
               enterKeyHint={textEntryOpen ? "done" : "search"}
               placeholder={studioDock ? "" : textEntryOpen ? "여기에 입력하세요" : "검색"}
@@ -458,16 +478,17 @@ export default function BottomSearchBar({
               onKeyDown={(e) => {
                 if (e.key !== "Enter") return;
                 // 모바일 키보드의 "검색"/"완료" 확인 버튼도 엔터와 동일한 keydown을 발생시킨다.
-                if (textEntryOpen) submitText();
+                if (studioActive) studioInfo.onConfirmName?.();
+                else if (textEntryOpen) submitText();
                 e.currentTarget.blur();
               }}
             />
-            {((panelOpen && !thumbOpen) || (importMode && hasSelection)) && (
+            {((panelOpen && !thumbOpen) || (importMode && hasSelection) || studioActive) && (
               <button
                 type="button"
                 className="search-bar-inline-confirm"
-                onClick={importMode && !panelOpen ? () => onConfirmImport?.() : confirmOpen ? confirm : infoOpen ? submitInfo : moveOpen ? submitMove : submitText}
-                disabled={importMode && !panelOpen ? !hasSelection : confirmOpen ? busy : infoOpen ? !canSubmitInfo : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
+                onClick={studioActive && !panelOpen ? () => studioInfo.onConfirmName?.() : importMode && !panelOpen ? () => onConfirmImport?.() : confirmOpen ? confirm : infoOpen ? submitInfo : moveOpen ? submitMove : submitText}
+                disabled={studioActive && !panelOpen ? !studioInfo.canConfirm : importMode && !panelOpen ? !hasSelection : confirmOpen ? busy : infoOpen ? !canSubmitInfo : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
               >
                 확인
               </button>

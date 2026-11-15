@@ -985,6 +985,10 @@ export default function App() {
         onUpload={handleStudioUpload}
         onImport={startImport}
         onOpenSettings={() => setShowSettings(true)}
+        onRenamed={(map) => {
+          setStudioFiles((prev) => prev.map((f) => (map[f.id] ? { ...f, name: map[f.id] } : f)));
+          setRefreshKey((k) => k + 1);
+        }}
         onBack={() => setShowStudio(false)}
         transfers={transfers}
         onOpenTransfers={() => setShowTransfers(true)}
