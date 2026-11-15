@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import BottomSearchBar from "../components/BottomSearchBar";
 import PageHeader from "../components/PageHeader";
 import Spinner from "../components/Spinner";
+import CheckboxVisual from "../components/Checkbox";
 import { ImportIcon } from "../components/icons";
 import { fileUrl, renameFiles } from "../lib/drive";
 import { isVideo, looksLikeVideoFile } from "../lib/thumbnail";
@@ -16,6 +17,7 @@ const SWIPE_THRESHOLD = 50;
 const SECTIONS = [
   { id: "edit", label: "편집" },
   { id: "convert", label: "변환" },
+  { id: "settings", label: "설정" },
   { id: "save", label: "저장" },
 ];
 
@@ -32,6 +34,8 @@ export default function StudioPage({ session, files, onUpload, onImport, onOpenS
   const [pending, setPending] = useState({}); // { [fileId]: 새 이름 }
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
+  // 설정 섹션의 "일괄 적용"(기본 해제). 켜져 있는 동안의 편집·변환 값은 불러온 모든 파일에 한꺼번에 적용된다.
+  const [batch, setBatch] = useState(false);
   const item = files[Math.min(index, files.length - 1)] ?? null;
   const at = item ? files.indexOf(item) : -1;
 
@@ -66,6 +70,18 @@ export default function StudioPage({ session, files, onUpload, onImport, onOpenS
   const canConfirm = Boolean(item) && Boolean(typed) && typed !== shownName;
   const confirmName = () => {
     if (!item || !typed) return;
+    if (batch) {
+      // 일괄 적용: 불러온 모든 파일에 같은 이름 + 번호(이름_1, 이름_2…, 각자 원래 확장자)로 적용한다.
+      setPending(() => {
+        const next = {};
+        files.forEach((f, i) => {
+          const ext = /\.([^.]+)$/.exec(f.name)?.[1];
+          next[f.id] = `${typed}_${i + 1}${ext ? `.${ext}` : ""}`;
+        });
+        return next;
+      });
+      return;
+    }
     setPending((prev) => {
       const next = { ...prev };
       if (typed === item.name) delete next[item.id];
@@ -102,7 +118,18 @@ export default function StudioPage({ session, files, onUpload, onImport, onOpenS
     </>
   );
   const content =
-    section === "save" ? (
+    section === "settings" ? (
+      <>
+        <label className="info-thumb">
+          <span className="checkbox">
+            <input type="checkbox" checked={batch} onChange={(e) => setBatch(e.target.checked)} />
+            <CheckboxVisual />
+          </span>
+          <span className="info-thumb-label">일괄 적용</span>
+        </label>
+        <p className="search-bar-confirm-desc">{batch ? "앞으로의 편집·변환이 불러온 모든 파일에 적용돼요" : "\u00a0"}</p>
+      </>
+    ) : section === "save" ? (
       <>
         <div className="studio-save-line">
           <p className="search-bar-confirm-desc">{pendingCount ? `변경한 파일 ${pendingCount}개` : "변경 사항 없음"}</p>
