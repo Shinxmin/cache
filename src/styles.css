@@ -2561,8 +2561,8 @@ main.page {
 /* 스튜디오 하단바: 세로폭 308px(= 이동 화면에서 폴더 리스트가 3줄일 때의 하단바 높이). 버튼 줄은 맨 아래. */
 .search-dock.is-studio-dock {
   container-type: inline-size;
-  /* 이전(308px)보다 30% 줄인 216px. 정보 패널처럼 항상 열린 정보 영역 + 검색바 + 버튼 줄. */
-  height: 216px;
+  /* 216px보다 25% 늘린 270px. 섹션 버튼 + 섹션별 내용 + 검색바 + 버튼 줄. */
+  height: 270px;
 }
 .search-dock.is-studio-dock .search-dock-body,
 .search-dock.is-studio-dock .search-dock-body-inner {
@@ -2581,7 +2581,7 @@ main.page {
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 216px + 16.1px + 16px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 270px + 16.1px + 16px);
 }
 
 /* 스튜디오 뷰포트: 파일 뷰어처럼 한 파일을 크게 보여준다(좌우로 넘기기). */
@@ -2601,11 +2601,11 @@ main.page {
 }
 
 /* 스튜디오 섹션 버튼(제목 "정보" 자리): 하단 내비게이션 바처럼 네 모서리가 둥근 상자. 높이는 < > 버튼(30px)과 같고 폭은
-   하단바 폭의 70%, 왼쪽 정렬이며 안의 섹션도 왼쪽부터 놓인다. 선택된 섹션은 연한 알약. */
+   하단바 폭의 50%, 왼쪽 정렬이며 안의 섹션도 왼쪽부터 놓인다. 선택된 섹션은 연한 알약. */
 .studio-seg {
   flex: none;
   box-sizing: border-box;
-  width: 70cqw;
+  width: 50cqw;
   height: 30px;
   padding: 2px;
   display: flex;
@@ -2619,7 +2619,7 @@ main.page {
 .studio-seg-btn {
   flex: none;
   height: 26px;
-  padding: 0 14px;
+  padding: 0 7px;
   border-radius: 13px;
   font-size: 13px;
   color: var(--text-2);
