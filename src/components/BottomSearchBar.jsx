@@ -60,6 +60,8 @@ export default function BottomSearchBar({
   searchDisabled = false,
   // 스튜디오 화면 하단바: 세로폭을 이동 화면(리스트 3줄)과 같게 고정하고, 검색바는 연필 아이콘·플레이스홀더 없음으로 쓴다.
   studioDock = false,
+  // 스튜디오 하단바: 지금 보고 있는 파일의 정보를 정보 패널처럼 항상 열어 보여준다 — { name, lines: [날짜, 파일 수·용량], onPrev, onNext, prevDisabled, nextDisabled }
+  studioInfo,
   plusAccept,
   plusSecondLabel,
   plusSecondIcon,
@@ -223,7 +225,7 @@ export default function BottomSearchBar({
   // 막지만 목록에서 미리 눌리지 않게 해 둔다.
   const moveExcluded = moveExcludedIds ?? new Set();
 
-  const textValue = newFolderOpen ? newFolderName : renameOpen || infoOpen ? renameName : searchQuery;
+  const textValue = studioDock ? studioInfo?.name ?? "" : newFolderOpen ? newFolderName : renameOpen || infoOpen ? renameName : searchQuery;
   const onTextChange = (value) => {
     if (newFolderOpen) onChangeNewFolderName?.(value);
     else if (renameOpen || infoOpen) onChangeRenameName?.(value);
@@ -302,11 +304,29 @@ export default function BottomSearchBar({
           <div className="search-dock-body" aria-hidden={collapsed}>
           <div className="search-dock-body-inner">
           <div
-            className={`search-bar-confirm-panel${displayMode === "move" || displayMode === "thumb" ? " mode-move" : ""}${displayMode === "info" ? " mode-info" : ""}${panelOpen ? " is-open" : ""}`}
+            className={`search-bar-confirm-panel${studioDock ? " mode-info is-open" : ""}${displayMode === "move" || displayMode === "thumb" ? " mode-move" : ""}${displayMode === "info" ? " mode-info" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
           >
             <div className="search-bar-confirm-content" key={displayMode}>
-              {displayMode === "newFolder" ? (
+              {studioDock ? (
+                <>
+                  <div className="search-bar-confirm-title-row">
+                    <p className="search-bar-confirm-title search-bar-confirm-title--studio">정보</p>
+                    <div className="info-nav">
+                      <button className="info-nav-btn" type="button" aria-label="이전 파일" disabled={!studioInfo || studioInfo.prevDisabled} onClick={() => studioInfo?.onPrev?.()}>
+                        <DockBackIcon size={16} />
+                      </button>
+                      <button className="info-nav-btn" type="button" aria-label="다음 파일" disabled={!studioInfo || studioInfo.nextDisabled} onClick={() => studioInfo?.onNext?.()}>
+                        <DockForwardIcon size={16} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="search-bar-confirm-info">
+                    <p className="search-bar-confirm-desc">{studioInfo?.lines?.[0] ?? "\u00a0"}</p>
+                    <p className="search-bar-confirm-desc">{studioInfo?.lines?.[1] ?? "\u00a0"}</p>
+                  </div>
+                </>
+              ) : displayMode === "newFolder" ? (
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">새 폴더</p>
               ) : displayMode === "rename" ? (
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">이름 수정</p>

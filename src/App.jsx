@@ -432,6 +432,24 @@ export default function App() {
 
   // 확장자 제한 없이 고른 파일을 대기열에 넣어 순서대로 R2에 올린다. 즐겨찾기 화면에서 눌렀다면 업로드
   // 결과(방금 올린 파일)를 볼 수 있도록 먼저 즐겨찾기를 닫아 파일 화면으로 나온다.
+  // 스튜디오에서 올린 파일은 파일 화면에 올라가는 것과 같이, 끝나면 스튜디오 뷰포트 목록에도 들어간다.
+  const handleStudioUpload = (fileList) => {
+    const files = Array.from(fileList ?? []);
+    const target = parentId;
+    enqueue(
+      "up",
+      files.map((file) => ({
+        name: file.name,
+        size: file.size,
+        run: async (onProgress) => {
+          const row = await uploadFile({ token: session.token, userId: session.userId, file, parentId: target, onProgress });
+          setRefreshKey((k) => k + 1);
+          if (row?.id) setStudioFiles((prev) => (prev.some((x) => x.id === row.id) ? prev : [...prev, row]));
+        },
+      }))
+    );
+  };
+
   const handleUpload = (fileList) => {
     if (showFavorites) setShowFavorites(false);
     const files = Array.from(fileList ?? []);
@@ -963,7 +981,8 @@ export default function App() {
     return (
       <StudioPage
         files={studioFiles}
-        onUpload={handleUpload}
+        session={session}
+        onUpload={handleStudioUpload}
         onImport={startImport}
         onOpenSettings={() => setShowSettings(true)}
         onBack={() => setShowStudio(false)}
