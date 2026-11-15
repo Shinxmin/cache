@@ -1060,27 +1060,27 @@ main.page {
   opacity: var(--studio-disabled);
   pointer-events: none;
 }
-.info-lock {
+.info-thumb {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   cursor: pointer;
 }
-.info-lock .checkbox-box {
+.info-thumb .checkbox-box {
   width: 15px;
   height: 15px;
   border-radius: 4px;
 }
-.info-lock .checkbox-box svg {
+.info-thumb .checkbox-box svg {
   width: 10px;
   height: 10px;
 }
-.info-lock-label {
+.info-thumb-label {
   font-size: 11px;
   color: var(--panel-text-2);
 }
 /* 통합 암호가 없으면 웹사이트 표준 비활성화 디자인(흐림, 눌리지 않음). */
-.info-lock.is-disabled {
+.info-thumb.is-disabled {
   opacity: var(--studio-disabled);
   pointer-events: none;
 }
@@ -1284,22 +1284,6 @@ main.page {
     minmax(clamp((100% - 4 * var(--grid-gap-x)) / 5, 104px, (100% - 2 * var(--grid-gap-x)) / 3), 1fr)
   );
   gap: 16px var(--grid-gap-x);
-}
-/* 암호화(잠금)된 항목 표시: 갤러리 타일 좌상단의 작은 자물쇠, 리스트에서는 이름 옆 자물쇠. */
-.drive-lock-badge {
-  position: absolute;
-  top: 9px;
-  left: 9px;
-  z-index: 2;
-  display: flex;
-  line-height: 0;
-  color: var(--icon);
-}
-.drive-lock-inline {
-  display: inline-flex;
-  flex: none;
-  line-height: 0;
-  color: var(--icon);
 }
 .drive-tile-btn {
   width: 100%;
@@ -2111,40 +2095,6 @@ main.page {
   color: var(--panel-text-2);
 }
 
-/* ── 설정: 스토리지 통합 암호 섹션 ── */
-.settings-pw {
-  border-bottom: 1px solid var(--glass-border);
-}
-.settings-pw .settings-pw-head {
-  justify-content: flex-start;
-  gap: 10px;
-  height: 40px;
-  border-bottom: 0;
-  cursor: default;
-}
-.settings-pw-head .settings-row-label {
-  font-size: 13px;
-  font-weight: 400;
-}
-/* 통합 암호 설정 여부 체크박스. 설정 전에는 눌리지 않는다. */
-.settings-pw-check {
-  pointer-events: none;
-}
-/* 암호가 설정돼 있을 때는 눌러서 해제를 시도할 수 있다(현재 암호 확인 뒤 해제). */
-.settings-pw-check.is-clickable {
-  pointer-events: auto;
-  cursor: pointer;
-}
-.settings-pw-check .checkbox-box {
-  width: 16px;
-  height: 16px;
-  border-radius: 5px;
-}
-.settings-pw-check .checkbox-box svg {
-  width: 11px;
-  height: 11px;
-}
-
 /* ── 설정 탭 리스트: 지금은 스튜디오 툴킷 on/off 한 줄뿐이다. ── */
 .settings-list {
   display: flex;
@@ -2169,10 +2119,6 @@ main.page {
   /* 제목(아이콘 + 글자)과 오른쪽의 테마 스위치 사이 여백 */
   gap: 22px;
   padding: 14px 0 15px;
-}
-/* 보안 카드: 제목 줄 밑에 통합 암호 영역이 이어진다. */
-.settings-card--security .settings-card-head {
-  padding-bottom: 4px;
 }
 /* 총용량(3.0GB / 5.0GB의 오른쪽): 연한 회색 둥근 상자. 누르면 같은 자리에서 입력창으로 바뀐다. */
 .storage-quota {
@@ -2570,4 +2516,10 @@ main.page {
 }
 .history-fail {
   color: #ff8a8a;
+}
+
+/* 썸네일 패널에서 고른 파일 행 */
+.move-row.is-picked {
+  background: rgba(128, 128, 128, 0.22);
+  border-radius: 10px;
 }

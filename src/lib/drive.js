@@ -148,30 +148,11 @@ export async function getItemInfo(token, id) {
   return rpcResult(await supabase.rpc("item_info", { p_token: token, p_id: id }));
 }
 
-// ── 스토리지 통합 암호 / 항목 잠금(암호화) ──────────────────────────────
-// 통합 암호는 서버에 bcrypt 해시로만 저장되고 비교도 서버가 한다. 잠긴 항목(files.locked)은 열 때 이 암호를
-// 입력해야 한다. 암호를 지우면 모든 항목의 잠금도 함께 풀린다.
-export async function getStoragePasswordStatus(token) {
-  const r = rpcResult(await supabase.rpc("storage_password_status", { p_token: token }));
-  return Boolean(r?.has_password);
-}
-export async function setStoragePassword(token, newPassword, currentPassword = null) {
-  return rpcResult(await supabase.rpc("set_storage_password", { p_token: token, p_new: newPassword, p_current: currentPassword }));
-}
-export async function deleteStoragePassword(token, currentPassword) {
-  return rpcResult(await supabase.rpc("delete_storage_password", { p_token: token, p_current: currentPassword }));
-}
-export async function verifyStoragePassword(token, password) {
-  const r = rpcResult(await supabase.rpc("verify_storage_password", { p_token: token, p_password: password }));
-  return Boolean(r?.valid);
-}
-export async function setFilesLocked(token, ids, locked) {
-  return rpcResult(await supabase.rpc("set_files_locked", { p_token: token, p_ids: ids, p_locked: locked }));
+// 파일 썸네일 표시 여부(서버 저장 → 모든 기기에서 같다). hidden=true면 타일에 썸네일을 그리지 않는다(기본은 표시).
+export async function setFilesThumbHidden(token, ids, hidden) {
+  return rpcResult(await supabase.rpc("set_files_thumb_hidden", { p_token: token, p_ids: ids, p_hidden: hidden }));
 }
 
-// ── 하이라이트 클립(스튜디오 "하이라이트" 섹션) ────────────────────────
-// 동영상 하나에 저장해 둔 구간(클립) 목록. 클립은 계정에 저장되므로 다른
-// 기기에서 열어도 같은 목록이 뜬다.
 export async function listClips(token, fileId) {
   return rpcResult(await supabase.rpc("list_clips", { p_token: token, p_file_id: fileId }));
 }

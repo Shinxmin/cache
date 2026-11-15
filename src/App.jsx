@@ -21,9 +21,7 @@ import {
   getItemInfo,
   addTransferHistory,
   listDownloadEntries,
-  getStoragePasswordStatus,
-  setFilesLocked,
-  verifyStoragePassword,
+  setFilesThumbHidden,
   getStorageUsed,
   renameFiles,
   createFolder,
@@ -145,14 +143,17 @@ export default function App() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [infoLines, setInfoLines] = useState(null); // [시각, "N개 파일 • 용량"] | null(불러오는 중)
   const [renameName, setRenameName] = useState("");
-  // 스토리지 통합 암호: 설정돼 있는지(정보 패널의 암호화 체크박스 활성 여부)와, 잠긴 항목을 열 때 뜨는 암호 입력 패널.
-  const [hasStoragePw, setHasStoragePw] = useState(false);
-  const [unlockOpen, setUnlockOpen] = useState(false);
-  const [unlockPw, setUnlockPw] = useState("");
-  const unlockRunRef = useRef(null); // 암호가 맞았을 때 이어서 실행할 동작(열기)
   const [movePath, setMovePath] = useState([]); // [{ id, name }]
   const [moveRows, setMoveRows] = useState([]);
   const [moveRowsState, setMoveRowsState] = useState("loading"); // loading | ready | error
+  // 폴더 정보의 "썸네일" 체크: 체크하면 "썸네일" 패널(이동 패널과 같은 높이)이 열려 그 폴더의 하위 목록에서 썸네일로 쓸
+  // 이미지·움짤을 고른다. 확인하면 서버에 저장돼 모든 기기에서 같게 보인다.
+  const [thumbOpen, setThumbOpen] = useState(false);
+  const [thumbFolder, setThumbFolder] = useState(null);
+  const [thumbPath, setThumbPath] = useState([]); // 폴더 안에서 더 들어간 하위 폴더 [{ id, name }]
+  const [thumbRows, setThumbRows] = useState([]);
+  const [thumbRowsState, setThumbRowsState] = useState("loading");
+  const [thumbPickedId, setThumbPickedId] = useState(null);
   // 폴더 썸네일 지정 모드. 단일 폴더를 고르고 정보 아이콘을 켜면 그 폴더 타일에
   // 뜨는 사람 아이콘을 눌러 들어온다 — 그 폴더 안으로 들어가 이미지(jpg·jpeg·png·webp)만
   // 눌리고 나머지(다른 파일·폴더)는 흐려져 눌리지 않는다. 이미지를 하나 누르면 그
@@ -183,7 +184,7 @@ export default function App() {
   // 으로만 열려야 하기 때문이다(handleOpenFile 참고).
   // 암호화(잠금)된 항목은 스와이프로 넘어가는 목록에서도 뺀다 — 암호를 입력해 직접 연 그 항목만 뷰어에 들어간다.
   const mediaItems = useMemo(
-    () => visibleItems.filter((it) => (isImage(it.mime) || isVideo(it.mime)) && !it.split_pair && !it.locked),
+    () => visibleItems.filter((it) => (isImage(it.mime) || isVideo(it.mime)) && !it.split_pair),
     [visibleItems]
   );
   const [viewerItems, setViewerItems] = useState([]);
@@ -233,19 +234,6 @@ export default function App() {
     };
   }, [session?.token, refreshKey]);
 
-  useEffect(() => {
-    if (!session) return undefined;
-    let cancelled = false;
-    getStoragePasswordStatus(session.token)
-      .then((has) => {
-        if (!cancelled) setHasStoragePw(has);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [session?.token]);
-
   const showToast = (message) => {
     clearTimeout(toastTimerRef.current);
     setToast(message);
@@ -290,6 +278,26 @@ export default function App() {
       cancelled = true;
     };
   }, [moveOpen, movePath, session?.token]);
+
+  // 썸네일 패널이 열려 있는 동안, 지금 들어와 있는 폴더(폴더 자신 또는 그 안에서 더 들어간 하위 폴더)의 목록을 받아 온다.
+  useEffect(() => {
+    if (!thumbOpen || !thumbFolder || !session) return undefined;
+    const currentId = thumbPath.length ? thumbPath[thumbPath.length - 1].id : thumbFolder.id;
+    let cancelled = false;
+    setThumbRowsState("loading");
+    listFiles(session.token, currentId)
+      .then((data) => {
+        if (cancelled) return;
+        setThumbRows(data);
+        setThumbRowsState("ready");
+      })
+      .catch(() => {
+        if (!cancelled) setThumbRowsState("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [thumbOpen, thumbFolder?.id, thumbPath, session?.token]);
 
   // 지정 중인 폴더를 벗어나면(뒤로 가기 등) 지정 모드도 끝낸다.
   useEffect(() => {
@@ -396,12 +404,6 @@ export default function App() {
       return;
     }
     if (isImage(item.mime) || isVideo(item.mime)) {
-      if (item.locked) {
-        // 암호를 입력해 연 잠긴 항목은 그 항목만 뷰어에 넣는다.
-        setViewerItems([item]);
-        setViewerIndex(0);
-        return;
-      }
       const idx = mediaItems.findIndex((it) => it.id === item.id);
       setViewerItems(mediaItems);
       setViewerIndex(idx >= 0 ? idx : 0);
@@ -410,50 +412,44 @@ export default function App() {
     enqueue("down", [{ name: item.name, size: item.size, run: (onProgress) => downloadFile({ token: session.token, item, onProgress }) }]);
   };
 
-  // 암호화(잠금)된 항목은 통합 암호를 입력해야 열린다. 검색바가 암호 입력창이 되고, 암호가 맞으면 열리고
-  // 틀리면 아무 반응이 없다(통합 암호가 없으면 막지 않는다).
-  const guardLocked = (item, run) => {
-    if (!item.locked || !hasStoragePw) {
-      run();
-      return;
-    }
-    closeAllToolPanels();
-    unlockRunRef.current = run;
-    setUnlockPw("");
-    setUnlockOpen(true);
-  };
-  const handleOpenFile = (item) => guardLocked(item, () => openFileNow(item));
-  const confirmUnlock = async () => {
-    const pw = unlockPw;
-    if (!pw) return;
-    let valid = false;
-    try {
-      valid = await verifyStoragePassword(session.token, pw);
-    } catch {
-      valid = false;
-    }
-    if (!valid) return; // 틀리면 아무 반응 없음
-    const run = unlockRunRef.current;
-    unlockRunRef.current = null;
-    setUnlockOpen(false);
-    setUnlockPw("");
-    run?.();
-  };
-  const cancelUnlock = () => {
-    unlockRunRef.current = null;
-    setUnlockOpen(false);
-    setUnlockPw("");
-  };
+  const handleOpenFile = (item) => openFileNow(item);
 
-  // 정보 패널의 암호화 체크박스: 선택한 하나를 잠그거나 푼다(잠그려면 통합 암호가 있어야 한다).
-  const toggleInfoLock = async () => {
+  // 썸네일로 쓸 수 있는 파일: 서버가 만든 썸네일이 있는 이미지·움짤(jpg·jpeg·png·gif·apng·webp 등).
+  const isThumbSource = (row) => !row.is_folder && Boolean(row.thumb_key) && (isImage(row.mime) || /\.(jpe?g|png|apng|gif|webp|bmp|avif|heic|heif)$/i.test(row.name || ""));
+
+  // 정보 패널의 "썸네일" 체크박스. 파일: 켜면 썸네일이 보이고 끄면(서버에 영구 저장) 안 보인다(기본은 켜짐).
+  // 폴더: 기본은 꺼짐. 켜면 썸네일 패널이 열려 하위 목록에서 고르고, 끄면 지정한 썸네일이 해제·삭제된다.
+  const toggleInfoThumb = async () => {
     const item = infoItem;
-    if (!item || (!item.locked && !hasStoragePw)) return;
+    if (!item) return;
     try {
-      await setFilesLocked(session.token, [item.id], !item.locked);
+      if (item.is_folder) {
+        if (item.folder_thumb_key) {
+          await clearFolderThumbnail(session.token, item.id);
+          setRefreshKey((k) => k + 1);
+        } else {
+          closeAllToolPanels();
+          setThumbFolder(item);
+          setThumbPath([]);
+          setThumbPickedId(null);
+          setThumbOpen(true);
+        }
+        return;
+      }
+      await setFilesThumbHidden(session.token, [item.id], !item.thumb_hidden);
       setRefreshKey((k) => k + 1);
     } catch {
-      window.alert("암호화 설정을 바꾸지 못했습니다");
+      window.alert("썸네일 설정을 바꾸지 못했습니다");
+    }
+  };
+  const confirmThumb = async () => {
+    if (!thumbFolder || !thumbPickedId) return;
+    try {
+      await setFolderThumbnail(session.token, thumbFolder.id, thumbPickedId);
+      setThumbOpen(false);
+      setRefreshKey((k) => k + 1);
+    } catch {
+      window.alert("썸네일을 지정하지 못했습니다");
     }
   };
 
@@ -556,7 +552,7 @@ export default function App() {
     cancelMove();
     setRenameOpen(false);
     setInfoOpen(false);
-    setUnlockOpen(false);
+    setThumbOpen(false);
   };
 
   // 선택 메뉴의 정보: 하나만 선택했을 때만 동작한다. 파일은 이미 불러온 항목 값을, 폴더는 서버가 하위 모든
@@ -854,8 +850,6 @@ export default function App() {
         viewMode={viewMode}
         onOpenTrash={() => setShowTrash(true)}
         onBack={() => setShowSettings(false)}
-        hasStoragePw={hasStoragePw}
-        onStoragePasswordChange={setHasStoragePw}
         storageUsed={storageUsed}
         storageBillingBytes={storageBillingBytes}
         quotaBytes={quotaBytes}
@@ -909,7 +903,7 @@ export default function App() {
               parentId={parentId}
               favorites={favoritesView}
               searchQuery={searchQuery}
-              onOpenFolder={(item) => guardLocked(item, () => openFolder(item))}
+              onOpenFolder={openFolder}
               onOpenFile={handleOpenFile}
               refreshKey={refreshKey}
               selectionMode={selectedIds.size > 0}
@@ -956,14 +950,19 @@ export default function App() {
             onMoveSelected={handleMoveSelected}
             onRenameSelected={handleRenameSelected}
             onInfoSelected={handleInfoSelected}
-            infoLocked={Boolean(infoItem?.locked)}
-            infoLockDisabled={!hasStoragePw && !infoItem?.locked}
-            onToggleInfoLock={toggleInfoLock}
-            unlockOpen={unlockOpen}
-            unlockPw={unlockPw}
-            onChangeUnlockPw={setUnlockPw}
-            onConfirmUnlock={confirmUnlock}
-            onCancelUnlock={cancelUnlock}
+            infoThumbOn={infoItem ? (infoItem.is_folder ? Boolean(infoItem.folder_thumb_key) : !infoItem.thumb_hidden) : false}
+            onToggleInfoThumb={toggleInfoThumb}
+            thumbOpen={thumbOpen}
+            thumbPath={thumbPath}
+            thumbRows={thumbRows}
+            thumbRowsState={thumbRowsState}
+            thumbPickedId={thumbPickedId}
+            isThumbSource={isThumbSource}
+            onThumbInto={(row) => setThumbPath((p) => [...p, { id: row.id, name: row.name }])}
+            onThumbBack={() => setThumbPath((p) => p.slice(0, -1))}
+            onThumbPick={(row) => setThumbPickedId(row.id)}
+            onConfirmThumb={confirmThumb}
+            onCancelThumb={() => setThumbOpen(false)}
             allSelected={allSelected}
             onToggleSelectAll={handleToggleSelectAll}
             onDownloadSelected={handleDownloadSelected}
