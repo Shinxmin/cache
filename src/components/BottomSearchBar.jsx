@@ -84,14 +84,21 @@ export default function BottomSearchBar({
   onMoveSelected,
   onRenameSelected,
   onInfoSelected,
-  infoLocked,
-  infoLockDisabled,
-  onToggleInfoLock,
-  unlockOpen,
-  unlockPw,
-  onChangeUnlockPw,
-  onConfirmUnlock,
-  onCancelUnlock,
+  // 정보 패널의 "썸네일" 체크박스(파일: 썸네일 표시, 폴더: 지정한 썸네일 있음)
+  infoThumbOn,
+  onToggleInfoThumb,
+  // 썸네일 패널(폴더의 썸네일로 쓸 이미지·움짤 고르기, 이동 패널과 같은 모양)
+  thumbOpen,
+  thumbPath = [],
+  thumbRows = [],
+  thumbRowsState,
+  thumbPickedId,
+  isThumbSource,
+  onThumbInto,
+  onThumbBack,
+  onThumbPick,
+  onConfirmThumb,
+  onCancelThumb,
   allSelected,
   onToggleSelectAll,
   onDownloadSelected,
@@ -126,10 +133,10 @@ export default function BottomSearchBar({
   const [moveBusy, setMoveBusy] = useState(false);
   const [renameBusy, setRenameBusy] = useState(false);
   const selMode = hasSelection && !viewerMode;
-  const panelOpen = confirmOpen || newFolderOpen || renameOpen || moveOpen || infoOpen || unlockOpen;
+  const panelOpen = confirmOpen || newFolderOpen || renameOpen || moveOpen || thumbOpen || infoOpen;
 
   // 검색바가 검색 대신 값을 입력받는 상태 — 새 폴더·이름 바꾸기.
-  const textEntryOpen = newFolderOpen || renameOpen || infoOpen || unlockOpen;
+  const textEntryOpen = newFolderOpen || renameOpen || infoOpen;
   // 입력창을 쓰지 않는 패널(삭제 확인·이동)이 열려 있을 때는 검색바
   // 입력을 아예 비활성화한다 — 패널이 열려 있는 동안 검색어를 바꿔 지금 폴더
   // 목록 자체가 통째로 달라지는 걸 막기 위해서다.
@@ -144,17 +151,17 @@ export default function BottomSearchBar({
   // 모드가 반영돼 "빈 패널" 한 프레임이 생기지 않는다.
   const liveMode = newFolderOpen
     ? "newFolder"
-    : unlockOpen
-      ? "unlock"
-      : renameOpen
+    : renameOpen
       ? "rename"
       : infoOpen
         ? "info"
-        : moveOpen
-        ? "move"
-        : confirmOpen
-          ? "confirm"
-          : null;
+        : thumbOpen
+          ? "thumb"
+          : moveOpen
+            ? "move"
+            : confirmOpen
+              ? "confirm"
+              : null;
   const displayModeRef = useRef(liveMode ?? "confirm");
   if (liveMode !== null) displayModeRef.current = liveMode;
   const displayMode = displayModeRef.current;
@@ -208,10 +215,9 @@ export default function BottomSearchBar({
   // 막지만 목록에서 미리 눌리지 않게 해 둔다.
   const moveExcluded = moveExcludedIds ?? new Set();
 
-  const textValue = newFolderOpen ? newFolderName : unlockOpen ? unlockPw : renameOpen || infoOpen ? renameName : searchQuery;
+  const textValue = newFolderOpen ? newFolderName : renameOpen || infoOpen ? renameName : searchQuery;
   const onTextChange = (value) => {
     if (newFolderOpen) onChangeNewFolderName?.(value);
-    else if (unlockOpen) onChangeUnlockPw?.(value);
     else if (renameOpen || infoOpen) onChangeRenameName?.(value);
     else onSearch?.(value);
   };
@@ -226,30 +232,18 @@ export default function BottomSearchBar({
       setRenameBusy(false);
     }
   };
-  // 잠긴 항목의 암호 입력: 확인(엔터)하면 맞을 때만 열리고 틀리면 아무 일도 없다.
-  const [unlockBusy, setUnlockBusy] = useState(false);
-  const canSubmitUnlock = Boolean(unlockPw) && !unlockBusy;
-  const submitUnlock = async () => {
-    if (!canSubmitUnlock) return;
-    setUnlockBusy(true);
-    try {
-      await onConfirmUnlock();
-    } finally {
-      setUnlockBusy(false);
-    }
-  };
-  const submitText = () => (unlockOpen ? submitUnlock() : newFolderOpen ? submitFolder() : renameOpen ? submitRename() : infoOpen ? submitInfo() : undefined);
+  const submitText = () => (newFolderOpen ? submitFolder() : renameOpen ? submitRename() : infoOpen ? submitInfo() : undefined);
   const onCancelScrim = newFolderOpen
     ? onCancelNewFolder
-    : unlockOpen
-      ? onCancelUnlock
-      : renameOpen
+    : renameOpen
       ? onCancelRename
       : infoOpen
         ? onCancelInfo
-        : moveOpen
-        ? onCancelMove
-        : onCancelDelete;
+        : thumbOpen
+          ? onCancelThumb
+          : moveOpen
+            ? onCancelMove
+            : onCancelDelete;
 
   // 패널이 열려 있는 동안 화면의 어느 곳을 눌러도(파일·폴더 타일 포함) 그 기능은 취소되고 하단바 패널이
   // 닫힌다. 타일을 눌러도 선택은 건드리지 않는다 — 열어 둔 기능의 대상(선택)이 도중에 바뀌지 않게 한다.
@@ -300,7 +294,7 @@ export default function BottomSearchBar({
           <div className="search-dock-body" aria-hidden={collapsed}>
           <div className="search-dock-body-inner">
           <div
-            className={`search-bar-confirm-panel${displayMode === "move" ? " mode-move" : ""}${displayMode === "info" ? " mode-info" : ""}${panelOpen ? " is-open" : ""}`}
+            className={`search-bar-confirm-panel${displayMode === "move" || displayMode === "thumb" ? " mode-move" : ""}${displayMode === "info" ? " mode-info" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
           >
             <div className="search-bar-confirm-content" key={displayMode}>
@@ -308,19 +302,17 @@ export default function BottomSearchBar({
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">새 폴더</p>
               ) : displayMode === "rename" ? (
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">이름 수정</p>
-              ) : displayMode === "unlock" ? (
-                <p className="search-bar-confirm-title search-bar-confirm-title--studio">암호</p>
               ) : displayMode === "info" ? (
                 <>
                   <div className="search-bar-confirm-title-row">
                     <p className="search-bar-confirm-title search-bar-confirm-title--studio">정보</p>
-                    {/* 암호화: 제목 바로 오른쪽의 작은 체크박스. 통합 암호가 없으면 표준 비활성 디자인으로 흐려지고 눌리지 않는다. */}
-                    <label className={`info-lock${infoLockDisabled ? " is-disabled" : ""}`}>
+                    {/* 썸네일: 제목 바로 오른쪽의 작은 체크박스. 파일은 체크 = 썸네일 표시(기본), 폴더는 체크 = 지정한 썸네일 있음(기본 해제). */}
+                    <label className="info-thumb">
                       <span className="checkbox">
-                        <input type="checkbox" checked={Boolean(infoLocked)} disabled={infoLockDisabled} onChange={() => onToggleInfoLock?.()} />
+                        <input type="checkbox" checked={Boolean(infoThumbOn)} onChange={() => onToggleInfoThumb?.()} />
                         <CheckboxVisual />
                       </span>
-                      <span className="info-lock-label">암호화</span>
+                      <span className="info-thumb-label">썸네일</span>
                     </label>
                     {/* 제목 줄 오른쪽 끝: 이전·다음 파일로 넘기는 < > (여러 개 선택 중에는 비활성). */}
                     <div className="info-nav">
@@ -337,6 +329,46 @@ export default function BottomSearchBar({
                     <p className="search-bar-confirm-desc">{infoLines?.[0] ?? "\u00a0"}</p>
                     <p className="search-bar-confirm-desc">{infoLines?.[1] ?? "\u00a0"}</p>
                   </div>
+                </>
+              ) : displayMode === "thumb" ? (
+                <>
+                  <p className="search-bar-confirm-title search-bar-confirm-title--studio">썸네일</p>
+                  {thumbPath.length > 0 && (
+                    <div className="move-path">
+                      <button type="button" className="move-path-back" aria-label="상위 폴더로" onClick={onThumbBack}>
+                        <BackIcon size={16} />
+                      </button>
+                      <span className="move-path-name">{thumbPath[thumbPath.length - 1].name}</span>
+                    </div>
+                  )}
+                  <ul className="move-list">
+                    {thumbRowsState === "loading" ? (
+                      <li className="move-note">
+                        <Spinner />
+                      </li>
+                    ) : thumbRowsState === "error" ? (
+                      <li className="move-note">불러오지 못했습니다</li>
+                    ) : (
+                      thumbRows.map((row) => {
+                        const pickable = Boolean(isThumbSource?.(row));
+                        return (
+                          <li key={row.id}>
+                            <button
+                              type="button"
+                              className={`move-row${thumbPickedId === row.id ? " is-picked" : ""}`}
+                              disabled={!row.is_folder && !pickable}
+                              onClick={() => (row.is_folder ? onThumbInto?.(row) : onThumbPick?.(row))}
+                            >
+                              <span className="move-row-icon">
+                                {row.is_folder ? <FolderIcon size={16} /> : <FileIcon size={16} />}
+                              </span>
+                              <span className="move-row-name">{row.name}</span>
+                            </button>
+                          </li>
+                        );
+                      })
+                    )}
+                  </ul>
                 </>
               ) : displayMode === "move" ? (
                 <>
@@ -388,8 +420,7 @@ export default function BottomSearchBar({
             <input
               ref={inputRef}
               className="search-bar-input"
-              type={unlockOpen ? "password" : textEntryOpen ? "text" : "search"}
-              autoComplete={unlockOpen ? "off" : undefined}
+              type={textEntryOpen ? "text" : "search"}
               inputMode={textEntryOpen ? "text" : "search"}
               enterKeyHint={textEntryOpen ? "done" : "search"}
               placeholder={textEntryOpen ? "여기에 입력하세요" : "검색"}
@@ -407,8 +438,8 @@ export default function BottomSearchBar({
               <button
                 type="button"
                 className="search-bar-inline-confirm"
-                onClick={confirmOpen ? confirm : unlockOpen ? submitUnlock : infoOpen ? submitInfo : moveOpen ? submitMove : submitText}
-                disabled={confirmOpen ? busy : unlockOpen ? !canSubmitUnlock : infoOpen ? !canSubmitInfo : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
+                onClick={confirmOpen ? confirm : infoOpen ? submitInfo : thumbOpen ? () => onConfirmThumb?.() : moveOpen ? submitMove : submitText}
+                disabled={confirmOpen ? busy : infoOpen ? !canSubmitInfo : thumbOpen ? !thumbPickedId : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
               >
                 확인
               </button>
