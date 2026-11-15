@@ -247,3 +247,12 @@ export function LockIcon({ size = 14 }) {
 
 
 
+
+// DockBackIcon(<)의 좌우 대칭: 같은 선 두께 2의 꺾쇠 >. 정보 패널 < > 처럼 짝으로 쓸 때 굵기가 같아진다.
+export function DockForwardIcon({ size = 21 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+      <path d="M9 4.5 16.5 12 9 19.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="miter" />
+    </svg>
+  );
+}
