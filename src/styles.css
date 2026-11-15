@@ -2560,6 +2560,7 @@ main.page {
 
 /* 스튜디오 하단바: 세로폭 308px(= 이동 화면에서 폴더 리스트가 3줄일 때의 하단바 높이). 버튼 줄은 맨 아래. */
 .search-dock.is-studio-dock {
+  container-type: inline-size;
   /* 이전(308px)보다 30% 줄인 216px. 정보 패널처럼 항상 열린 정보 영역 + 검색바 + 버튼 줄. */
   height: 216px;
 }
@@ -2597,4 +2598,65 @@ main.page {
   max-height: 100%;
   object-fit: contain;
   border-radius: 12px;
+}
+
+/* 스튜디오 섹션 버튼(제목 "정보" 자리): 하단 내비게이션 바처럼 네 모서리가 둥근 상자. 높이는 < > 버튼(30px)과 같고 폭은
+   하단바 폭의 70%, 왼쪽 정렬이며 안의 섹션도 왼쪽부터 놓인다. 선택된 섹션은 연한 알약. */
+.studio-seg {
+  flex: none;
+  box-sizing: border-box;
+  width: 70cqw;
+  height: 30px;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  border-radius: 16px;
+  background: var(--glass);
+  box-shadow: inset 0 0 0 1px var(--glass-border);
+}
+.studio-seg-btn {
+  flex: none;
+  height: 26px;
+  padding: 0 14px;
+  border-radius: 13px;
+  font-size: 13px;
+  color: var(--text-2);
+  white-space: nowrap;
+  transition: background 0.25s var(--ease), color 0.25s var(--ease);
+}
+.studio-seg-btn.is-on {
+  background: rgba(128, 128, 128, 0.28);
+  color: var(--text);
+}
+.studio-save-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 3px;
+}
+.studio-save-line .search-bar-confirm-desc {
+  margin: 0;
+}
+.studio-save-btn {
+  flex: none;
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--text);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+}
+:root[data-theme="dark"] .studio-save-btn {
+  color: #000000;
+}
+.studio-save-btn:disabled {
+  opacity: var(--studio-disabled);
+  pointer-events: none;
+}
+
+.search-dock.is-studio-dock .search-bar-confirm-title-row {
+  gap: 6px;
 }
