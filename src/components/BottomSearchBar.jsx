@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BackIcon, CheckIcon, ChevronRightIcon, DockBackIcon, DownloadIcon, EditIcon, FileIcon, SettingsIcon } from "./icons";
+import { BackIcon, CheckIcon, DockForwardIcon, DockBackIcon, DownloadIcon, EditIcon, FileIcon, SettingsIcon } from "./icons";
 import HeaderMoreButton from "./HeaderMoreButton";
 import SelectionMoreButton from "./SelectionMoreButton";
 import CheckboxVisual from "./Checkbox";
@@ -328,7 +328,7 @@ export default function BottomSearchBar({
                         <DockBackIcon size={16} />
                       </button>
                       <button className="info-nav-btn" type="button" aria-label="다음 파일" disabled={infoNextDisabled} onClick={() => onInfoNext?.()}>
-                        <ChevronRightIcon size={16} />
+                        <DockForwardIcon size={16} />
                       </button>
                     </div>
                   </div>
