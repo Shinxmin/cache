@@ -56,6 +56,16 @@ export default function BottomSearchBar({
   inactive = false,
   // 파일 뷰어 위에 뜰 때: 검색바는 비활성, < 는 뷰어 닫기, 가운데는 다운로드, 오른쪽 끝은 설정 대신 선택 메뉴(삼점). 뷰어보다 위에 그려진다.
   viewerMode = false,
+  // 스튜디오: 검색바만 비활성(+는 켜져 있음), + 안의 업로드 파일 종류 제한과 두 번째 항목(불러오기)
+  searchDisabled = false,
+  // 스튜디오 화면 하단바: 세로폭을 이동 화면(리스트 3줄)과 같게 고정하고, 검색바는 연필 아이콘·플레이스홀더 없음으로 쓴다.
+  studioDock = false,
+  plusAccept,
+  plusSecondLabel,
+  plusSecondIcon,
+  // 스튜디오 "불러오기" 선택 화면: < 만 켜져 있고(선택하면 전체 선택/해제도), 검색은 가능, 확인 버튼이 항상 보인다.
+  importMode = false,
+  onConfirmImport,
   // 휴지통처럼 일부 버튼만 막는 화면용: 설정/+ 버튼 비활성, 선택 메뉴 항목 교체, 선택 중에도 좌우 버튼(<·설정)을
   // 전체 선택/다운로드로 바꾸지 않기, 삭제 패널 제목 교체.
   settingsDisabled = false,
@@ -92,12 +102,10 @@ export default function BottomSearchBar({
   thumbPath = [],
   thumbRows = [],
   thumbRowsState,
-  thumbPickedId,
   isThumbSource,
   onThumbInto,
   onThumbBack,
   onThumbPick,
-  onConfirmThumb,
   onCancelThumb,
   allSelected,
   onToggleSelectAll,
@@ -269,7 +277,7 @@ export default function BottomSearchBar({
   const collapsed = scrolling && !panelOpen && !typing;
 
   // 검색바 아이콘은 이름을 입력받는 동안(새 폴더·이름 바꾸기) 돋보기 대신 연필 아이콘이 된다.
-  const searchBarIcon = textEntryOpen ? <EditIcon size={20} /> : <SearchIcon />;
+  const searchBarIcon = textEntryOpen || studioDock ? <EditIcon size={20} /> : <SearchIcon />;
 
   return (
     <>
@@ -278,7 +286,7 @@ export default function BottomSearchBar({
       )}
       <div className={`bottom-search-wrap${viewerMode ? " is-elevated" : ""}`}>
         <div
-          className={`search-dock${panelOpen ? " has-confirm" : ""}${collapsed ? " is-collapsed" : ""}${inactive ? " is-inactive" : ""}${viewerMode ? " is-viewer" : ""}`}
+          className={`search-dock${panelOpen ? " has-confirm" : ""}${collapsed ? " is-collapsed" : ""}${inactive ? " is-inactive" : ""}${viewerMode || searchDisabled ? " is-viewer" : ""}${studioDock ? " is-studio-dock" : ""}`}
           onClick={(e) => {
             // 패널이 열려 있을 때 하단바 안의 빈 곳(제목·여백·버튼 사이)을 눌러도 바깥 빈 곳과 같이 취소한다.
             // 버튼·입력창·이동 목록처럼 실제로 눌리는 것은 제외.
@@ -355,7 +363,7 @@ export default function BottomSearchBar({
                           <li key={row.id}>
                             <button
                               type="button"
-                              className={`move-row${thumbPickedId === row.id ? " is-picked" : ""}`}
+                              className="move-row"
                               disabled={!row.is_folder && !pickable}
                               onClick={() => (row.is_folder ? onThumbInto?.(row) : onThumbPick?.(row))}
                             >
@@ -423,9 +431,9 @@ export default function BottomSearchBar({
               type={textEntryOpen ? "text" : "search"}
               inputMode={textEntryOpen ? "text" : "search"}
               enterKeyHint={textEntryOpen ? "done" : "search"}
-              placeholder={textEntryOpen ? "여기에 입력하세요" : "검색"}
+              placeholder={studioDock ? "" : textEntryOpen ? "여기에 입력하세요" : "검색"}
               value={textValue}
-              disabled={inputDisabled || ((inactive || viewerMode) && !panelOpen)}
+              disabled={inputDisabled || ((inactive || viewerMode || searchDisabled) && !panelOpen)}
               onChange={(e) => onTextChange(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key !== "Enter") return;
@@ -434,12 +442,12 @@ export default function BottomSearchBar({
                 e.currentTarget.blur();
               }}
             />
-            {panelOpen && (
+            {((panelOpen && !thumbOpen) || (importMode && hasSelection)) && (
               <button
                 type="button"
                 className="search-bar-inline-confirm"
-                onClick={confirmOpen ? confirm : infoOpen ? submitInfo : thumbOpen ? () => onConfirmThumb?.() : moveOpen ? submitMove : submitText}
-                disabled={confirmOpen ? busy : infoOpen ? !canSubmitInfo : thumbOpen ? !thumbPickedId : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
+                onClick={importMode && !panelOpen ? () => onConfirmImport?.() : confirmOpen ? confirm : infoOpen ? submitInfo : moveOpen ? submitMove : submitText}
+                disabled={importMode && !panelOpen ? !hasSelection : confirmOpen ? busy : infoOpen ? !canSubmitInfo : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
               >
                 확인
               </button>
@@ -476,7 +484,7 @@ export default function BottomSearchBar({
             {/* 가운데 버튼: 선택 중(기본)·뷰어 위에서는 다운로드, 아니면 +.
                 휴지통처럼 좌우 버튼을 바꾸지 않는 화면(swapSideButtons=false)은 예전처럼 + 자리에 삼점이 온다. */}
             {(selMode && swapSideButtons) || viewerMode ? (
-              <button className="header-settings" type="button" aria-label="다운로드" onClick={onDownloadSelected}>
+              <button className="header-settings" type="button" aria-label="다운로드" disabled={importMode} onClick={onDownloadSelected}>
                 <DownloadIcon size={19} />
               </button>
             ) : selMode ? (
@@ -487,9 +495,17 @@ export default function BottomSearchBar({
                 onMove={onMoveSelected}
                 onInfo={onInfoSelected}
                 infoDisabled={infoDisabled}
+                disabled={importMode}
               />
             ) : (
-              <HeaderMoreButton onUpload={onUpload} onNewFolder={onNewFolder} disabled={inactive || plusDisabled || viewerMode} />
+              <HeaderMoreButton
+                onUpload={onUpload}
+                onNewFolder={onNewFolder}
+                disabled={inactive || plusDisabled || viewerMode}
+                accept={plusAccept}
+                secondLabel={plusSecondLabel}
+                secondIcon={plusSecondIcon}
+              />
             )}
             {/* 오른쪽 끝 버튼: 선택 중이거나 뷰어 위에서는 삼점(삭제·이동·정보), 아니면 설정. */}
             {(selMode && swapSideButtons) || viewerMode ? (
@@ -500,6 +516,7 @@ export default function BottomSearchBar({
                 onMove={onMoveSelected}
                 onInfo={onInfoSelected}
                 infoDisabled={infoDisabled}
+                disabled={importMode}
               />
             ) : (
               (onOpenSettings || inactive || settingsDisabled) && (
