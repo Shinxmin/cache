@@ -294,7 +294,7 @@ export async function uploadFile({ token, userId, file, parentId = null, onProgr
     }
   }
 
-  const row = rpcResult(
+  return rpcResult(
     await supabase.rpc("create_file", {
       p_token: token,
       p_name: file.name,
@@ -305,18 +305,6 @@ export async function uploadFile({ token, userId, file, parentId = null, onProgr
       p_thumb_key: thumbKey,
     })
   );
-  // 서버가 돌려주는 건 id뿐이라, 방금 올린 파일을 바로 쓸 수 있게(스튜디오 뷰포트 등) 나머지 필드를 채워서 돌려준다.
-  return {
-    ...row,
-    name: file.name,
-    is_folder: false,
-    r2_key: key,
-    thumb_key: thumbKey,
-    mime: file.type || null,
-    size: file.size,
-    parent_id: parentId,
-    created_at: new Date().toISOString(),
-  };
 }
 
 // 스플릿 비교 프리셋 저장: A/B 두 파일의 실제 바이트를 각각 새 R2 객체로

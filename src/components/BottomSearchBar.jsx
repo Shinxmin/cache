@@ -56,18 +56,6 @@ export default function BottomSearchBar({
   inactive = false,
   // 파일 뷰어 위에 뜰 때: 검색바는 비활성, < 는 뷰어 닫기, 가운데는 다운로드, 오른쪽 끝은 설정 대신 선택 메뉴(삼점). 뷰어보다 위에 그려진다.
   viewerMode = false,
-  // 스튜디오: 검색바만 비활성(+는 켜져 있음), + 안의 업로드 파일 종류 제한과 두 번째 항목(불러오기)
-  searchDisabled = false,
-  // 스튜디오 화면 하단바: 세로폭을 이동 화면(리스트 3줄)과 같게 고정하고, 검색바는 연필 아이콘·플레이스홀더 없음으로 쓴다.
-  studioDock = false,
-  // 스튜디오 하단바: 지금 보고 있는 파일의 정보를 정보 패널처럼 항상 열어 보여준다 — { name, lines: [날짜, 파일 수·용량], onPrev, onNext, prevDisabled, nextDisabled }
-  studioInfo,
-  plusAccept,
-  plusSecondLabel,
-  plusSecondIcon,
-  // 스튜디오 "불러오기" 선택 화면: < 만 켜져 있고(선택하면 전체 선택/해제도), 검색은 가능, 확인 버튼이 항상 보인다.
-  importMode = false,
-  onConfirmImport,
   // 휴지통처럼 일부 버튼만 막는 화면용: 설정/+ 버튼 비활성, 선택 메뉴 항목 교체, 선택 중에도 좌우 버튼(<·설정)을
   // 전체 선택/다운로드로 바꾸지 않기, 삭제 패널 제목 교체.
   settingsDisabled = false,
@@ -225,11 +213,9 @@ export default function BottomSearchBar({
   // 막지만 목록에서 미리 눌리지 않게 해 둔다.
   const moveExcluded = moveExcludedIds ?? new Set();
 
-  const studioActive = Boolean(studioDock && studioInfo?.editable);
-  const textValue = studioDock ? studioInfo?.name ?? "" : newFolderOpen ? newFolderName : renameOpen || infoOpen ? renameName : searchQuery;
+  const textValue = newFolderOpen ? newFolderName : renameOpen || infoOpen ? renameName : searchQuery;
   const onTextChange = (value) => {
-    if (studioDock) studioInfo?.onChangeName?.(value);
-    else if (newFolderOpen) onChangeNewFolderName?.(value);
+    if (newFolderOpen) onChangeNewFolderName?.(value);
     else if (renameOpen || infoOpen) onChangeRenameName?.(value);
     else onSearch?.(value);
   };
@@ -281,7 +267,7 @@ export default function BottomSearchBar({
   const collapsed = scrolling && !panelOpen && !typing;
 
   // 검색바 아이콘은 이름을 입력받는 동안(새 폴더·이름 바꾸기) 돋보기 대신 연필 아이콘이 된다.
-  const searchBarIcon = textEntryOpen || studioDock ? <EditIcon size={20} /> : <SearchIcon />;
+  const searchBarIcon = textEntryOpen ? <EditIcon size={20} /> : <SearchIcon />;
 
   return (
     <>
@@ -290,7 +276,7 @@ export default function BottomSearchBar({
       )}
       <div className={`bottom-search-wrap${viewerMode ? " is-elevated" : ""}`}>
         <div
-          className={`search-dock${panelOpen ? " has-confirm" : ""}${collapsed ? " is-collapsed" : ""}${inactive ? " is-inactive" : ""}${viewerMode || searchDisabled ? " is-viewer" : ""}${studioDock ? " is-studio-dock" : ""}`}
+          className={`search-dock${panelOpen ? " has-confirm" : ""}${collapsed ? " is-collapsed" : ""}${inactive ? " is-inactive" : ""}${viewerMode ? " is-viewer" : ""}`}
           onClick={(e) => {
             // 패널이 열려 있을 때 하단바 안의 빈 곳(제목·여백·버튼 사이)을 눌러도 바깥 빈 곳과 같이 취소한다.
             // 버튼·입력창·이동 목록처럼 실제로 눌리는 것은 제외.
@@ -306,47 +292,11 @@ export default function BottomSearchBar({
           <div className="search-dock-body" aria-hidden={collapsed}>
           <div className="search-dock-body-inner">
           <div
-            className={`search-bar-confirm-panel${studioDock ? " mode-info is-open" : ""}${displayMode === "move" || displayMode === "thumb" ? " mode-move" : ""}${displayMode === "info" ? " mode-info" : ""}${panelOpen ? " is-open" : ""}`}
+            className={`search-bar-confirm-panel${displayMode === "move" || displayMode === "thumb" ? " mode-move" : ""}${displayMode === "info" ? " mode-info" : ""}${panelOpen ? " is-open" : ""}`}
             aria-hidden={!panelOpen}
           >
             <div className="search-bar-confirm-content" key={displayMode}>
-              {studioDock ? (
-                <>
-                  <div className="search-bar-confirm-title-row">
-                    {/* 제목 "정보" 대신: 하단 내비게이션 바 모양(네 모서리 곡선)의 섹션 버튼. 선택된 섹션은 연한 알약으로 표시된다. */}
-                    <div className="studio-seg" role="tablist" aria-label="스튜디오 섹션">
-                      {(studioInfo?.sections ?? []).map((sec) => (
-                        <button
-                          key={sec.id}
-                          type="button"
-                          role="tab"
-                          aria-selected={studioInfo.section === sec.id}
-                          className={`studio-seg-btn${studioInfo.section === sec.id ? " is-on" : ""}`}
-                          onClick={() => studioInfo.onSection?.(sec.id)}
-                        >
-                          {sec.label}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="info-nav">
-                      <button className="info-nav-btn" type="button" aria-label="이전 파일" disabled={!studioInfo || studioInfo.prevDisabled} onClick={() => studioInfo?.onPrev?.()}>
-                        <DockBackIcon size={16} />
-                      </button>
-                      <button className="info-nav-btn" type="button" aria-label="다음 파일" disabled={!studioInfo || studioInfo.nextDisabled} onClick={() => studioInfo?.onNext?.()}>
-                        <DockForwardIcon size={16} />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="search-bar-confirm-info">
-                    {studioInfo?.content ?? (
-                      <>
-                        <p className="search-bar-confirm-desc">{studioInfo?.lines?.[0] ?? "\u00a0"}</p>
-                        <p className="search-bar-confirm-desc">{studioInfo?.lines?.[1] ?? "\u00a0"}</p>
-                      </>
-                    )}
-                  </div>
-                </>
-              ) : displayMode === "newFolder" ? (
+              {displayMode === "newFolder" ? (
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">새 폴더</p>
               ) : displayMode === "rename" ? (
                 <p className="search-bar-confirm-title search-bar-confirm-title--studio">이름 수정</p>
@@ -468,27 +418,26 @@ export default function BottomSearchBar({
             <input
               ref={inputRef}
               className="search-bar-input"
-              type={textEntryOpen || studioActive ? "text" : "search"}
+              type={textEntryOpen ? "text" : "search"}
               inputMode={textEntryOpen ? "text" : "search"}
               enterKeyHint={textEntryOpen ? "done" : "search"}
-              placeholder={studioDock ? "" : textEntryOpen ? "여기에 입력하세요" : "검색"}
+              placeholder={textEntryOpen ? "여기에 입력하세요" : "검색"}
               value={textValue}
-              disabled={inputDisabled || ((inactive || viewerMode || searchDisabled) && !panelOpen)}
+              disabled={inputDisabled || ((inactive || viewerMode) && !panelOpen)}
               onChange={(e) => onTextChange(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key !== "Enter") return;
                 // 모바일 키보드의 "검색"/"완료" 확인 버튼도 엔터와 동일한 keydown을 발생시킨다.
-                if (studioActive) studioInfo.onConfirmName?.();
-                else if (textEntryOpen) submitText();
+                if (textEntryOpen) submitText();
                 e.currentTarget.blur();
               }}
             />
-            {((panelOpen && !thumbOpen) || (importMode && hasSelection) || studioActive) && (
+            {panelOpen && !thumbOpen && (
               <button
                 type="button"
                 className="search-bar-inline-confirm"
-                onClick={studioActive && !panelOpen ? () => studioInfo.onConfirmName?.() : importMode && !panelOpen ? () => onConfirmImport?.() : confirmOpen ? confirm : infoOpen ? submitInfo : moveOpen ? submitMove : submitText}
-                disabled={studioActive && !panelOpen ? !studioInfo.canConfirm : importMode && !panelOpen ? !hasSelection : confirmOpen ? busy : infoOpen ? !canSubmitInfo : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
+                onClick={confirmOpen ? confirm : infoOpen ? submitInfo : moveOpen ? submitMove : submitText}
+                disabled={confirmOpen ? busy : infoOpen ? !canSubmitInfo : moveOpen ? !canSubmitMove : renameOpen ? !canSubmitRename : !canSubmitFolder}
               >
                 확인
               </button>
@@ -525,7 +474,7 @@ export default function BottomSearchBar({
             {/* 가운데 버튼: 선택 중(기본)·뷰어 위에서는 다운로드, 아니면 +.
                 휴지통처럼 좌우 버튼을 바꾸지 않는 화면(swapSideButtons=false)은 예전처럼 + 자리에 삼점이 온다. */}
             {(selMode && swapSideButtons) || viewerMode ? (
-              <button className="header-settings" type="button" aria-label="다운로드" disabled={importMode} onClick={onDownloadSelected}>
+              <button className="header-settings" type="button" aria-label="다운로드" onClick={onDownloadSelected}>
                 <DownloadIcon size={19} />
               </button>
             ) : selMode ? (
@@ -536,16 +485,12 @@ export default function BottomSearchBar({
                 onMove={onMoveSelected}
                 onInfo={onInfoSelected}
                 infoDisabled={infoDisabled}
-                disabled={importMode}
               />
             ) : (
               <HeaderMoreButton
                 onUpload={onUpload}
                 onNewFolder={onNewFolder}
                 disabled={inactive || plusDisabled || viewerMode}
-                accept={plusAccept}
-                secondLabel={plusSecondLabel}
-                secondIcon={plusSecondIcon}
               />
             )}
             {/* 오른쪽 끝 버튼: 선택 중이거나 뷰어 위에서는 삼점(삭제·이동·정보), 아니면 설정. */}
@@ -557,7 +502,6 @@ export default function BottomSearchBar({
                 onMove={onMoveSelected}
                 onInfo={onInfoSelected}
                 infoDisabled={infoDisabled}
-                disabled={importMode}
               />
             ) : (
               (onOpenSettings || inactive || settingsDisabled) && (
